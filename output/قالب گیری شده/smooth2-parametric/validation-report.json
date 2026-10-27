@@ -1,13 +1,13 @@
 {
   "solids": 1,
   "shape_valid": true,
-  "stl_watertight": true,
-  "volume_mm3": 185633.0,
+  "stl_watertight": false,
+  "volume_mm3": 201611.1,
   "source_volume_mm3": 189355.4,
   "extents_mm": [
-    144.7,
-    25.6,
-    149.67
+    144.66,
+    28.53,
+    153.67
   ],
   "source_extents_mm": [
     144.73,
@@ -15,14 +15,14 @@
     150.05
   ],
   "new_to_source_surface_distance_mm": {
-    "mean": 1.37,
-    "median": 0.76,
-    "p95": 4.6
+    "mean": 1.45,
+    "median": 0.91,
+    "p95": 4.48
   },
   "source_to_new_surface_distance_mm": {
-    "mean": 1.58,
-    "median": 0.84,
-    "p95": 5.6
+    "mean": 1.69,
+    "median": 1.01,
+    "p95": 5.68
   },
   "guards_outer_roundness_at_y9": [
     {
@@ -30,36 +30,36 @@
         37.0,
         39.5
       ],
-      "outer_R_min": 35.285,
-      "outer_R_max": 35.288,
-      "roundness_error_mm": 0.004
+      "outer_R_min": 35.28,
+      "outer_R_max": 35.286,
+      "roundness_error_mm": 0.006
     },
     {
       "center": [
         37.0,
         -39.5
       ],
-      "outer_R_min": 35.282,
-      "outer_R_max": 35.286,
-      "roundness_error_mm": 0.004
+      "outer_R_min": 35.278,
+      "outer_R_max": 35.287,
+      "roundness_error_mm": 0.009
     },
     {
       "center": [
         -37.0,
         39.5
       ],
-      "outer_R_min": 35.281,
-      "outer_R_max": 35.288,
-      "roundness_error_mm": 0.007
+      "outer_R_min": 35.28,
+      "outer_R_max": 35.286,
+      "roundness_error_mm": 0.006
     },
     {
       "center": [
         -37.0,
         -39.5
       ],
-      "outer_R_min": 35.282,
-      "outer_R_max": 35.286,
-      "roundness_error_mm": 0.004
+      "outer_R_min": 35.278,
+      "outer_R_max": 35.287,
+      "roundness_error_mm": 0.009
     }
   ],
   "known_differences": [

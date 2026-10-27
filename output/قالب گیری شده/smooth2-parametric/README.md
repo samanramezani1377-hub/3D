@@ -13,3 +13,10 @@ Parametric rebuild of the `smooth 2` quadcopter (CadQuery). Generator: `cad/para
 - Guard rings are revolved from the measured barrel profile (outer radius 29 -> 35.3 -> 31 mm over the height), still exact circles.
 - Propellers lowered to y=9 like the original, radius 25.5 mm.
 - Check with `python3 cad/tools/validate.py` (volume, extents, surface distance to the original, ring roundness).
+
+## Update 2 (reference render: faceted dome, LED, camera)
+- Dome is now a mirror-symmetric low-poly polyhedron of planar triangles (`canopy_faceted`, `facet_vertices`, `facet_inset`) built through the measured levels.
+- Front green LED chevron: a groove in the shell plus a separate insert `led_strip_green.step/.stl` (parameters `led_*`).
+- Fixed front camera tilted down 20 deg under the nose (`camera_*`).
+- Lower hull widened so it meets the guard rings (no air gap between body/arms and guards); arms are 16 x 12 mm.
+- Previews: `preview_overview.png`, `preview_front.png`.

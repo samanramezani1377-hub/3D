@@ -9,13 +9,13 @@ import cadquery as cq
 PARAMS = {
     # central body (plan polygon, mirrored left/right) ---------------------
     "body_height": 13.0,            # lower hull height (y 0..body_height)
-    "body_half_width": 24.0,        # max half width (x) at the widest point
+    "body_half_width": 35.0,        # max half width (x) at the widest point
     "body_front_z": 66.0,           # nose (+z)
     "body_rear_z": -52.0,           # tail (-z)
-    "body_front_half_width": 12.0,
-    "body_rear_half_width": 18.0,
-    "body_widest_z_front": 20.0,
-    "body_widest_z_rear": -10.0,
+    "body_front_half_width": 11.0,
+    "body_rear_half_width": 22.0,
+    "body_widest_z_front": 10.0,
+    "body_widest_z_rear": -18.0,
     "body_edge_fillet": 3.0,
     # canopy (upper dome) ---------------------------------------------------
     "canopy_height": 12.0,
