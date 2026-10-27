@@ -1,0 +1,19 @@
+{
+  "native_file": "quadcopter_exterior_shell_smoothed_candidate.FCStd",
+  "step_file": "quadcopter_exterior_shell_smoothed_candidate.step",
+  "stl_file": "quadcopter_exterior_shell_smoothed_candidate.stl",
+  "mesh_object_facets": 24792,
+  "step_shape_faces": 24792,
+  "step_shape_valid": true,
+  "step_shape_solids": 0,
+  "step_shape_closed": true,
+  "bounds_mm": [
+    -72.28983306884766,
+    0.014585999771952629,
+    -74.98411560058594,
+    72.27725982666016,
+    26.13784408569336,
+    74.97705841064453
+  ],
+  "note": "Smoothing is limited to vertex displacement. The STEP remains faceted; this run does not claim true smooth NURBS surfaces or feature-based parametric reconstruction."
+}
