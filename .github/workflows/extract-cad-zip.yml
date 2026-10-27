@@ -1,0 +1,37 @@
+name: Extract CAD ZIP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [demo]
+    paths: ['.github/workflows/extract-cad-zip.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: demo
+      - name: Extract archive safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive='output/original-quadcopter-mesh-cad.zip'
+          target='output/original-quadcopter-mesh-cad'
+          test -s "$archive"
+          test ! -e "$target"
+          unzip -t "$archive"
+          mkdir -p "$target"
+          unzip -q "$archive" -d "$target"
+          test -n "$(find "$target" -type f -print -quit)"
+          find "$target" -type f -printf '%p (%s bytes)\n'
+          rm "$archive"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$target" "$archive"
+          git commit -m 'Extract CAD archive into its own folder'
+          git push origin HEAD:demo
