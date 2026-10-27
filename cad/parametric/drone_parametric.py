@@ -28,6 +28,11 @@ PARAMS = {
     "canopy_base_y": 13.0,
     "canopy_top_y": 25.6,
     "canopy_top_scale": 0.45,        # last ring of the dome relative to the top measured section
+    # faceted (low-poly) dome, like the reference render --------------------------
+    "canopy_faceted": True,
+    "facet_vertices": 14,            # vertices per level (fewer = bigger flat facets)
+    "facet_inset": 0.90,             # every 2nd vertex of the mid levels is pulled inward -> sharp creases
+    "facet_ridge_lift": 1.6,         # extra height (mm) given to the top ridge vertices
     # rotor stations / arms ---------------------------------------------------
     "motor_x": 37.0,                # |x| of each motor axis
     "motor_z": 39.5,                # |z| of each motor axis
@@ -82,6 +87,46 @@ def hull_polygon(p):
             (-p["body_half_width"], p["body_widest_z_front"])]
 
 
+def faceted_canopy(p):
+    """Closed polyhedron of planar triangles through the measured levels -> crisp low-poly dome."""
+    import os, numpy as np
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "body_sections.json")
+    data = json.load(open(path))
+    n = data["points_per_level"]; K = p["facet_vertices"]
+    idx = [int(round(i * n / K)) % n for i in range(K)]
+    def pick(pts):
+        a = np.asarray(pts, float)[idx]
+        return a
+    secs = sorted((float(y), np.array(q)) for y, q in data["sections"].items())
+    lv = [(p["canopy_base_y"], pick(_resample(hull_polygon(p), n)))]
+    for j, (y, q) in enumerate(secs):
+        a = pick(q); c = a.mean(axis=0)
+        a[1::2] = c + (a[1::2] - c) * p["facet_inset"]          # zig-zag -> creases between triangles
+        lv.append((y, a))
+    ytop, ptop = secs[-1]; a = pick(ptop); c = a.mean(axis=0)
+    top = c + (a - c) * p["canopy_top_scale"]
+    lv.append((p["canopy_top_y"], top))
+    P = [[cq.Vector(float(x), float(y), float(z)) for (x, z) in pts] for y, pts in lv]
+    # lift the two middle (ridge) vertices of the top ring a little
+    faces = []
+    def tri(a, b, c):
+        faces.append(cq.Face.makeFromWires(cq.Wire.makePolygon([a, b, c], close=True)))
+    for L in range(len(P) - 1):
+        for i in range(K):
+            j = (i + 1) % K
+            if i % 2 == 0:
+                tri(P[L][i], P[L][j], P[L + 1][i]); tri(P[L][j], P[L + 1][j], P[L + 1][i])
+            else:
+                tri(P[L][i], P[L][j], P[L + 1][j]); tri(P[L][i], P[L + 1][j], P[L + 1][i])
+    faces.append(cq.Face.makeFromWires(cq.Wire.makePolygon(P[0] + [P[0][0]], close=False) if False else cq.Wire.makePolygon(P[0], close=True)))
+    faces.append(cq.Face.makeFromWires(cq.Wire.makePolygon(P[-1], close=True)))
+    shell = cq.Shell.makeShell(faces)
+    solid = cq.Solid.makeSolid(shell)
+    if solid.Volume() < 0:
+        solid = cq.Solid(solid.wrapped.Reversed())
+    return cq.Workplane("XY").add(solid)
+
+
 def measured_canopy(p):
     import os, numpy as np
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "body_sections.json")
@@ -117,6 +162,8 @@ def body(p):
     hull = (cq.Workplane("XZ").polyline(pts).close().extrude(-p["body_height"]))
     if p.get("use_measured_canopy"):
         try:
+            if p.get("canopy_faceted"):
+                return hull.union(faceted_canopy(p))
             return hull.union(measured_canopy(p))
         except Exception as e:  # fall back to the simple tapered canopy below
             print("measured canopy failed, using simple canopy:", e)
