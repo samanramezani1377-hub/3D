@@ -1,0 +1,135 @@
+name: Inspect propeller-guard geometry in smooth 2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - demo
+    paths:
+      - ".github/workflows/inspect-smooth-2-guards.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: inspect-smooth-2-guards-demo
+  cancel-in-progress: false
+
+jobs:
+  inspect-existing-smooth2:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout demo only
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+          fetch-depth: 0
+
+      - name: Install FreeCAD and inspection libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends freecad python3-numpy python3-matplotlib
+
+      - name: Export exact smooth 2 shape and inspect geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="output/قالب گیری شده/smooth 2"
+          SRC="$BASE/quadcopter_smooth_2.FCStd"
+          test -s "$SRC"
+          mkdir -p /tmp/guard-inspect
+          cat > /tmp/guard-inspect/inspect.FCMacro <<'PY'
+          import os, json, FreeCAD as App, Mesh
+          base = os.path.abspath("output/قالب گیری شده/smooth 2")
+          src = os.path.join(base, "quadcopter_smooth_2.FCStd")
+          out = "/tmp/guard-inspect/smooth2_reference.stl"
+          doc = App.openDocument(src)
+          try:
+              rows = []
+              candidates = []
+              for obj in doc.Objects:
+                  if hasattr(obj, "Shape") and not obj.Shape.isNull():
+                      sh = obj.Shape
+                      bb = sh.BoundBox
+                      rows.append({
+                          "object": obj.Name, "label": obj.Label, "type": obj.TypeId,
+                          "valid": bool(sh.isValid()), "closed": bool(sh.isClosed()),
+                          "faces": len(sh.Faces), "solids": len(sh.Solids),
+                          "bounds_mm": [bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax],
+                          "extents_mm": [bb.XLength, bb.YLength, bb.ZLength]
+                      })
+                      if len(sh.Faces) > 100:
+                          candidates.append((len(sh.Faces), obj))
+              if not candidates:
+                  raise RuntimeError("No substantial shape found in smooth 2 FCStd")
+              obj = max(candidates, key=lambda x: x[0])[1]
+              Mesh.export([obj], out)
+              report = {
+                  "status": "diagnostic_exported_no_geometry_changed",
+                  "source": "output/قالب گیری شده/smooth 2/quadcopter_smooth_2.FCStd",
+                  "branch_main_modified": False,
+                  "source_cad_modified": False,
+                  "selected_object": obj.Name,
+                  "objects": rows,
+                  "diagnostic_mesh": "smooth2_reference.stl",
+                  "purpose": "Prepare a top-view and dimensional baseline before any propeller-guard reconstruction.",
+                  "limits": [
+                      "This step does not modify or overwrite smooth 2.",
+                      "No guard is assumed circular until the guard regions and their design intent are verified.",
+                      "A mesh-derived solid does not contain the original parametric sketches or constraints."
+                  ]
+              }
+              with open(os.path.join(base, "guard-roundness-inspection.json"), "w") as f:
+                  json.dump(report, f, indent=2)
+              print(json.dumps(report, indent=2))
+          finally:
+              App.closeDocument(doc.Name)
+          PY
+          if command -v FreeCADCmd >/dev/null 2>&1; then FC=FreeCADCmd; elif command -v freecadcmd >/dev/null 2>&1; then FC=freecadcmd; else echo "FreeCADCmd not found" >&2; exit 1; fi
+          env -u LD_LIBRARY_PATH "$FC" /tmp/guard-inspect/inspect.FCMacro
+          test -s /tmp/guard-inspect/smooth2_reference.stl
+          test -s "$BASE/guard-roundness-inspection.json"
+
+      - name: Create top-view reference image
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y --no-install-recommends python3-trimesh
+          export MPLBACKEND=Agg
+          python3 - <<'PY'
+          import os
+          import numpy as np
+          import trimesh
+          import matplotlib
+          matplotlib.use("Agg")
+          import matplotlib.pyplot as plt
+          base = "output/قالب گیری شده/smooth 2"
+          mesh = trimesh.load("/tmp/guard-inspect/smooth2_reference.stl", force="mesh", process=False)
+          if not isinstance(mesh, trimesh.Trimesh) or len(mesh.faces) == 0:
+              raise RuntimeError("Could not load diagnostic mesh")
+          v = mesh.vertices
+          fig, ax = plt.subplots(figsize=(10, 10))
+          ax.scatter(v[:, 0], v[:, 2], s=0.12, rasterized=True)
+          ax.set_aspect("equal", adjustable="box")
+          ax.set_xlabel("X (mm)")
+          ax.set_ylabel("Z (mm)")
+          ax.set_title("smooth 2 — top projection (X-Z), diagnostic only")
+          ax.grid(True, linewidth=0.3, alpha=0.4)
+          fig.tight_layout()
+          fig.savefig(os.path.join(base, "guard-roundness-top-view.png"), dpi=180)
+          plt.close(fig)
+          print("Vertices:", len(v), "faces:", len(mesh.faces), "bounds:", mesh.bounds.tolist())
+          PY
+
+      - name: Commit diagnostics to demo only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "output/قالب گیری شده/smooth 2/guard-roundness-inspection.json" "output/قالب گیری شده/smooth 2/guard-roundness-top-view.png"
+          if git diff --cached --quiet; then
+            echo "No diagnostic changes to commit."
+            exit 0
+          fi
+          git commit -m "Inspect propeller guard geometry in smooth 2"
+          git push origin HEAD:demo
