@@ -1,0 +1,54 @@
+name: Commit CAD artifact into demo branch
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - demo
+    paths:
+      - ".github/workflows/commit-cad-artifact.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  commit-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out demo branch
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+          fetch-depth: 0
+
+      - name: Download generated CAD artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: original-quadcopter-mesh-cad
+          path: downloaded-cad
+          repository: ${{ github.repository }}
+          run-id: 40433523186
+          github-token: ${{ github.token }}
+
+      - name: Package artifact for repository storage
+        run: |
+          set -euo pipefail
+          test -d downloaded-cad
+          mkdir -p output
+          zip -qr output/original-quadcopter-mesh-cad.zip downloaded-cad
+          test -s output/original-quadcopter-mesh-cad.zip
+          ls -lh output/original-quadcopter-mesh-cad.zip
+
+      - name: Commit archive to demo
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/original-quadcopter-mesh-cad.zip
+          if git diff --cached --quiet; then
+            echo "Artifact archive is already committed."
+          else
+            git commit -m "Add generated original quadcopter CAD artifact"
+            git push origin HEAD:demo
+          fi
