@@ -1,31 +1,35 @@
-# Quadcopter source mesh and CAD conversion (demo branch)
+# Quadcopter source mesh and CAD redesign (demo branch)
 
-This branch is the work area for inspecting the original quadcopter and preparing it for a careful redesign. The original geometry on `main` is treated as read-only.
+This branch is the work area for inspecting the original quadcopter and developing a separate modular redesign. The original geometry on main is treated as read-only. No source mesh or original CAD conversion output is overwritten.
 
 ## Source assets
 
-- `quadcopter_tidy.obj` — original mesh
-- `quadcopter_tidy.stl` — original STL
-- `output/quadcopter_tidy_complete.stl` — preserved complete-mesh copy
-- `parts/` — separate body, duct, motor, and propeller mesh files
+- quadcopter_tidy.obj — original mesh
+- quadcopter_tidy.stl — original STL
+- output/quadcopter_tidy_complete.stl — preserved complete-mesh copy
+- parts/ — separate body, duct, motor, and propeller mesh files
 
-The source mesh is approximately 144.60 × 26.15 × 150.00 mm in its current coordinate orientation. These are mesh bounds, not verified printer-oriented dimensions.
+The source mesh is approximately 144.60 × 26.15 × 150.00 mm in its current coordinate orientation. These are source-mesh bounds, not verified printer-oriented dimensions.
 
 ## Workflows
 
-Workflows are manual-only to avoid reinstalling tools or reconverting the mesh on every commit.
+1. **Convert original mesh to CAD** — fetches quadcopter_tidy.obj from main read-only and uploads the original faceted FreeCAD/STEP conversion and reports.
+2. **Inspect original geometry** — reports mesh dimensions, triangle counts, watertightness, connected components, and existing part files.
+3. **Build modular quadcopter redesign CAD** — runs cad/redesign/quadcopter_modular_redesign.FCMacro on demo and uploads a new parametric first-pass assembly, individual STEP/STL parts, and a design report.
 
-1. **Convert original mesh to CAD** — GitHub Actions → “Convert original quadcopter mesh to editable CAD” → Run workflow. It fetches `quadcopter_tidy.obj` from `main` read-only and uploads a downloadable artifact containing a FreeCAD document, STEP export, and reports.
-2. **Inspect original geometry** — GitHub Actions → “Inspect original quadcopter geometry” → Run workflow. It reports mesh dimensions, triangle counts, watertightness, connected components, and checks the existing part files.
+## Modular redesign status
 
-The generated CAD is mesh-derived faceted geometry. Conversion does not recover the original design history, smooth analytic surfaces, or editable parametric features. A closed-solid candidate, if produced, is still faceted and must be inspected before use.
+A first-pass parametric concept is now present under cad/redesign/. It includes:
+- lower electronics tray with a nominally flat floor and underside M3 screw-head counterbores;
+- upper lid and four underside clamp bosses;
+- four independent arms, each with an integrated propeller guard and a provisional motor mounting pattern;
+- a two-blade, serrated trailing-edge propeller concept informed by low-noise research;
+- a fixed camera mount with a nominal 15-degree downward angle.
 
-## Redesign status
+The initial values are editable in the FreeCAD macro. Motor mounting dimensions and shaft bore are placeholders, not measurements from the source mesh or a selected motor. Battery/electronics/camera fit and screw engagement are not verified. The action's XY bounds check does not replace slicer placement and orientation checks.
 
-A separate parametric redesign is **not yet implemented**. The intended direction is to preserve the original quadcopter as the reference and then design/test separate upper shell, lower electronics tray, four clamped arms, underside fasteners, arm-mounted guards and motor interfaces, plus a fixed downward-angled camera mount.
+## Low-noise propeller design
 
-Before printing, actual motor/propeller dimensions, screw pattern and lengths, battery/electronics sizes, camera field of view, material, printer tolerances, and required loads must be confirmed. Each individual exported part must be checked against the 200 × 200 mm print bed in the slicer. Do not treat this repository as a flight-ready or safety-validated design.
+Recent experimental work suggests that carefully tuned trailing-edge serrations can reduce tonal and broadband noise, but effects depend on geometry and RPM and may reduce thrust. Other work emphasizes reducing blade-tip loading and designing for the intended operating point. The generated propeller is only a research-informed prototype; no acoustic or thrust results are claimed. Research links and design caveats are documented in cad/redesign/README.md.
 
-## Propellers and noise
-
-No custom quiet propeller is currently validated here. Noise and thrust depend on propeller geometry, RPM, motor, and operating point. Use a commercially matched propeller for initial powered tests; do not spin an unvalidated printed propeller at flight RPM.
+**Safety:** do not spin a printed prototype at flight RPM or fly the current concept. Validate material, balance, runout, vibration, thrust, current, temperature and sound on a guarded test stand. Use a commercially rated propeller matched to the motor for initial powered tests. This repository is not yet a flight-ready or safety-validated design.
