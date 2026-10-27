@@ -25,7 +25,8 @@ jobs:
       - name: Install FreeCAD and mesh processing tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends freecad python3-trimesh python3-numpy
+          sudo apt-get install -y --no-install-recommends freecad python3-numpy python3-pip
+          python3 -m pip install --disable-pip-version-check 'trimesh<5.2'
 
       - name: Export mesh from existing FreeCAD document
         shell: bash
