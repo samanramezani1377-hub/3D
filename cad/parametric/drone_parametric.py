@@ -362,3 +362,5 @@ if __name__ == "__main__":
     out = "output/قالب گیری شده/smooth2-parametric"
     export(shape, out)
     json.dump({**PARAMS, **params}, open(out + "/drone_parametric.params.json", "w"), indent=2)
+
+# Harmless commit to trigger the demo-branch regeneration workflow; no model changes.
