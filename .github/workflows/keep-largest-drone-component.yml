@@ -1,0 +1,79 @@
+name: Keep largest connected drone component
+
+on:
+  push:
+    branches: [demo]
+    paths:
+      - ".github/workflows/keep-largest-drone-component.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  process-original-stl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout demo branch
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install mesh tools
+        run: python -m pip install --upgrade pip trimesh numpy
+      - name: Download original STL from main
+        run: |
+          curl --fail --location --retry 3 \
+            https://raw.githubusercontent.com/samanramezani1377-hub/3D/main/quadcopter_tidy.stl \
+            --output /tmp/quadcopter_tidy_original.stl
+          test -s /tmp/quadcopter_tidy_original.stl
+      - name: Extract and validate largest connected component
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import trimesh
+
+          src = Path("/tmp/quadcopter_tidy_original.stl")
+          mesh = trimesh.load_mesh(src, file_type="stl", process=True)
+          if not isinstance(mesh, trimesh.Trimesh) or mesh.is_empty:
+              raise SystemExit("Original STL did not load as a non-empty triangle mesh")
+          components = mesh.split(only_watertight=False)
+          if not components:
+              raise SystemExit("No connected mesh components found")
+          components.sort(key=lambda m: (len(m.faces), m.area), reverse=True)
+          largest = components[0]
+          if len(largest.faces) < 100:
+              raise SystemExit("Largest component is unexpectedly small; refusing output")
+          out = Path("output/quadcopter_tidy_largest_component.stl")
+          out.parent.mkdir(parents=True, exist_ok=True)
+          largest.export(out)
+          check = trimesh.load_mesh(out, file_type="stl", process=True)
+          report = {
+              "source": "main/quadcopter_tidy.stl",
+              "source_bytes": src.stat().st_size,
+              "source_triangles": int(len(mesh.faces)),
+              "source_connected_components": int(len(components)),
+              "kept_triangles": int(len(largest.faces)),
+              "kept_component_area": float(largest.area),
+              "kept_component_bounds_mm_assumed": check.bounds.tolist(),
+              "output_bytes": out.stat().st_size,
+              "validation_nonempty": bool(not check.is_empty),
+              "note": "Largest connected mesh component only; this is not a guarantee of flight safety or printability."
+          }
+          if check.is_empty or len(check.faces) != len(largest.faces):
+              raise SystemExit("Output mesh validation failed")
+          Path("output/mesh_report.json").write_text(json.dumps(report, indent=2) + "\n")
+          print(json.dumps(report, indent=2))
+          PY
+      - name: Commit output to demo branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/quadcopter_tidy_largest_component.stl output/mesh_report.json
+          git commit -m "Keep largest connected component of original quadcopter STL" || echo "No changes to commit"
+          git push origin HEAD:demo
