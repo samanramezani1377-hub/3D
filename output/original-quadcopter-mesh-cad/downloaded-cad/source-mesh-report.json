@@ -22,4 +22,4 @@
   ],
   "watertight": true,
   "conversion_note": "Mesh-to-CAD conversion preserves the source geometry as a faceted shape; it does not reconstruct smooth analytic surfaces."
-}\n
+}
