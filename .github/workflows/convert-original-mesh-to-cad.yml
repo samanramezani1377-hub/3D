@@ -5,6 +5,7 @@ on:
     branches: [demo]
     paths:
       - ".github/workflows/convert-original-mesh-to-cad.yml"
+      - "!**"
   workflow_dispatch:
 
 permissions:
