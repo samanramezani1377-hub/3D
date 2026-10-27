@@ -36,8 +36,8 @@ PARAMS = {
     # rotor stations / arms ---------------------------------------------------
     "motor_x": 37.0,                # |x| of each motor axis
     "motor_z": 39.5,                # |z| of each motor axis
-    "arm_width": 12.0,
-    "arm_height": 9.0,
+    "arm_width": 16.0,
+    "arm_height": 12.0,
     "motor_radius": 6.0,
     "motor_height": 20.0,
     "motor_hub_radius": 9.0,        # base boss under the motor
@@ -52,6 +52,23 @@ PARAMS = {
     "guard_profile_outer": [29.0, 32.1, 33.4, 34.4, 34.9, 35.3, 35.2, 34.2, 33.1, 31.0],
     "guard_profile_inner": [27.8, 27.8, 27.8, 28.0, 28.0, 27.5, 27.0, 27.0, 28.0, 28.5],
     "guard_use_profile": True,
+    # front LED chevron (green light bar) ---------------------------------------
+    "led_enabled": True,
+    "led_points_xy": [[-9.0, 17.0], [-6.0, 16.7], [-3.0, 16.4], [0.0, 16.2], [3.0, 16.4], [6.0, 16.7], [9.0, 17.0]],  # (x, y) of the V
+    "led_radius": 0.9,               # light-bar radius
+    "led_groove_radius": 1.2,        # groove cut in the shell (insert sits in it)
+    # fixed front camera, tilted down --------------------------------------------
+    "camera_enabled": True,
+    "camera_width": 22.0,
+    "camera_height": 13.0,
+    "camera_depth": 14.0,
+    "camera_y": 7.0,
+    "camera_z": 65.0,
+    "camera_tilt_down_deg": 20.0,
+    "camera_barrel_radius": 6.2,
+    "camera_barrel_length": 5.0,
+    "camera_lens_radius": 4.2,
+    "camera_lens_protrusion": 1.2,
     # propellers (simple 2-blade, one per motor) --------------------------------
     "include_props": True,
     "prop_radius": 25.5,            # must stay < guard inner radius (guard_outer_radius - guard_wall)
@@ -96,7 +113,12 @@ def faceted_canopy(p):
     idx = [int(round(i * n / K)) % n for i in range(K)]
     def pick(pts):
         a = np.asarray(pts, float)[idx]
-        return a
+        b = a.copy()                       # mirror-symmetric about x=0 (pair vertex i with K-i)
+        for i in range(K):
+            k = (K - i) % K
+            b[i, 0] = (a[i, 0] - a[k, 0]) / 2.0
+            b[i, 1] = (a[i, 1] + a[k, 1]) / 2.0
+        return b
     secs = sorted((float(y), np.array(q)) for y, q in data["sections"].items())
     lv = [(p["canopy_base_y"], pick(_resample(hull_polygon(p), n)))]
     for j, (y, q) in enumerate(secs):
@@ -234,6 +256,55 @@ def motor(p, x, z):
     return hub.union(can)
 
 
+def _surface_z(solid, x, y, zlo=30.0, zhi=95.0):
+    """Front surface z of the model at (x, y): bisection on inside/outside."""
+    lo, hi = zlo, zhi
+    if not solid.isInside(cq.Vector(x, y, lo)):
+        return None
+    for _ in range(40):
+        mid = 0.5 * (lo + hi)
+        if solid.isInside(cq.Vector(x, y, mid)):
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def _led_path(p, solid):
+    pts = []
+    for x, y in p["led_points_xy"]:
+        z = _surface_z(solid, x, y)
+        if z is None:
+            raise RuntimeError("LED point (%s,%s) is not on the shell" % (x, y))
+        pts.append(cq.Vector(x, y, z))
+    return pts
+
+
+def _sweep_tube(pts, r):
+    edges = [cq.Edge.makeLine(pts[i], pts[i + 1]) for i in range(len(pts) - 1)]
+    path = cq.Wire.assembleEdges(edges)
+    d = (pts[1] - pts[0]).normalized()
+    plane = cq.Plane(origin=pts[0], xDir=cq.Vector(0, 1, 0) if abs(d.y) < 0.9 else cq.Vector(1, 0, 0), normal=d)
+    return cq.Workplane(plane).circle(r).sweep(cq.Workplane(obj=path), transition="round")
+
+
+def led_parts(p, solid):
+    """(groove tool, light-bar insert) following the front surface of the dome."""
+    pts = _led_path(p, solid)
+    return _sweep_tube(pts, p["led_groove_radius"]), _sweep_tube(pts, p["led_radius"])
+
+
+def camera(p):
+    w, h, dpt = p["camera_width"], p["camera_height"], p["camera_depth"]
+    box = cq.Workplane("XY").box(w, h, dpt)
+    box = box.edges("|Z").fillet(2.0)
+    barrel = (cq.Workplane("XY").workplane(offset=dpt / 2).circle(p["camera_barrel_radius"]).extrude(p["camera_barrel_length"]))
+    lens = (cq.Workplane("XY").workplane(offset=dpt / 2 + p["camera_barrel_length"]).circle(p["camera_lens_radius"]).extrude(p["camera_lens_protrusion"]))
+    cam = box.union(barrel).union(lens)
+    cam = cam.rotate((0, 0, 0), (1, 0, 0), p["camera_tilt_down_deg"])
+    return cam.translate((0, p["camera_y"], p["camera_z"]))
+
+
 def prop(p, x, z):
     blade = (cq.Workplane("XZ").workplane(offset=-p["prop_y"]).center(x, z)
              .rect(2 * p["prop_radius"], p["prop_chord"]).extrude(-p["prop_thickness"]))
@@ -252,6 +323,12 @@ def build(p=None):
         model = model.union(arm(p, x, z)).union(guard(p, x, z)).union(motor(p, x, z))
         if p["include_props"]:
             model = model.union(prop(p, x, z))
+    if p["camera_enabled"]:
+        model = model.union(camera(p))
+    if p["led_enabled"]:
+        groove, insert = led_parts(p, model.val())
+        model = model.cut(groove)
+        build.led_insert = insert              # exported separately (green part)
     return model
 
 
@@ -260,6 +337,10 @@ def export(shape, out_dir, name="drone_parametric"):
     os.makedirs(out_dir, exist_ok=True)
     cq.exporters.export(shape, os.path.join(out_dir, name + ".step"))
     cq.exporters.export(shape, os.path.join(out_dir, name + ".stl"), tolerance=0.05, angularTolerance=0.1)
+    led = getattr(build, "led_insert", None)
+    if led is not None:
+        cq.exporters.export(led, os.path.join(out_dir, "led_strip_green.step"))
+        cq.exporters.export(led, os.path.join(out_dir, "led_strip_green.stl"), tolerance=0.02, angularTolerance=0.1)
 
 
 if __name__ == "__main__":

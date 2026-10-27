@@ -24,8 +24,8 @@
   "facet_ridge_lift": 1.6,
   "motor_x": 37.0,
   "motor_z": 39.5,
-  "arm_width": 12.0,
-  "arm_height": 9.0,
+  "arm_width": 16.0,
+  "arm_height": 12.0,
   "motor_radius": 6.0,
   "motor_height": 20.0,
   "motor_hub_radius": 9.0,
@@ -71,6 +71,50 @@
     28.5
   ],
   "guard_use_profile": true,
+  "led_enabled": true,
+  "led_points_xy": [
+    [
+      -9.0,
+      17.0
+    ],
+    [
+      -6.0,
+      16.7
+    ],
+    [
+      -3.0,
+      16.4
+    ],
+    [
+      0.0,
+      16.2
+    ],
+    [
+      3.0,
+      16.4
+    ],
+    [
+      6.0,
+      16.7
+    ],
+    [
+      9.0,
+      17.0
+    ]
+  ],
+  "led_radius": 0.9,
+  "led_groove_radius": 1.2,
+  "camera_enabled": true,
+  "camera_width": 22.0,
+  "camera_height": 13.0,
+  "camera_depth": 14.0,
+  "camera_y": 7.0,
+  "camera_z": 65.0,
+  "camera_tilt_down_deg": 20.0,
+  "camera_barrel_radius": 6.2,
+  "camera_barrel_length": 5.0,
+  "camera_lens_radius": 4.2,
+  "camera_lens_protrusion": 1.2,
   "include_props": true,
   "prop_radius": 25.5,
   "prop_chord": 7.0,
