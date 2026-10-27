@@ -366,3 +366,5 @@ if __name__ == "__main__":
 # Harmless commit to trigger the demo-branch regeneration workflow; no model changes.
 
 # Workflow trigger: rerun smooth2 parametric CAD exports after cache configuration fix.
+
+# Trigger regeneration after making the CAD export push resilient to concurrent branch updates.
