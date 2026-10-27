@@ -2,6 +2,11 @@ name: Convert original quadcopter mesh to editable CAD
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - demo
+    paths:
+      - '.github/workflows/convert-original-mesh-to-cad.yml'
 
 permissions:
   contents: read
@@ -35,6 +40,8 @@ jobs:
 
       - name: Install FreeCAD and mesh inspection tools
         run: |
+          # Keep downloaded .deb files so actions/cache can save them after the job.
+          echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/keep-cache
           sudo chmod -R a+rwX /var/cache/apt/archives
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends freecad
