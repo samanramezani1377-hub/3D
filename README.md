@@ -1,30 +1,31 @@
-# Modular guarded quadcopter — demo branch
+# Quadcopter source mesh and CAD conversion (demo branch)
 
-This branch contains a parametric OpenSCAD concept for a modular guarded quadcopter. Original OBJ/STL assets on the branch are retained.
+This branch is the work area for inspecting the original quadcopter and preparing it for a careful redesign. The original geometry on `main` is treated as read-only.
 
-## Design intent
-- Two-piece body: upper cover and lower tray with a flat electronics floor.
-- Four separate arms sandwiched between the body halves.
-- Four underside M3-class screw clearances (nominal 3.2 mm) at body corners.
-- Separate circular propeller guard module for each arm.
-- Motor mounting area at each arm tip (generic placeholder pattern).
-- Fixed camera bracket with approximately 18-degree downward tilt.
-- Nominal frame layout about 240 mm; the body and each module are intended to fit a 200 × 200 mm bed, but every exported STL's bounding box must be checked in the slicer.
+## Source assets
 
-## CAD file
-- `cad/quadcopter_demo.scad`: parametric geometry. Set `PART` near the top to `top`, `bottom`, `arm`, `rotor_guard`, `propeller`, or `camera_mount`. `assembly` previews the arrangement.
+- `quadcopter_tidy.obj` — original mesh
+- `quadcopter_tidy.stl` — original STL
+- `output/quadcopter_tidy_complete.stl` — preserved complete-mesh copy
+- `parts/` — separate body, duct, motor, and propeller mesh files
 
-### Exporting parts
-1. Open the SCAD file in OpenSCAD.
-2. Set `PART` to the component you want.
-3. Press F6 (Render), then export as STL.
-4. Duplicate arms and guards four times. Check orientation, supports, clearances and the actual bounding box in your slicer before printing.
+The source mesh is approximately 144.60 × 26.15 × 150.00 mm in its current coordinate orientation. These are mesh bounds, not verified printer-oriented dimensions.
 
-## Printable propeller prototype
-The SCAD includes a complete, printable three-blade planform, not just a hub. It is a **geometry prototype only**: blade pitch, airfoil, motor/shaft fit, material, print orientation, fatigue strength, thrust, efficiency, noise and dynamic balance have not been validated. Do not run it at flight RPM or fly it without professional engineering validation and controlled guarded testing. A blade can fracture and cause serious injury. For initial powered testing, a matched commercial propeller is safer.
+## Workflows
 
-## Low-noise design notes
-Research indicates that trailing-edge serrations can reduce broadband and tonal noise in some conditions, but results are geometry- and RPM-dependent and may reduce thrust. See `docs/quiet-propellers.md` for papers and test recommendations. Noise comparisons should be made at equal thrust and measured RPM, with a fixed microphone distance and direction.
+Workflows are manual-only to avoid reinstalling tools or reconverting the mesh on every commit.
 
-## Engineering status and missing inputs
-This is not yet a flight-ready airframe or a verified print package. The SCAD has not been validated by a mesh repair/manifold check or by physical test. Generic dimensions were assumed because the exact motor and bolt pattern, propeller size, battery, ESC, flight controller, camera, target thrust, filament and printer tolerances were not supplied. Before manufacture, validate arm clamping, screw lengths, motor mounts, guard-to-prop clearance, center of gravity, camera field of view, battery retention, structural loads, vibration, heat, electrical safety, and each part's bounding box. The design should be iterated against actual components before flight.
+1. **Convert original mesh to CAD** — GitHub Actions → “Convert original quadcopter mesh to editable CAD” → Run workflow. It fetches `quadcopter_tidy.obj` from `main` read-only and uploads a downloadable artifact containing a FreeCAD document, STEP export, and reports.
+2. **Inspect original geometry** — GitHub Actions → “Inspect original quadcopter geometry” → Run workflow. It reports mesh dimensions, triangle counts, watertightness, connected components, and checks the existing part files.
+
+The generated CAD is mesh-derived faceted geometry. Conversion does not recover the original design history, smooth analytic surfaces, or editable parametric features. A closed-solid candidate, if produced, is still faceted and must be inspected before use.
+
+## Redesign status
+
+A separate parametric redesign is **not yet implemented**. The intended direction is to preserve the original quadcopter as the reference and then design/test separate upper shell, lower electronics tray, four clamped arms, underside fasteners, arm-mounted guards and motor interfaces, plus a fixed downward-angled camera mount.
+
+Before printing, actual motor/propeller dimensions, screw pattern and lengths, battery/electronics sizes, camera field of view, material, printer tolerances, and required loads must be confirmed. Each individual exported part must be checked against the 200 × 200 mm print bed in the slicer. Do not treat this repository as a flight-ready or safety-validated design.
+
+## Propellers and noise
+
+No custom quiet propeller is currently validated here. Noise and thrust depend on propeller geometry, RPM, motor, and operating point. Use a commercially matched propeller for initial powered tests; do not spin an unvalidated printed propeller at flight RPM.
