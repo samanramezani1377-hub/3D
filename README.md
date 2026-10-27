@@ -2,35 +2,42 @@
 
 This branch (`demo`) is dedicated to improving the CAD files derived from the **original complete quadcopter model**. The source mesh `quadcopter_tidy.obj` on `main` is read-only and must never be modified.
 
-## Source and current deliverables
+## Current active work location — authoritative
 
-- Source: `main/quadcopter_tidy.obj` (read-only)
-- Preserved complete-mesh copy: `output/quadcopter_tidy_complete.stl`
-- Native FreeCAD conversion: `cad/original/quadcopter_tidy_mesh_cad.FCStd`
-- Conversion report: `cad/original/cad-conversion-report.json`
-- Source inspection report: `cad/original/source-mesh-report.json`
-- **Canonical existing final files and diagnostics:** `output/original-quadcopter-mesh-cad/downloaded-cad/`
+**From now on, all CAD correction and cleanup work must be performed only on the extracted exterior-shell candidate in:**
 
-## Important working rule: edit the existing final CAD files
+`output/قالب گیری شده/`
 
-The task is to **correct and improve the CAD deliverables that already exist** in `output/original-quadcopter-mesh-cad/downloaded-cad/`.
+This folder is the sole active working location for the next phase: identifying and removing incorrect/unwanted internal geometry while preserving the correct exterior shape.
 
-- Treat the files in that directory as the current final deliverables and preserve them while working.
-- Inspect and modify the existing CAD model/file when a correction is needed.
-- **Do not regenerate the CAD from the source mesh, rebuild the output package, or replace the existing final files** as a routine step.
-- Do not run repeated comparisons against earlier versions or spend time re-reporting differences unless a specific comparison is necessary to diagnose a concrete defect.
-- Do not create a conceptual redesign or substitute a newly invented model for the actual quadcopter.
-- If a change genuinely requires replacing a final file, do so only when explicitly requested; keep the change focused and explain exactly which file was changed.
-- Do not claim a CAD correction is complete until the edited file has actually been saved and the correction has been checked.
+Current files in that folder:
+- `quadcopter_exterior_shell_candidate.FCStd` — native FreeCAD working file
+- `quadcopter_exterior_shell_candidate.step` — STEP export of the extracted shell
+- `exterior-shell-report.json` — extraction report
+- `source-sha256.txt` — source fingerprint
+
+Start from the existing `.FCStd` file in this folder. Save corrections and new working versions in this same folder, with clear filenames. Export corresponding STEP files there when needed.
+
+## Strict working rules
+
+- **Work only inside `output/قالب گیری شده/` for the active CAD-cleanup task.**
+- Do not continue editing the previous canonical directory `output/original-quadcopter-mesh-cad/downloaded-cad/`; it is preserved as a historical/reference deliverable, not the active work target.
+- Do not modify the source mesh `main/quadcopter_tidy.obj` or make any changes to branch `main`.
+- Preserve the current files in `output/قالب گیری شده/` before making changes. Do not overwrite the starting candidate unless the user explicitly asks; prefer new, clearly named versions for corrections.
+- Do not regenerate the CAD from the source mesh or rerun conversion workflows as a routine step.
+- First inspect the actual existing candidate, identify demonstrably incorrect/unwanted internal geometry, and make focused corrections. Do not delete parts merely because they are internal; they may be legitimate structure.
+- Validate each result after saving. Do not claim that internal geometry has been cleaned or that the model is manufacturing-ready unless the corresponding checks have actually passed.
+- The current exterior-shell candidate is still mesh-derived/faceted. Extracting a shell does not by itself reconstruct smooth analytic/NURBS surfaces or remove all internal defects.
+
+## Previous/reference deliverables
+
+The earlier conversion files and reports remain preserved at:
+`output/original-quadcopter-mesh-cad/downloaded-cad/`
+
+Other historical conversion files may remain under `cad/original/` and `output/`; they are not the active work target.
 
 ## Workflow and source safety
-
-The conversion workflow is available in GitHub Actions, but a conversion run is **not** the default next step for CAD correction. Work on the existing deliverables first; do not use the workflow to regenerate or replace them unless explicitly requested.
 
 - All project changes belong on `demo`.
 - `main` is a read-only source and must remain unchanged.
 - Do not add an unrelated redesign or extra workflow that changes the project's scope.
-
-## What this conversion means
-
-The existing CAD originated from the original triangular mesh and therefore retains faceted geometry. It is not a fully reconstructed parametric mechanical design, and smooth analytic/NURBS surfaces have not automatically been rebuilt. Make only corrections grounded in the actual model and the specific defect being addressed; do not label it manufacturing-ready without appropriate checks.
