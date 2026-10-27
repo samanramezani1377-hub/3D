@@ -38,16 +38,21 @@ PARAMS = {
     "motor_hub_radius": 9.0,        # base boss under the motor
     "motor_hub_height": 6.0,
     # propeller guards: TRUE circular rings -----------------------------------
-    "guard_outer_radius": 35.5,
+    "guard_outer_radius": 35.5,     # used when guard_use_profile is False
     "guard_wall": 4.5,
     "guard_height": 17.0,
     "guard_edge_fillet": 1.8,
+    # barrel profile measured on the original ring wall (radius vs height, mm)
+    "guard_profile_y":     [0.0, 1.5, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0],
+    "guard_profile_outer": [29.0, 32.1, 33.4, 34.4, 34.9, 35.3, 35.2, 34.2, 33.1, 31.0],
+    "guard_profile_inner": [27.8, 27.8, 27.8, 28.0, 28.0, 27.5, 27.0, 27.0, 28.0, 28.5],
+    "guard_use_profile": True,
     # propellers (simple 2-blade, one per motor) --------------------------------
     "include_props": True,
-    "prop_radius": 29.0,            # must stay < guard inner radius (guard_outer_radius - guard_wall)
+    "prop_radius": 25.5,            # must stay < guard inner radius (guard_outer_radius - guard_wall)
     "prop_chord": 7.0,
     "prop_thickness": 1.2,
-    "prop_y": 14.0,                 # blade plane height
+    "prop_y": 9.0,                 # blade plane height
     "prop_hub_radius": 4.0,
     "prop_hub_height": 4.0,
 }
@@ -138,8 +143,21 @@ def stations(p):
     return [(sx * p["motor_x"], sz * p["motor_z"]) for sx in (1, -1) for sz in (1, -1)]
 
 
+def guard_profile(p, x, z):
+    """Round guard ring made by revolving the measured barrel profile -> exact circles."""
+    ys, ro, ri = p["guard_profile_y"], p["guard_profile_outer"], p["guard_profile_inner"]
+    outer = [(r, y) for r, y in zip(ro, ys)]
+    inner = [(r, y) for r, y in zip(ri, ys)][::-1]
+    w = (cq.Workplane("XY").moveTo(*outer[0]).spline(outer[1:], includeCurrent=True)
+         .lineTo(*inner[0]).spline(inner[1:], includeCurrent=True).close())
+    ring = w.revolve(360, (0, 0, 0), (0, 1, 0))
+    return ring.translate((x, 0, z))
+
+
 def guard(p, x, z):
     """Round guard ring: outer/inner radius are exact circles by construction."""
+    if p.get("guard_use_profile"):
+        return guard_profile(p, x, z)
     ro, ri = p["guard_outer_radius"], p["guard_outer_radius"] - p["guard_wall"]
     ring = (cq.Workplane("XZ").center(x, z).circle(ro).circle(ri).extrude(-p["guard_height"]))
     try:
@@ -180,7 +198,8 @@ def prop(p, x, z):
 
 def build(p=None):
     p = {**PARAMS, **(p or {})}
-    assert p["prop_radius"] < p["guard_outer_radius"] - p["guard_wall"], "prop would hit the guard"
+    inner_min = min(p["guard_profile_inner"]) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
+    assert p["prop_radius"] < inner_min, "prop would hit the guard"
     model = body(p)
     for i, (x, z) in enumerate(stations(p)):
         model = model.union(arm(p, x, z)).union(guard(p, x, z)).union(motor(p, x, z))

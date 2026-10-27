@@ -1,120 +1,71 @@
 {
-  "stage": 4,
   "solids": 1,
   "shape_valid": true,
   "stl_watertight": true,
-  "volume_mm3": 144660.5,
+  "volume_mm3": 185633.0,
   "source_volume_mm3": 189355.4,
-  "bounds_mm": [
-    [
-      -72.5,
-      -0.0,
-      -75.0
-    ],
-    [
-      72.5,
-      25.0,
-      75.0
-    ]
-  ],
-  "source_bounds_mm": [
-    [
-      -72.38,
-      0.0,
-      -75.03
-    ],
-    [
-      72.35,
-      26.16,
-      75.02
-    ]
-  ],
   "extents_mm": [
-    145.0,
-    25.0,
-    150.0
+    144.7,
+    25.6,
+    149.67
   ],
   "source_extents_mm": [
     144.73,
     26.16,
     150.05
   ],
-  "guards_outer_roundness": [
+  "new_to_source_surface_distance_mm": {
+    "mean": 1.37,
+    "median": 0.76,
+    "p95": 4.6
+  },
+  "source_to_new_surface_distance_mm": {
+    "mean": 1.58,
+    "median": 0.84,
+    "p95": 5.6
+  },
+  "guards_outer_roundness_at_y9": [
     {
       "center": [
         37.0,
         39.5
       ],
-      "samples": 180,
-      "outer_R_min": 35.49,
-      "outer_R_max": 35.5,
-      "roundness_error_mm": 0.01
+      "outer_R_min": 35.285,
+      "outer_R_max": 35.288,
+      "roundness_error_mm": 0.004
     },
     {
       "center": [
         37.0,
         -39.5
       ],
-      "samples": 180,
-      "outer_R_min": 35.49,
-      "outer_R_max": 35.5,
-      "roundness_error_mm": 0.01
+      "outer_R_min": 35.282,
+      "outer_R_max": 35.286,
+      "roundness_error_mm": 0.004
     },
     {
       "center": [
         -37.0,
         39.5
       ],
-      "samples": 180,
-      "outer_R_min": 35.49,
-      "outer_R_max": 35.5,
-      "roundness_error_mm": 0.01
+      "outer_R_min": 35.281,
+      "outer_R_max": 35.288,
+      "roundness_error_mm": 0.007
     },
     {
       "center": [
         -37.0,
         -39.5
       ],
-      "samples": 179,
-      "outer_R_min": 35.49,
-      "outer_R_max": 35.5,
-      "roundness_error_mm": 0.01
+      "outer_R_min": 35.282,
+      "outer_R_max": 35.286,
+      "roundness_error_mm": 0.004
     }
   ],
-  "source_guard_radius_spread_for_comparison": [
-    {
-      "quadrant": [
-        1,
-        1
-      ],
-      "source_radius_spread_mm": 13.12
-    },
-    {
-      "quadrant": [
-        1,
-        -1
-      ],
-      "source_radius_spread_mm": 9.23
-    },
-    {
-      "quadrant": [
-        -1,
-        1
-      ],
-      "source_radius_spread_mm": 12.78
-    },
-    {
-      "quadrant": [
-        -1,
-        -1
-      ],
-      "source_radius_spread_mm": 6.77
-    }
-  ],
-  "limits": [
-    "Parametric model is a clean re-construction from measurements, not a feature-exact copy of the mesh; volume is lower because the mesh interior was a noisy solid blob.",
-    "Propellers are simple placeholders (flat 2-blade), clearance to guard checked by assertion only.",
-    "Not verified for printing/flight."
-  ],
-  "roundness_note": "Outer-wall radius sampled around each motor axis; the single stray sample near x=0 on the body's rear edge (z=-45) is excluded because it belongs to the body tail, not the ring."
+  "known_differences": [
+    "Original guard rings are slightly egg-shaped on the body side; new rings are exact circles by request.",
+    "Original propellers are noisy curved multi-blade shapes inside the mesh; new ones are simple 2-blade placeholders.",
+    "Original motor/arm interior is a noisy blob; new arms/motors are clean primitives.",
+    "Lower hull is parametric (polygon); canopy follows measured sections of the original."
+  ]
 }
