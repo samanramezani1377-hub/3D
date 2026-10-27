@@ -1,0 +1,30 @@
+{
+  "source_mesh": "main/quadcopter_tidy.obj",
+  "comparison_method": "Sampled source-mesh vertex distance to STEP boundary using FreeCAD distToShape",
+  "sampling": {
+    "method": "even stride through source OBJ vertex list",
+    "sampled_vertices": 1200,
+    "total_vertices": 12338
+  },
+  "files": {},
+  "errors": [
+    "Either three floats, tuple, vector or vertex expected"
+  ],
+  "source_mesh_stats": {
+    "vertices": 12338,
+    "facets": 24794,
+    "bounds_mm": [
+      -72.30188751220703,
+      0.0,
+      -75.0,
+      72.30188751220703,
+      26.154569625854492,
+      75.0
+    ],
+    "extents_mm": [
+      144.60377502441406,
+      26.154569625854492,
+      150.0
+    ]
+  }
+}
