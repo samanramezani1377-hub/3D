@@ -1,0 +1,145 @@
+name: Compare CAD geometry with source mesh
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [demo]
+    paths:
+      - '.github/workflows/compare-cad-to-source.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  compare-geometry:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout demo
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+
+      - name: Install FreeCAD
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends freecad curl
+
+      - name: Download source mesh and CAD candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cad-compare
+          curl --fail --location --retry 3 'https://raw.githubusercontent.com/samanramezani1377-hub/3D/main/quadcopter_tidy.obj' -o /tmp/cad-compare/quadcopter_tidy.obj
+          base='https://raw.githubusercontent.com/samanramezani1377-hub/3D/demo/output/original-quadcopter-mesh-cad/downloaded-cad'
+          curl --fail --location --retry 3 "$base/quadcopter_tidy_mesh_cad.step" -o /tmp/cad-compare/quadcopter_tidy_mesh_cad.step
+          curl --fail --location --retry 3 "$base/quadcopter_tidy_solid_candidate.step" -o /tmp/cad-compare/quadcopter_tidy_solid_candidate.step
+          test -s /tmp/cad-compare/quadcopter_tidy.obj
+          test -s /tmp/cad-compare/quadcopter_tidy_mesh_cad.step
+          test -s /tmp/cad-compare/quadcopter_tidy_solid_candidate.step
+
+      - name: Compare source mesh vertices against imported STEP geometry
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/cad-compare/compare.FCMacro <<'PY'
+          import os, json, math, traceback
+          import FreeCAD as App
+          import Part, Mesh
+          root = '/tmp/cad-compare'
+          report = {
+              'source_mesh': 'main/quadcopter_tidy.obj',
+              'comparison_method': 'Sampled source-mesh vertex distance to STEP boundary using FreeCAD distToShape',
+              'sampling': {},
+              'files': {},
+              'errors': []
+          }
+          try:
+              mesh = Mesh.Mesh(os.path.join(root, 'quadcopter_tidy.obj'))
+              points = list(mesh.Points)
+              if not points:
+                  raise RuntimeError('Source OBJ imported with no mesh vertices')
+              report['source_mesh_stats'] = {
+                  'vertices': len(points),
+                  'facets': len(mesh.Facets),
+                  'bounds_mm': [
+                      float(mesh.BoundBox.XMin), float(mesh.BoundBox.YMin), float(mesh.BoundBox.ZMin),
+                      float(mesh.BoundBox.XMax), float(mesh.BoundBox.YMax), float(mesh.BoundBox.ZMax)
+                  ],
+                  'extents_mm': [
+                      float(mesh.BoundBox.XLength), float(mesh.BoundBox.YLength), float(mesh.BoundBox.ZLength)
+                  ]
+              }
+              sample_count = min(1200, len(points))
+              stride = max(1, len(points) // sample_count)
+              sampled = points[::stride][:sample_count]
+              report['sampling'] = {'method': 'even stride through source OBJ vertex list', 'sampled_vertices': len(sampled), 'total_vertices': len(points)}
+              for filename in ('quadcopter_tidy_mesh_cad.step', 'quadcopter_tidy_solid_candidate.step'):
+                  shape = Part.Shape()
+                  shape.read(os.path.join(root, filename))
+                  if shape.isNull():
+                      raise RuntimeError(filename + ' imported as null shape')
+                  distances = []
+                  for i, p in enumerate(sampled):
+                      vertex = Part.Vertex(p)
+                      result = shape.distToShape(vertex)
+                      distances.append(float(result[0]))
+                  sorted_d = sorted(distances)
+                  def percentile(frac):
+                      return sorted_d[min(len(sorted_d)-1, int(round(frac*(len(sorted_d)-1))))]
+                  bb = shape.BoundBox
+                  report['files'][filename] = {
+                      'valid': bool(shape.isValid()),
+                      'solids': len(shape.Solids),
+                      'shells': len(shape.Shells),
+                      'closed': bool(shape.isClosed()),
+                      'faces': len(shape.Faces),
+                      'volume_mm3': float(shape.Volume),
+                      'bounds_mm': [float(bb.XMin), float(bb.YMin), float(bb.ZMin), float(bb.XMax), float(bb.YMax), float(bb.ZMax)],
+                      'extents_mm': [float(bb.XLength), float(bb.YLength), float(bb.ZLength)],
+                      'source_vertex_distance_mm': {
+                          'min': min(distances),
+                          'mean': sum(distances)/len(distances),
+                          'p95': percentile(0.95),
+                          'max': max(distances),
+                          'within_0_01mm': sum(d <= 0.01 for d in distances),
+                          'within_0_1mm': sum(d <= 0.1 for d in distances),
+                          'sample_count': len(distances)
+                      }
+                  }
+              report['interpretation'] = 'Distance sampling checks whether sampled source-mesh vertices lie on the imported STEP boundary. It does not prove full surface equivalence or recover smooth/parametric design features.'
+              with open(os.path.join(root, 'geometry-comparison-report.json'), 'w') as f:
+                  json.dump(report, f, indent=2)
+              print(json.dumps(report, indent=2))
+          except Exception as e:
+              report['errors'].append(str(e))
+              traceback.print_exc()
+              with open(os.path.join(root, 'geometry-comparison-report.json'), 'w') as f:
+                  json.dump(report, f, indent=2)
+              raise
+          PY
+          FC=''
+          for candidate in FreeCADCmd freecadcmd /usr/lib/freecad/bin/FreeCADCmd /usr/lib/freecad/FreeCADCmd; do
+            if command -v "$candidate" >/dev/null 2>&1; then FC="$(command -v "$candidate")"; break; fi
+            if [ -x "$candidate" ]; then FC="$candidate"; break; fi
+          done
+          if [ -z "$FC" ]; then echo 'FreeCADCmd executable not found' >&2; exit 1; fi
+          env -u LD_LIBRARY_PATH "$FC" /tmp/cad-compare/compare.FCMacro
+
+      - name: Publish geometry comparison report to demo
+        if: success()
+        run: |
+          set -euo pipefail
+          cp /tmp/cad-compare/geometry-comparison-report.json output/original-quadcopter-mesh-cad/downloaded-cad/geometry-comparison-report.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add output/original-quadcopter-mesh-cad/downloaded-cad/geometry-comparison-report.json
+          if git diff --cached --quiet; then echo 'Geometry comparison report unchanged'; else git commit -m 'Add source mesh to CAD geometry comparison report'; git push origin HEAD:demo; fi
+
+      - name: Upload comparison report even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cad-geometry-comparison-report
+          path: /tmp/cad-compare/geometry-comparison-report.json
+          if-no-files-found: ignore
