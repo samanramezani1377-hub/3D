@@ -1,0 +1,80 @@
+name: Build modular quadcopter redesign CAD
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - demo
+    paths:
+      - 'cad/redesign/**'
+      - '.github/workflows/build-modular-redesign.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout demo branch only
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+
+      - name: Install FreeCAD
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends freecad
+
+      - name: Generate parametric parts, STEP, STL and validation report
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/modular-redesign
+          if command -v FreeCADCmd >/dev/null 2>&1; then
+            FREECAD_CMD="$(command -v FreeCADCmd)"
+          elif command -v freecadcmd >/dev/null 2>&1; then
+            FREECAD_CMD="$(command -v freecadcmd)"
+          else
+            echo "FreeCAD command-line executable not found" >&2
+            exit 1
+          fi
+          env -u LD_LIBRARY_PATH "$FREECAD_CMD" cad/redesign/quadcopter_modular_redesign.FCMacro
+          test -s build/modular-redesign/quadcopter_modular_assembly.FCStd
+          test -s build/modular-redesign/quadcopter_modular_assembly.step
+          test -s build/modular-redesign/design_report.json
+          python3 - <<'PY'
+          import json, pathlib, sys
+          root = pathlib.Path("build/modular-redesign")
+          report = json.loads((root / "design_report.json").read_text())
+          failed = []
+          for part in report.get("parts", []):
+              if not part.get("valid", False):
+                  failed.append(f"{part.get('part')}: invalid shape")
+              if not part.get("within_200x200_bed_by_xy_bounds", False):
+                  failed.append(f"{part.get('part')}: XY bounds exceed 200 mm")
+          for name in ("lower_tray", "upper_lid", "arm_with_integrated_guard",
+                       "quiet_propeller_prototype", "fixed_camera_mount"):
+              for ext in (".step", ".stl"):
+                  p = root / (name + ext)
+                  if not p.exists() or p.stat().st_size < 100:
+                      failed.append(f"missing/empty export: {p}")
+          if failed:
+              print("\\n".join(failed), file=sys.stderr)
+              sys.exit(1)
+          print("All exported parts passed basic shape and 200x200 mm XY-bound checks.")
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Upload printable parts and native CAD
+        uses: actions/upload-artifact@v4
+        with:
+          name: modular-quadcopter-redesign-cad
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            build/modular-redesign/*.FCStd
+            build/modular-redesign/*.step
+            build/modular-redesign/*.stl
+            build/modular-redesign/design_report.json
