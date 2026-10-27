@@ -272,25 +272,23 @@ def _surface_z(solid, x, y, zlo=30.0, zhi=95.0):
 
 
 def _led_path(p, solid):
-    """Smooth front LED path recessed slightly below the actual canopy surface."""
+    """Keep the LED straight in the front (X/Y) projection while conforming to canopy depth."""
     import numpy as np
+    anchors = p["led_points_xy"]
+    # The front-view line must be horizontal: interpolate only X; keep Y fixed.
+    x0, y0 = anchors[0]
+    x1, y1 = anchors[-1]
+    if abs(y1 - y0) > 1e-6 or any(abs(y - y0) > 1e-6 for _, y in anchors):
+        raise ValueError("led_points_xy must use a single Y value for a straight horizontal front-view LED")
     pts = []
-    for x, y in p["led_points_xy"]:
-        z = _surface_z(solid, x, y)
+    for x in np.linspace(x0, x1, 40):
+        z = _surface_z(solid, float(x), float(y0))
         if z is None:
-            raise RuntimeError("LED point (%s,%s) is not on the shell" % (x, y))
+            raise RuntimeError("LED path at x=%s, y=%s is not on the shell" % (x, y0))
+        # Recess toward the body interior; X/Y projection remains exactly horizontal.
         z -= p.get("led_embed_depth", 0.75)
-        pts.append(cq.Vector(x, y, z))
-    arr = np.array([[v.x, v.y, v.z] for v in pts], dtype=float)
-    try:
-        from scipy.interpolate import splprep, splev
-        tck, _ = splprep(arr.T, s=0.15, k=min(3, len(pts) - 1))
-        xyz = splev(np.linspace(0.0, 1.0, 40), tck)
-        return [cq.Vector(float(x), float(y), float(z)) for x, y, z in zip(*xyz)]
-    except Exception:
-        edge = cq.Edge.makeSpline(pts)
-        return [edge.startPoint(), *[edge.positionAt(i / 39.0) for i in range(1, 39)], edge.endPoint()]
-
+        pts.append(cq.Vector(float(x), float(y0), float(z)))
+    return pts
 
 def _sweep_tube(pts, r):
     edge = cq.Edge.makeSpline(pts)
