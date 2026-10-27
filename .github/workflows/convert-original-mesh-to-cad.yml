@@ -1,11 +1,6 @@
 name: Convert original quadcopter mesh to editable CAD
 
 on:
-  push:
-    branches: [demo]
-    paths:
-      - ".github/workflows/convert-original-mesh-to-cad.yml"
-      - "!**"
   workflow_dispatch:
 
 permissions:
@@ -152,8 +147,15 @@ jobs:
               raise
           PY
           # FreeCAD's command-line executable is provided by the Ubuntu package.
-          command -v FreeCADCmd || command -v freecadcmd
-          FreeCADCmd build/original-mesh-cad/convert.FCMacro || freecadcmd build/original-mesh-cad/convert.FCMacro
+          if command -v FreeCADCmd >/dev/null 2>&1; then
+            FREECAD_CMD="$(command -v FreeCADCmd)"
+          elif command -v freecadcmd >/dev/null 2>&1; then
+            FREECAD_CMD="$(command -v freecadcmd)"
+          else
+            echo "FreeCAD command-line executable not found" >&2
+            exit 1
+          fi
+          "$FREECAD_CMD" build/original-mesh-cad/convert.FCMacro
           test -s build/original-mesh-cad/quadcopter_tidy_mesh_cad.FCStd
           test -s build/original-mesh-cad/quadcopter_tidy_mesh_cad.step
           test -s build/original-mesh-cad/cad-conversion-report.json
