@@ -63,19 +63,57 @@ jobs:
               print(f"{name}: {size} bytes")
           PY
 
-      - name: Commit only the four requested CAD exports
+      - name: Commit exports onto the latest demo branch safely
+        shell: bash
         run: |
           set -euo pipefail
+          out="output/قالب گیری شده/smooth2-parametric"
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "$tmpdir"' EXIT
+
+          files=(
+            "drone_parametric.step"
+            "drone_parametric.stl"
+            "led_strip_green.step"
+            "led_strip_green.stl"
+          )
+          # Preserve the generated artifacts while synchronizing with any newer
+          # commits that arrived on demo during the CAD build.
+          for f in "${files[@]}"; do
+            cp "$out/$f" "$tmpdir/$f"
+          done
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- \
-            "output/قالب گیری شده/smooth2-parametric/drone_parametric.step" \
-            "output/قالب گیری شده/smooth2-parametric/drone_parametric.stl" \
-            "output/قالب گیری شده/smooth2-parametric/led_strip_green.step" \
-            "output/قالب گیری شده/smooth2-parametric/led_strip_green.stl"
-          if git diff --cached --quiet; then
-            echo "No changes in the four CAD exports; nothing to commit."
-            exit 0
-          fi
-          git commit -m "Regenerate smooth2 parametric quadcopter CAD exports"
-          git push origin HEAD:demo
+
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt $attempt/5: syncing with latest origin/demo"
+            git fetch origin demo
+            git reset --hard origin/demo
+            mkdir -p "$out"
+            for f in "${files[@]}"; do
+              cp "$tmpdir/$f" "$out/$f"
+            done
+
+            git add -- \
+              "$out/drone_parametric.step" \
+              "$out/drone_parametric.stl" \
+              "$out/led_strip_green.step" \
+              "$out/led_strip_green.stl"
+
+            if git diff --cached --quiet; then
+              echo "Generated CAD exports already match origin/demo; nothing to commit."
+              exit 0
+            fi
+
+            git commit -m "Regenerate smooth2 parametric quadcopter CAD exports"
+            if git push origin HEAD:demo; then
+              echo "CAD exports pushed successfully."
+              exit 0
+            fi
+            echo "Push was rejected (likely a concurrent update); retrying against latest demo."
+            sleep "$attempt"
+          done
+
+          echo "Could not push after 5 attempts; inspect concurrent updates or permissions."
+          exit 1
