@@ -123,14 +123,12 @@ jobs:
                           solid_feature = doc.addObject("Part::Feature", "SolidCandidate")
                           solid_feature.Label = "Solid candidate (mesh-derived; faceted)"
                           solid_feature.Shape = solid
-                          # Try removing splitter edges, but retain candidate if refinement fails.
-                          try:
-                              refined = solid.removeSplitter()
-                              if not refined.isNull() and refined.isValid():
-                                  solid_feature.Shape = refined
-                          except Exception:
-                              pass
+                          # Do NOT call removeSplitter(): it can merge/remove mesh-derived
+                          # edges and make vertex-set comparisons misleading. Preserve the
+                          # source mesh's faceted topology in the solid candidate.
                           doc.recompute()
+                          solid_status["faces_before_export"] = int(len(solid_feature.Shape.Faces))
+                          solid_status["refinement_applied"] = False
                           if solid_feature.Shape.isValid() and solid_feature.Shape.isClosed():
                               Part.export([solid_feature], solid_step_path)
                   if not solid_status["created"]:
@@ -154,6 +152,7 @@ jobs:
                   "bounds_mm": [bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax],
                   "extents_mm": [bb.XLength, bb.YLength, bb.ZLength],
                   "geometry_type": "faceted mesh-derived CAD shape",
+                  "topology_policy": "preserve source mesh facets; no removeSplitter/refinement applied to the solid candidate",
                   "solid_candidate": solid_status,
                   "solid_candidate_step": os.path.basename(solid_step_path) if os.path.exists(solid_step_path) else None,
                   "limitation": "Mesh conversion alone does not reconstruct design features or smooth analytic surfaces. Even a valid solid candidate remains faceted and is not parametric feature recognition."
