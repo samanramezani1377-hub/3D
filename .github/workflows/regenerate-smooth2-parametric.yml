@@ -1,0 +1,79 @@
+name: Regenerate smooth2 parametric quadcopter
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regenerate-smooth2-parametric-demo
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout demo branch
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install CAD generation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install cadquery numpy trimesh
+
+      - name: Generate the parametric model
+        run: |
+          set -euo pipefail
+          test -s "cad/parametric/drone_parametric.py"
+          test -s "cad/parametric/body_sections.json"
+          python "cad/parametric/drone_parametric.py"
+
+      - name: Validate generated files
+        run: |
+          set -euo pipefail
+          out="output/قالب گیری شده/smooth2-parametric"
+          for f in drone_parametric.step drone_parametric.stl led_strip_green.step led_strip_green.stl; do
+            test -s "$out/$f" || { echo "Missing or empty generated file: $out/$f"; exit 1; }
+          done
+          python - <<'PY'
+          import json, os
+          out = "output/قالب گیری شده/smooth2-parametric"
+          report = {}
+          for name in ("drone_parametric.step", "drone_parametric.stl",
+                       "led_strip_green.step", "led_strip_green.stl"):
+              path = os.path.join(out, name)
+              report[name] = {"bytes": os.path.getsize(path)}
+              if os.path.getsize(path) < 100:
+                  raise SystemExit(f"Output unexpectedly small: {path}")
+          with open(os.path.join(out, "ci-validation.json"), "w", encoding="utf-8") as f:
+              json.dump({"status": "generated_files_present", "files": report}, f, indent=2)
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Commit only the four requested CAD exports
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            "output/قالب گیری شده/smooth2-parametric/drone_parametric.step" \
+            "output/قالب گیری شده/smooth2-parametric/drone_parametric.stl" \
+            "output/قالب گیری شده/smooth2-parametric/led_strip_green.step" \
+            "output/قالب گیری شده/smooth2-parametric/led_strip_green.stl"
+          if git diff --cached --quiet; then
+            echo "No changes in the four CAD exports; nothing to commit."
+            exit 0
+          fi
+          git commit -m "Regenerate smooth2 parametric quadcopter CAD exports"
+          git push origin HEAD:demo
