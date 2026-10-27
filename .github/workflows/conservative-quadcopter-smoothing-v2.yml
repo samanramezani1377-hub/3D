@@ -26,7 +26,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends freecad python3-numpy python3-pip
-          python3 -m pip install --disable-pip-version-check 'trimesh<5.2'
+          python3 -m pip install --user --disable-pip-version-check --upgrade 'numpy==1.26.4' 'trimesh==4.4.9'
 
       - name: Export mesh from existing FreeCAD document
         shell: bash
@@ -96,9 +96,9 @@ jobs:
               raise RuntimeError("Smoothing produced non-finite vertices")
           if max_disp > 1.0 or float(extent_delta.max()) > 0.75:
               raise RuntimeError("Smoothing exceeded conservative geometry-change limits")
-          os.makedirs("output/قالب گیری شده", exist_ok=True)
-          src.export("output/قالب گیری شده/quadcopter_exterior_shell_smoothed_candidate.stl")
-          with open("output/قالب گیری شده/smoothing-candidate-report.json", "w") as f:
+          os.makedirs("output/قالب گیری شده/smoothing", exist_ok=True)
+          src.export("output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.stl")
+          with open("output/قالب گیری شده/smoothing/smoothing-candidate-report.json", "w") as f:
               json.dump(report, f, indent=2)
           print(json.dumps(report, indent=2))
           PY
@@ -109,7 +109,7 @@ jobs:
           set -euo pipefail
           cat > /tmp/quadcopter-smooth/import.FCMacro <<'PY'
           import os, json, FreeCAD as App, Mesh, Part
-          base = os.path.abspath("output/قالب گیری شده")
+          base = os.path.abspath("output/قالب گیری شده/smoothing")
           stl = os.path.join(base, "quadcopter_exterior_shell_smoothed_candidate.stl")
           fcstd = os.path.join(base, "quadcopter_exterior_shell_smoothed_candidate.FCStd")
           step = os.path.join(base, "quadcopter_exterior_shell_smoothed_candidate.step")
@@ -149,19 +149,19 @@ jobs:
           PY
           if command -v FreeCADCmd >/dev/null 2>&1; then FC=FreeCADCmd; elif command -v freecadcmd >/dev/null 2>&1; then FC=freecadcmd; else echo "FreeCADCmd not found" >&2; exit 1; fi
           env -u LD_LIBRARY_PATH "$FC" /tmp/quadcopter-smooth/import.FCMacro
-          test -s "output/قالب گیری شده/quadcopter_exterior_shell_smoothed_candidate.FCStd"
-          test -s "output/قالب گیری شده/quadcopter_exterior_shell_smoothed_candidate.step"
-          test -s "output/قالب گیری شده/smoothing-cad-validation.json"
+          test -s "output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.FCStd"
+          test -s "output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.step"
+          test -s "output/قالب گیری شده/smoothing/smoothing-cad-validation.json"
 
       - name: Commit only new candidate outputs to demo
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "output/قالب گیری شده/quadcopter_exterior_shell_smoothed_candidate.stl" \
-            "output/قالب گیری شده/quadcopter_exterior_shell_smoothed_candidate.FCStd" \
-            "output/قالب گیری شده/quadcopter_exterior_shell_smoothed_candidate.step" \
-            "output/قالب گیری شده/smoothing-candidate-report.json" \
-            "output/قالب گیری شده/smoothing-cad-validation.json"
+          git add "output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.stl" \
+            "output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.FCStd" \
+            "output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.step" \
+            "output/قالب گیری شده/smoothing/smoothing-candidate-report.json" \
+            "output/قالب گیری شده/smoothing/smoothing-cad-validation.json"
           git commit -m "Add conservative smoothed quadcopter CAD candidate"
           git push origin HEAD:demo
