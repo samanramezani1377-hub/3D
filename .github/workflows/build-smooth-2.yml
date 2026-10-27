@@ -1,0 +1,244 @@
+name: Build smooth 2 from existing smoothed STEP
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - demo
+    paths:
+      - ".github/workflows/build-smooth-2.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-smooth-2-demo
+  cancel-in-progress: false
+
+jobs:
+  solidify-reduce-and-rebuild:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout demo only
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+          fetch-depth: 0
+
+      - name: Install FreeCAD and mesh reduction tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends freecad python3-numpy python3-pip
+          python3 -m pip install --user --disable-pip-version-check 'numpy==1.26.4' 'trimesh==4.4.9' 'fast-simplification==0.1.9'
+
+      - name: Solidify the existing smoothed STEP and export working mesh
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/smooth-2
+          cat > /tmp/smooth-2/export_source.FCMacro <<'PY'
+          import os, json, FreeCAD as App, Part, MeshPart
+          src = os.path.abspath("output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.step")
+          if not os.path.isfile(src):
+              raise RuntimeError("Existing smoothed STEP input is missing: " + src)
+          shape = Part.read(src)
+          if shape.isNull() or not shape.isValid():
+              raise RuntimeError("Imported STEP shape is null or invalid")
+          initial = {
+              "input_step": src,
+              "input_faces": len(shape.Faces),
+              "input_solids": len(shape.Solids),
+              "input_shells": len(shape.Shells),
+              "input_closed": bool(shape.isClosed()),
+              "input_valid": bool(shape.isValid())
+          }
+          solids = list(shape.Solids)
+          if not solids:
+              shells = [s for s in shape.Shells if s.isClosed()]
+              if not shells:
+                  raise RuntimeError("Could not find a closed shell in the existing STEP; refusing to fabricate a solid")
+              for shell in shells:
+                  candidate = Part.makeSolid(shell)
+                  if not candidate.isNull() and candidate.isValid() and len(candidate.Solids) > 0:
+                      solids.append(candidate)
+          if not solids:
+              raise RuntimeError("STEP-to-Solid conversion failed validation")
+          solid = Part.makeCompound(solids) if len(solids) > 1 else solids[0]
+          if not solid.isValid() or not solid.isClosed() or len(solid.Solids) < 1:
+              raise RuntimeError("Solidified source failed validity/closed/solid checks")
+          doc = App.newDocument("Smooth2SourceSolid")
+          obj = doc.addObject("Part::Feature", "SourceSolid")
+          obj.Label = "Solidified existing smoothed STEP (working source)"
+          obj.Shape = solid
+          doc.recompute()
+          doc.saveAs("/tmp/smooth-2/source_solid.FCStd")
+          mesh = MeshPart.meshFromShape(Shape=solid, LinearDeflection=0.15, AngularDeflection=0.25, Relative=False)
+          mesh.write("/tmp/smooth-2/solidified_source.stl")
+          initial.update({
+              "solidification_succeeded": True,
+              "solidified_solids": len(solid.Solids),
+              "solidified_faces": len(solid.Faces),
+              "solidified_valid": bool(solid.isValid()),
+              "solidified_closed": bool(solid.isClosed())
+          })
+          with open("/tmp/smooth-2/source-solidification.json", "w") as f:
+              json.dump(initial, f, indent=2)
+          print(json.dumps(initial, indent=2))
+          App.closeDocument(doc.Name)
+          PY
+          if command -v FreeCADCmd >/dev/null 2>&1; then FC=FreeCADCmd; elif command -v freecadcmd >/dev/null 2>&1; then FC=freecadcmd; else echo "FreeCADCmd not found" >&2; exit 1; fi
+          env -u LD_LIBRARY_PATH "$FC" /tmp/smooth-2/export_source.FCMacro
+          test -s /tmp/smooth-2/solidified_source.stl
+
+      - name: Reduce mesh density and smooth the reduced surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PYTHONPATH="/usr/lib/python3/dist-packages:$HOME/.local/lib/python3.10/site-packages"
+          python3 - <<'PY'
+          import json, os
+          import numpy as np
+          import trimesh
+          from trimesh.smoothing import filter_taubin
+
+          src = trimesh.load('/tmp/smooth-2/solidified_source.stl', force='mesh', process=True)
+          if not isinstance(src, trimesh.Trimesh) or len(src.faces) < 1000:
+              raise RuntimeError("Solidified STEP produced an unexpectedly small mesh")
+          if not np.isfinite(src.vertices).all():
+              raise RuntimeError("Input mesh contains non-finite coordinates")
+          source_faces = int(len(src.faces))
+          source_bounds = src.bounds.copy()
+          source_extents = src.extents.copy()
+          target_faces = max(4000, int(source_faces * 0.45))
+          target_faces = min(target_faces, source_faces - 1)
+          reduced = src.simplify_quadric_decimation(face_count=target_faces)
+          if not isinstance(reduced, trimesh.Trimesh) or len(reduced.faces) >= source_faces:
+              raise RuntimeError("Quadric decimation did not reduce the face count")
+          reduced.process(validate=True)
+          before_smooth = reduced.vertices.copy()
+          # Conservative smoothing after decimation; geometry drift is bounded by dimensions.
+          filter_taubin(reduced, lamb=0.06, nu=0.061, iterations=2)
+          if not np.isfinite(reduced.vertices).all():
+              raise RuntimeError("Smoothing produced non-finite vertices")
+          extent_delta = np.abs(reduced.extents - source_extents)
+          max_extent_delta = float(extent_delta.max())
+          if max_extent_delta > 1.5:
+              raise RuntimeError("Reduced model changed overall dimensions by more than 1.5 mm")
+          if not reduced.is_watertight:
+              reduced.fill_holes()
+          if not reduced.is_watertight:
+              raise RuntimeError("Reduced/smoothed mesh is not watertight; refusing to create a misleading solid")
+          out = "output/قالب گیری شده/smooth 2"
+          os.makedirs(out, exist_ok=True)
+          stl_path = os.path.join(out, "quadcopter_smooth_2_reduced.stl")
+          reduced.export(stl_path)
+          report = {
+              "status": "mesh_reduced_smoothed_candidate",
+              "source_step": "output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.step",
+              "source_files_modified": False,
+              "branch_main_modified": False,
+              "method": "solidify existing STEP -> tessellate for processing -> quadric decimation -> conservative Taubin smoothing -> rebuild closed CAD solid",
+              "source_face_count": source_faces,
+              "target_face_count": target_faces,
+              "reduced_face_count": int(len(reduced.faces)),
+              "face_reduction_percent": round(100.0 * (1.0 - len(reduced.faces) / source_faces), 2),
+              "watertight_after_processing": bool(reduced.is_watertight),
+              "source_extents_mm": source_extents.tolist(),
+              "result_extents_mm": reduced.extents.tolist(),
+              "absolute_extent_change_mm": extent_delta.tolist(),
+              "mesh_smoothing_iterations": 2,
+              "nurbs_surface_reconstruction": "not_claimed; polygon reduction and smoothing do not by themselves reconstruct true analytic/NURBS surfaces"
+          }
+          with open(os.path.join(out, "smooth-2-processing-report.json"), "w") as f:
+              json.dump(report, f, indent=2)
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Rebuild and validate a closed CAD solid
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/smooth-2/rebuild.FCMacro <<'PY'
+          import os, json, FreeCAD as App, Part, Mesh
+          base = os.path.abspath("output/قالب گیری شده/smooth 2")
+          stl = os.path.join(base, "quadcopter_smooth_2_reduced.stl")
+          fcstd = os.path.join(base, "quadcopter_smooth_2.FCStd")
+          step = os.path.join(base, "quadcopter_smooth_2.step")
+          if not os.path.isfile(stl):
+              raise RuntimeError("Reduced mesh is missing")
+          mesh_obj = Mesh.Mesh(stl)
+          if mesh_obj.CountFacets < 1000:
+              raise RuntimeError("Reduced mesh has too few facets")
+          shape = Part.Shape()
+          shape.makeShapeFromMesh(mesh_obj.Topology, 0.05)
+          if shape.isNull() or not shape.isValid():
+              raise RuntimeError("Could not convert reduced mesh to a valid B-rep shell")
+          shells = [s for s in shape.Shells if s.isClosed()]
+          if not shells:
+              raise RuntimeError("Reduced mesh did not form a closed shell")
+          solids = []
+          for shell in shells:
+              solid = Part.makeSolid(shell)
+              if not solid.isNull() and solid.isValid() and solid.isClosed() and len(solid.Solids) > 0:
+                  solids.append(solid)
+          if not solids:
+              raise RuntimeError("Could not create a valid closed solid from reduced mesh")
+          result = Part.makeCompound(solids) if len(solids) > 1 else solids[0]
+          if not result.isValid() or not result.isClosed() or len(result.Solids) < 1:
+              raise RuntimeError("Final CAD solid failed validation")
+          # Try OpenCascade same-domain cleanup; only accept a valid result.
+          cleanup_status = "not_available"
+          try:
+              cleaned = result.removeSplitter()
+              if not cleaned.isNull() and cleaned.isValid() and cleaned.isClosed() and len(cleaned.Solids) > 0:
+                  result = cleaned
+                  cleanup_status = "removeSplitter_valid"
+              else:
+                  cleanup_status = "cleanup_rejected_invalid_result"
+          except Exception as exc:
+              cleanup_status = "cleanup_failed: " + str(exc)
+          doc = App.newDocument("QuadcopterSmooth2")
+          cad = doc.addObject("Part::Feature", "Smooth2Solid")
+          cad.Label = "Smooth 2 - reduced and smoothed closed CAD solid (faceted source)"
+          cad.Shape = result
+          doc.recompute()
+          doc.saveAs(fcstd)
+          Part.export([cad], step)
+          bb = result.BoundBox
+          report_path = os.path.join(base, "smooth-2-processing-report.json")
+          with open(report_path) as f:
+              report = json.load(f)
+          report.update({
+              "native_file": os.path.basename(fcstd),
+              "step_file": os.path.basename(step),
+              "stl_file": os.path.basename(stl),
+              "final_cad_faces": len(result.Faces),
+              "final_solid_count": len(result.Solids),
+              "final_shape_valid": bool(result.isValid()),
+              "final_shape_closed": bool(result.isClosed()),
+              "same_domain_cleanup": cleanup_status,
+              "bounds_mm": [bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax],
+              "true_smooth_nurbs_surfaces": False,
+              "important_limit": "The output is a closed, lower-face-count faceted CAD solid. It is not a feature-based parametric model and does not claim full NURBS surface fitting. That requires a separate reverse-engineering/surface-fitting stage."
+          })
+          with open(report_path, "w") as f:
+              json.dump(report, f, indent=2)
+          print(json.dumps(report, indent=2))
+          App.closeDocument(doc.Name)
+          PY
+          if command -v FreeCADCmd >/dev/null 2>&1; then FC=FreeCADCmd; elif command -v freecadcmd >/dev/null 2>&1; then FC=freecadcmd; else echo "FreeCADCmd not found" >&2; exit 1; fi
+          env -u LD_LIBRARY_PATH "$FC" /tmp/smooth-2/rebuild.FCMacro
+          test -s "output/قالب گیری شده/smooth 2/quadcopter_smooth_2.FCStd"
+          test -s "output/قالب گیری شده/smooth 2/quadcopter_smooth_2.step"
+          test -s "output/قالب گیری شده/smooth 2/quadcopter_smooth_2_reduced.stl"
+          test -s "output/قالب گیری شده/smooth 2/smooth-2-processing-report.json"
+
+      - name: Commit smooth 2 outputs to demo only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "output/قالب گیری شده/smooth 2/"
+          git commit -m "Add reduced and solidified quadcopter smooth 2 candidate"
+          git push origin HEAD:demo
