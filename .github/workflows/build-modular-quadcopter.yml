@@ -1,0 +1,70 @@
+name: Build and validate modular quadcopter draft
+
+on:
+  push:
+    branches: [demo]
+    paths:
+      - "cad/quadcopter_modular_v2.scad"
+      - ".github/workflows/build-modular-quadcopter.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: demo
+      - name: Install OpenSCAD and mesh tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openscad
+          python -m pip install --upgrade pip trimesh numpy scipy
+      - name: Export separate printable STL files
+        run: |
+          mkdir -p build/modular-quadcopter
+          for part in lower_tray upper_shell arm guard camera_mount assembly; do
+            openscad -o "build/modular-quadcopter/${part}.stl" -D "part=\"${part}\"" cad/quadcopter_modular_v2.scad
+            test -s "build/modular-quadcopter/${part}.stl"
+          done
+      - name: Validate meshes and print-bed envelope
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import trimesh
+
+          root = Path("build/modular-quadcopter")
+          report = {"source": "cad/quadcopter_modular_v2.scad", "parts": [], "print_bed_mm": [200, 200]}
+          failures = []
+          for path in sorted(root.glob("*.stl")):
+              mesh = trimesh.load_mesh(path, file_type="stl", process=False)
+              if mesh.is_empty or len(mesh.faces) == 0:
+                  failures.append(f"{path.name}: empty mesh")
+                  continue
+              ext = [round(float(x), 3) for x in mesh.extents]
+              record = {
+                  "file": path.name,
+                  "bytes": path.stat().st_size,
+                  "triangles": int(len(mesh.faces)),
+                  "bounds_mm": mesh.bounds.tolist(),
+                  "extents_mm": ext,
+                  "watertight": bool(mesh.is_watertight),
+                  "within_200x200_xy": bool(ext[0] <= 200 and ext[1] <= 200)
+              }
+              report["parts"].append(record)
+              if path.name != "assembly.stl" and not record["within_200x200_xy"]:
+                  failures.append(f"{path.name}: exceeds 200x200 mm XY bed envelope")
+          (root / "validation-report.json").write_text(json.dumps(report, indent=2) + "\n")
+          print(json.dumps(report, indent=2))
+          if failures:
+              raise SystemExit("\n".join(failures))
+          PY
+      - name: Upload CAD and validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: modular-quadcopter-draft
+          path: build/modular-quadcopter/
