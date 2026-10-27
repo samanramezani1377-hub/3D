@@ -1,4 +1,4 @@
-name: Commit CAD artifact into demo branch
+name: Extract CAD project into demo branch
 
 on:
   workflow_dispatch:
@@ -10,10 +10,9 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
-  commit-artifact:
+  extract-cad-project:
     runs-on: ubuntu-latest
     steps:
       - name: Check out demo branch
@@ -22,33 +21,26 @@ jobs:
           ref: demo
           fetch-depth: 0
 
-      - name: Download generated CAD artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: original-quadcopter-mesh-cad
-          path: downloaded-cad
-          repository: ${{ github.repository }}
-          run-id: 40433523186
-          github-token: ${{ github.token }}
-
-      - name: Package artifact for repository storage
+      - name: Extract FreeCAD project and reports from committed archive
         run: |
           set -euo pipefail
-          test -d downloaded-cad
-          mkdir -p output
-          zip -qr output/original-quadcopter-mesh-cad.zip downloaded-cad
           test -s output/original-quadcopter-mesh-cad.zip
-          ls -lh output/original-quadcopter-mesh-cad.zip
+          mkdir -p cad/original
+          unzip -o output/original-quadcopter-mesh-cad.zip -d /tmp/quadcopter-cad
+          cp /tmp/quadcopter-cad/quadcopter_tidy_mesh_cad.FCStd cad/original/
+          cp /tmp/quadcopter-cad/source-mesh-report.json cad/original/
+          cp /tmp/quadcopter-cad/cad-conversion-report.json cad/original/
+          ls -lh cad/original/
 
-      - name: Commit archive to demo
+      - name: Commit editable FreeCAD project and reports
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output/original-quadcopter-mesh-cad.zip
+          git add cad/original/quadcopter_tidy_mesh_cad.FCStd cad/original/source-mesh-report.json cad/original/cad-conversion-report.json
           if git diff --cached --quiet; then
-            echo "Artifact archive is already committed."
+            echo "CAD project and reports are already committed."
           else
-            git commit -m "Add generated original quadcopter CAD artifact"
+            git commit -m "Add editable quadcopter FreeCAD project and reports"
             git push origin HEAD:demo
           fi
