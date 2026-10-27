@@ -1,0 +1,59 @@
+{
+  "status": "success",
+  "source": "existing final file on demo: output/original-quadcopter-mesh-cad/downloaded-cad/quadcopter_tidy_mesh_cad.FCStd",
+  "source_sha256": "5a079d82450ed0fe56cdd6bbf8c80fee2b746c414879120109739550915dde41",
+  "source_branch_modified": false,
+  "main_branch_modified": false,
+  "source_file_regenerated": false,
+  "outputs": [
+    "quadcopter_exterior_shell_candidate.FCStd",
+    "quadcopter_exterior_shell_candidate.step"
+  ],
+  "source_solid": {
+    "valid": true,
+    "null": false,
+    "faces": 24754,
+    "shells": 1,
+    "solids": 1,
+    "closed": true,
+    "volume_mm3": 190084.2426169949,
+    "bounds_mm": [
+      -72.30188751220703,
+      -1.3877787807814457e-17,
+      -75.0,
+      72.30188751220703,
+      26.154569625854492,
+      75.0
+    ],
+    "extents_mm": [
+      144.60377502441406,
+      26.154569625854492,
+      150.0
+    ]
+  },
+  "exterior_shell": {
+    "valid": true,
+    "null": false,
+    "faces": 24754,
+    "shells": 1,
+    "solids": 0,
+    "closed": true,
+    "volume_mm3": 190084.2426169949,
+    "bounds_mm": [
+      -72.30188751220703,
+      -1.3877787807814457e-17,
+      -75.0,
+      72.30188751220703,
+      26.154569625854492,
+      75.0
+    ],
+    "extents_mm": [
+      144.60377502441406,
+      26.154569625854492,
+      150.0
+    ]
+  },
+  "geometry_policy": "Extracted the existing SolidCandidate outer shell into a standalone document; original final files are not modified.",
+  "important_limitation": "This is an independent shell file, not yet smooth analytic-surface reconstruction. Its faceted faces are inherited from the existing mesh-derived CAD. This artifact is a safe baseline for subsequent surface fitting and reverse engineering; it does not claim to remove mesh-related faceting.",
+  "next_stage": "Fit and validate analytic/freeform surfaces against this shell in a separate non-destructive stage; keep the source and this baseline artifact unchanged."
+}
