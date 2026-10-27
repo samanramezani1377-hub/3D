@@ -24,6 +24,20 @@ PARAMS = {
     "canopy_half_width": 19.0,
     "canopy_taper_deg": 18.0,
     "canopy_fillet": 4.0,
+    # rotor stations / arms ---------------------------------------------------
+    "motor_x": 37.0,                # |x| of each motor axis
+    "motor_z": 39.5,                # |z| of each motor axis
+    "arm_width": 12.0,
+    "arm_height": 9.0,
+    "motor_radius": 6.0,
+    "motor_height": 20.0,
+    "motor_hub_radius": 9.0,        # base boss under the motor
+    "motor_hub_height": 6.0,
+    # propeller guards: TRUE circular rings -----------------------------------
+    "guard_outer_radius": 35.5,
+    "guard_wall": 4.5,
+    "guard_height": 17.0,
+    "guard_edge_fillet": 1.8,
 }
 
 
@@ -57,9 +71,47 @@ def body(p):
     return hull.union(canopy)
 
 
+def stations(p):
+    return [(sx * p["motor_x"], sz * p["motor_z"]) for sx in (1, -1) for sz in (1, -1)]
+
+
+def guard(p, x, z):
+    """Round guard ring: outer/inner radius are exact circles by construction."""
+    ro, ri = p["guard_outer_radius"], p["guard_outer_radius"] - p["guard_wall"]
+    ring = (cq.Workplane("XZ").center(x, z).circle(ro).circle(ri).extrude(-p["guard_height"]))
+    try:
+        ring = ring.faces(">Y").edges().fillet(p["guard_edge_fillet"])
+    except Exception:
+        pass
+    return ring
+
+
+def arm(p, x, z):
+    """Straight bar from the body centre line to the motor axis."""
+    import math
+    L = math.hypot(x, z)
+    ang = math.degrees(math.atan2(z, x))
+    bar = (cq.Workplane("XY").box(L, p["arm_width"], p["arm_height"], centered=(False, True, False))
+           .rotate((0, 0, 0), (0, 0, 1), 0))
+    # box is built along +X in the XY plane with Z up; map to our Y-up frame:
+    # build in (x, z) plan with height along Y by rotating about X.
+    bar = bar.rotate((0, 0, 0), (1, 0, 0), -90)          # box height Z -> Y, width Y -> -Z
+    bar = bar.rotate((0, 0, 0), (0, 1, 0), -ang)          # aim at the motor (x, z)
+    return bar
+
+
+def motor(p, x, z):
+    hub = (cq.Workplane("XZ").center(x, z).circle(p["motor_hub_radius"]).extrude(-p["motor_hub_height"]))
+    can = (cq.Workplane("XZ").center(x, z).circle(p["motor_radius"]).extrude(-p["motor_height"]))
+    return hub.union(can)
+
+
 def build(p=None):
     p = {**PARAMS, **(p or {})}
-    return body(p)
+    model = body(p)
+    for (x, z) in stations(p):
+        model = model.union(arm(p, x, z)).union(guard(p, x, z)).union(motor(p, x, z))
+    return model
 
 
 if __name__ == "__main__":
