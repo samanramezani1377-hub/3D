@@ -64,14 +64,15 @@ jobs:
           import numpy as np
           import trimesh
           from trimesh.smoothing import filter_taubin
-          src = trimesh.load('/tmp/quadcopter-smooth/source.stl', force='mesh', process=False)
+          src = trimesh.load('/tmp/quadcopter-smooth/source.stl', force='mesh', process=True)
           if not isinstance(src, trimesh.Trimesh) or len(src.faces) < 1000:
               raise RuntimeError("Source STL is missing or unexpectedly small")
           original_vertices = src.vertices.copy()
           original_bounds = src.bounds.copy()
-          # Gentle, low-iteration Taubin smoothing: intended to soften visible facet noise
-          # while limiting shrinkage. It does not claim to create NURBS surfaces.
-          filter_taubin(src, lamb=0.25, nu=0.26, iterations=3)
+          # Extra-light Taubin smoothing to preserve the overall drone geometry.
+          # Merge STL vertices first so smoothing acts on connected mesh topology.
+          # This is mesh smoothing only; it does not create NURBS surfaces.
+          filter_taubin(src, lamb=0.08, nu=0.081, iterations=1)
           displacement = np.linalg.norm(src.vertices - original_vertices, axis=1)
           max_disp = float(displacement.max())
           p95_disp = float(np.percentile(displacement, 95))
@@ -82,7 +83,7 @@ jobs:
             "source": "output/قالب گیری شده/quadcopter_exterior_shell_candidate.FCStd",
             "source_files_modified": False,
             "branch_main_modified": False,
-            "method": "Taubin mesh smoothing, 3 iterations, lambda=0.25, nu=0.26",
+            "method": "Taubin mesh smoothing, 1 iteration, lambda=0.08, nu=0.081, STL vertices merged",
             "source_vertices": int(len(original_vertices)),
             "triangles": int(len(src.faces)),
             "watertight": bool(src.is_watertight),
@@ -92,10 +93,11 @@ jobs:
             "geometry_note": "This is a conservative smoothed mesh candidate, not a reconstructed NURBS/parametric solid. The original model is preserved for comparison.",
             "acceptance": "Reject automatically if the smoothing moves any vertex by more than 1.0 mm or changes any overall extent by more than 0.75 mm."
           }
+          print("SMOOTHING_DIAGNOSTICS=" + json.dumps({"max_vertex_displacement_mm": max_disp, "p95_vertex_displacement_mm": p95_disp, "extent_change_mm": extent_delta.tolist()}))
           if not np.isfinite(src.vertices).all():
               raise RuntimeError("Smoothing produced non-finite vertices")
           if max_disp > 1.0 or float(extent_delta.max()) > 0.75:
-              raise RuntimeError("Smoothing exceeded conservative geometry-change limits")
+              raise RuntimeError("Smoothing exceeded conservative geometry-change limits; diagnostics printed above")
           os.makedirs("output/قالب گیری شده/smoothing", exist_ok=True)
           src.export("output/قالب گیری شده/smoothing/quadcopter_exterior_shell_smoothed_candidate.stl")
           with open("output/قالب گیری شده/smoothing/smoothing-candidate-report.json", "w") as f:
