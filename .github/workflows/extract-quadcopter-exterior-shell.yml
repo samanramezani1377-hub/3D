@@ -2,6 +2,11 @@ name: Extract independent quadcopter exterior shell
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - demo
+    paths:
+      - ".github/workflows/extract-quadcopter-exterior-shell.yml"
 
 permissions:
   contents: read
