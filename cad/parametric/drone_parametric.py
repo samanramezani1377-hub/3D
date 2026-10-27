@@ -9,14 +9,14 @@ import cadquery as cq
 PARAMS = {
     # central body (plan polygon, mirrored left/right) ---------------------
     "body_height": 13.0,            # lower hull height (y 0..body_height)
-    "body_half_width": 35.0,        # max half width (x) at the widest point
+    "body_half_width": 32.0,        # max half width (x) at the widest point
     "body_front_z": 66.0,           # nose (+z)
     "body_rear_z": -52.0,           # tail (-z)
-    "body_front_half_width": 11.0,
-    "body_rear_half_width": 22.0,
+    "body_front_half_width": 9.0,
+    "body_rear_half_width": 19.0,
     "body_widest_z_front": 10.0,
     "body_widest_z_rear": -18.0,
-    "body_edge_fillet": 3.0,
+    "body_edge_fillet": 0.8,
     # canopy (upper dome) ---------------------------------------------------
     "canopy_height": 12.0,
     "canopy_front_z": 44.0,
@@ -34,7 +34,7 @@ PARAMS = {
     "facet_inset": 0.90,             # every 2nd vertex of the mid levels is pulled inward -> sharp creases
     "facet_ridge_lift": 1.6,         # extra height (mm) given to the top ridge vertices
     # rotor stations / arms ---------------------------------------------------
-    "motor_x": 37.0,                # |x| of each motor axis
+    "motor_x": 58.0,                # |x| of each motor axis
     "motor_z": 39.5,                # |z| of each motor axis
     "arm_width": 16.0,
     "arm_height": 12.0,
@@ -54,7 +54,7 @@ PARAMS = {
     "guard_use_profile": True,
     # front LED chevron (green light bar) ---------------------------------------
     "led_enabled": True,
-    "led_points_xy": [[-9.0, 17.0], [-6.0, 16.7], [-3.0, 16.4], [0.0, 16.2], [3.0, 16.4], [6.0, 16.7], [9.0, 17.0]],  # (x, y) of the V
+    "led_points_xy": [[-9.0, 17.0], [-6.0, 14.8], [-3.0, 14.8], [0.0, 14.8], [3.0, 14.8], [6.0, 14.8], [9.0, 17.0]],  # angular \\___/ light bar
     "led_radius": 0.9,               # light-bar radius
     "led_groove_radius": 1.2,        # groove cut in the shell (insert sits in it)
     # fixed front camera, tilted down --------------------------------------------
