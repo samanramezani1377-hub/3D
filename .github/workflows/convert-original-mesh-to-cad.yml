@@ -67,6 +67,7 @@ jobs:
           src = os.path.join(root, "quadcopter_tidy.obj")
           doc_path = os.path.join(root, "quadcopter_tidy_mesh_cad.FCStd")
           step_path = os.path.join(root, "quadcopter_tidy_mesh_cad.step")
+          solid_step_path = os.path.join(root, "quadcopter_tidy_solid_candidate.step")
           report_path = os.path.join(root, "cad-conversion-report.json")
 
           try:
@@ -91,7 +92,37 @@ jobs:
               shape_feature.Shape = shape
               doc.recompute()
 
-              # Export both the native FreeCAD document and STEP interchange file.
+              # Attempt a genuine closed solid from the watertight source shell.
+              # Keep the original faceted shape regardless of whether this succeeds.
+              solid_feature = None
+              solid_status = {"attempted": True, "created": False, "valid": False, "closed": False, "error": None}
+              try:
+                  shell = Part.Shell(shape.Faces)
+                  if not shell.isNull() and shell.isClosed():
+                      solid = Part.makeSolid(shell)
+                      if not solid.isNull():
+                          solid_status["created"] = True
+                          solid_status["valid"] = bool(solid.isValid())
+                          solid_status["closed"] = bool(solid.isClosed())
+                          solid_feature = doc.addObject("Part::Feature", "SolidCandidate")
+                          solid_feature.Label = "Solid candidate (mesh-derived; faceted)"
+                          solid_feature.Shape = solid
+                          # Try removing splitter edges, but retain candidate if refinement fails.
+                          try:
+                              refined = solid.removeSplitter()
+                              if not refined.isNull() and refined.isValid():
+                                  solid_feature.Shape = refined
+                          except Exception:
+                              pass
+                          doc.recompute()
+                          if solid_feature.Shape.isValid() and solid_feature.Shape.isClosed():
+                              Part.export([solid_feature], solid_step_path)
+                  if not solid_status["created"]:
+                      solid_status["error"] = "Mesh-derived shell could not be converted into a closed solid."
+              except Exception as exc:
+                  solid_status["error"] = str(exc)
+
+              # Export the reference shape and the native document. The original is retained.
               doc.saveAs(doc_path)
               Part.export([shape_feature], step_path)
 
@@ -107,7 +138,9 @@ jobs:
                   "bounds_mm": [bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax],
                   "extents_mm": [bb.XLength, bb.YLength, bb.ZLength],
                   "geometry_type": "faceted mesh-derived CAD shape",
-                  "limitation": "The triangular mesh is retained as faceted geometry. This is not automatic feature recognition or smooth-surface reconstruction."
+                  "solid_candidate": solid_status,
+                  "solid_candidate_step": os.path.basename(solid_step_path) if os.path.exists(solid_step_path) else None,
+                  "limitation": "Mesh conversion alone does not reconstruct design features or smooth analytic surfaces. Even a valid solid candidate remains faceted and is not parametric feature recognition."
               }
               with open(report_path, "w") as f:
                   json.dump(report, f, indent=2)
@@ -131,5 +164,6 @@ jobs:
           path: |
             build/original-mesh-cad/quadcopter_tidy_mesh_cad.FCStd
             build/original-mesh-cad/quadcopter_tidy_mesh_cad.step
+            build/original-mesh-cad/quadcopter_tidy_solid_candidate.step
             build/original-mesh-cad/source-mesh-report.json
             build/original-mesh-cad/cad-conversion-report.json
