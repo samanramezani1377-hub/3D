@@ -181,7 +181,8 @@ jobs:
             echo "FreeCAD command-line executable not found" >&2
             exit 1
           fi
-          "$FREECAD_CMD" build/original-mesh-cad/convert.FCMacro
+          # setup-python prepends its runtime libraries to LD_LIBRARY_PATH; FreeCAD 0.19 uses the system Python runtime and can then fail to import stdlib modules (for example math). Run FreeCAD without that injected library path.
+          env -u LD_LIBRARY_PATH "$FREECAD_CMD" build/original-mesh-cad/convert.FCMacro
           test -s build/original-mesh-cad/quadcopter_tidy_mesh_cad.FCStd
           test -s build/original-mesh-cad/quadcopter_tidy_mesh_cad.step
           test -s build/original-mesh-cad/cad-conversion-report.json
