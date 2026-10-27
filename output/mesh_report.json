@@ -1,11 +1,10 @@
 {
   "source": "main/quadcopter_tidy.stl",
+  "output": "output/quadcopter_tidy_complete.stl",
   "source_bytes": 1239784,
-  "source_triangles": 24794,
-  "source_connected_components": 1,
-  "kept_triangles": 24794,
-  "kept_component_area": 48896.6339628171,
-  "kept_component_bounds_mm_assumed": [
+  "output_bytes": 1239784,
+  "triangle_count": 24794,
+  "bounds": [
     [
       -72.30188751220703,
       -75.0,
@@ -17,7 +16,9 @@
       26.154565811157227
     ]
   ],
-  "output_bytes": 1239784,
-  "validation_nonempty": true,
-  "note": "Largest connected mesh component only; this is not a guarantee of flight safety or printability."
+  "sha256_source": "3b31e4ac0c03b68c222910884fa3e6c894b7935da7c458760274c60f1bc65436",
+  "sha256_output": "3b31e4ac0c03b68c222910884fa3e6c894b7935da7c458760274c60f1bc65436",
+  "byte_identical_copy": true,
+  "geometry_removed": false,
+  "note": "Complete original model preserved byte-for-byte; no parts removed."
 }
