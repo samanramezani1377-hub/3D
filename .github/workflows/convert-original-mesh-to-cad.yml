@@ -1,0 +1,135 @@
+name: Convert original quadcopter mesh to editable CAD
+
+on:
+  push:
+    branches: [demo]
+    paths:
+      - ".github/workflows/convert-original-mesh-to-cad.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  convert:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout demo branch
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+
+      - name: Install FreeCAD and mesh inspection tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y freecad
+          python3 -m pip install --upgrade trimesh numpy
+
+      - name: Fetch the original mesh from main (read-only)
+        run: |
+          mkdir -p build/original-mesh-cad
+          curl --fail --location --retry 3 \
+            https://raw.githubusercontent.com/samanramezani1377-hub/3D/main/quadcopter_tidy.obj \
+            --output build/original-mesh-cad/quadcopter_tidy.obj
+          test -s build/original-mesh-cad/quadcopter_tidy.obj
+          sha256sum build/original-mesh-cad/quadcopter_tidy.obj
+
+      - name: Inspect source mesh
+        run: |
+          python3 - <<'PY'
+          import json, trimesh
+          p = "build/original-mesh-cad/quadcopter_tidy.obj"
+          mesh = trimesh.load(p, force="mesh", process=False)
+          report = {
+            "source_file": "main/quadcopter_tidy.obj",
+            "source_branch_modified": False,
+            "vertices": int(len(mesh.vertices)),
+            "triangles": int(len(mesh.faces)),
+            "bounds_mm": mesh.bounds.tolist(),
+            "extents_mm": mesh.extents.tolist(),
+            "watertight": bool(mesh.is_watertight),
+            "conversion_note": "Mesh-to-CAD conversion preserves the source geometry as a faceted shape; it does not reconstruct smooth analytic surfaces."
+          }
+          open("build/original-mesh-cad/source-mesh-report.json", "w").write(json.dumps(report, indent=2) + "\\n")
+          print(json.dumps(report, indent=2))
+          PY
+
+      - name: Convert mesh to FreeCAD document and STEP
+        shell: bash
+        run: |
+          cat > build/original-mesh-cad/convert.FCMacro <<'PY'
+          import os, json, traceback
+          import FreeCAD as App
+          import Mesh
+          import Part
+
+          root = os.path.abspath("build/original-mesh-cad")
+          src = os.path.join(root, "quadcopter_tidy.obj")
+          doc_path = os.path.join(root, "quadcopter_tidy_mesh_cad.FCStd")
+          step_path = os.path.join(root, "quadcopter_tidy_mesh_cad.step")
+          report_path = os.path.join(root, "cad-conversion-report.json")
+
+          try:
+              mesh_obj = Mesh.Mesh(src)
+              if mesh_obj.CountFacets == 0:
+                  raise RuntimeError("Imported mesh contains no facets")
+
+              doc = App.newDocument("Qu ad copterMeshCAD".replace(" ", ""))
+              mesh_feature = doc.addObject("Mesh::Feature", "OriginalMesh")
+              mesh_feature.Label = "Original quadcopter mesh (reference)"
+              mesh_feature.Mesh = mesh_obj
+
+              # Create a Part shape from the exact triangular facets.
+              # This is editable as a faceted CAD shape, not a smooth NURBS solid.
+              shape = Part.Shape()
+              shape.makeShapeFromMesh(mesh_obj.Topology, 0.05)
+              if shape.isNull():
+                  raise RuntimeError("FreeCAD failed to build a shape from the mesh")
+
+              shape_feature = doc.addObject("Part::Feature", "FacetedCAD")
+              shape_feature.Label = "Original quadcopter — faceted CAD conversion"
+              shape_feature.Shape = shape
+              doc.recompute()
+
+              # Export both the native FreeCAD document and STEP interchange file.
+              doc.saveAs(doc_path)
+              Part.export([shape_feature], step_path)
+
+              bb = shape.BoundBox
+              report = {
+                  "source": "main/quadcopter_tidy.obj",
+                  "source_branch_modified": False,
+                  "native_cad": os.path.basename(doc_path),
+                  "step_file": os.path.basename(step_path),
+                  "mesh_facets": int(mesh_obj.CountFacets),
+                  "shape_faces": int(len(shape.Faces)),
+                  "shape_is_null": bool(shape.isNull()),
+                  "bounds_mm": [bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax],
+                  "extents_mm": [bb.XLength, bb.YLength, bb.ZLength],
+                  "geometry_type": "faceted mesh-derived CAD shape",
+                  "limitation": "The triangular mesh is retained as faceted geometry. This is not automatic feature recognition or smooth-surface reconstruction."
+              }
+              with open(report_path, "w") as f:
+                  json.dump(report, f, indent=2)
+              print(json.dumps(report, indent=2))
+              App.closeDocument(doc.Name)
+          except Exception:
+              traceback.print_exc()
+              raise
+          PY
+          # FreeCAD's command-line executable is provided by the Ubuntu package.
+          command -v FreeCADCmd || command -v freecadcmd
+          FreeCADCmd build/original-mesh-cad/convert.FCMacro || freecadcmd build/original-mesh-cad/convert.FCMacro
+          test -s build/original-mesh-cad/quadcopter_tidy_mesh_cad.FCStd
+          test -s build/original-mesh-cad/quadcopter_tidy_mesh_cad.step
+          test -s build/original-mesh-cad/cad-conversion-report.json
+
+      - name: Upload converted CAD files and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-quadcopter-mesh-cad
+          path: |
+            build/original-mesh-cad/quadcopter_tidy_mesh_cad.FCStd
+            build/original-mesh-cad/quadcopter_tidy_mesh_cad.step
+            build/original-mesh-cad/source-mesh-report.json
+            build/original-mesh-cad/cad-conversion-report.json
