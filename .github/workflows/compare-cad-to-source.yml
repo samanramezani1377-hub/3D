@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           cat > /tmp/cad-compare/compare.FCMacro <<'PY'
-          import os, json, math, traceback
+          import os, json, traceback
           import FreeCAD as App
           import Part, Mesh
           root = '/tmp/cad-compare'
@@ -80,8 +80,9 @@ jobs:
                   if shape.isNull():
                       raise RuntimeError(filename + ' imported as null shape')
                   distances = []
-                  for i, p in enumerate(sampled):
-                      vertex = Part.Vertex(p)
+                  for p in sampled:
+                      vector = App.Vector(float(p.x), float(p.y), float(p.z))
+                      vertex = Part.Vertex(vector)
                       result = shape.distToShape(vertex)
                       distances.append(float(result[0]))
                   sorted_d = sorted(distances)
@@ -125,6 +126,7 @@ jobs:
           done
           if [ -z "$FC" ]; then echo 'FreeCADCmd executable not found' >&2; exit 1; fi
           env -u LD_LIBRARY_PATH "$FC" /tmp/cad-compare/compare.FCMacro
+          python3 -c "import json; p='/tmp/cad-compare/geometry-comparison-report.json'; r=json.load(open(p)); assert not r.get('errors'), 'Geometry comparison failed: ' + repr(r.get('errors')); assert len(r.get('files', {})) == 2, 'Comparison did not produce both STEP results'"
 
       - name: Publish geometry comparison report to demo
         if: success()
