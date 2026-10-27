@@ -9,9 +9,9 @@ import cadquery as cq
 PARAMS = {
     # central body (plan polygon, mirrored left/right) ---------------------
     "body_height": 13.0,            # lower hull height (y 0..body_height)
-    "body_half_width": 22.0,        # max half width (x) at the widest point
-    "body_front_z": 62.0,           # nose (+z)
-    "body_rear_z": -45.0,           # tail (-z)
+    "body_half_width": 24.0,        # max half width (x) at the widest point
+    "body_front_z": 66.0,           # nose (+z)
+    "body_rear_z": -52.0,           # tail (-z)
     "body_front_half_width": 12.0,
     "body_rear_half_width": 18.0,
     "body_widest_z_front": 20.0,
@@ -24,6 +24,10 @@ PARAMS = {
     "canopy_half_width": 19.0,
     "canopy_taper_deg": 18.0,
     "canopy_fillet": 4.0,
+    "use_measured_canopy": True,     # loft through cad/parametric/body_sections.json (edit the numbers to reshape)
+    "canopy_base_y": 13.0,
+    "canopy_top_y": 25.6,
+    "canopy_top_scale": 0.45,        # last ring of the dome relative to the top measured section
     # rotor stations / arms ---------------------------------------------------
     "motor_x": 37.0,                # |x| of each motor axis
     "motor_z": 39.5,                # |z| of each motor axis
@@ -49,6 +53,52 @@ PARAMS = {
 }
 
 
+def _resample(pts, n):
+    import numpy as np
+    pts = np.asarray(pts, float)
+    area = 0.5 * np.sum(pts[:, 0] * np.roll(pts[:, 1], -1) - np.roll(pts[:, 0], -1) * pts[:, 1])
+    if area < 0:
+        pts = pts[::-1]
+    pts = np.roll(pts, -int(np.argmax(pts[:, 1])), axis=0)
+    line = np.vstack([pts, pts[:1]])
+    seg = np.r_[0, np.cumsum(np.hypot(*np.diff(line, axis=0).T))]
+    t = np.linspace(0, seg[-1], n, endpoint=False)
+    return np.c_[np.interp(t, seg, line[:, 0]), np.interp(t, seg, line[:, 1])]
+
+
+def hull_polygon(p):
+    return [(-p["body_front_half_width"], p["body_front_z"]),
+            (p["body_front_half_width"], p["body_front_z"]),
+            (p["body_half_width"], p["body_widest_z_front"]),
+            (p["body_half_width"], p["body_widest_z_rear"]),
+            (p["body_rear_half_width"], p["body_rear_z"]),
+            (-p["body_rear_half_width"], p["body_rear_z"]),
+            (-p["body_half_width"], p["body_widest_z_rear"]),
+            (-p["body_half_width"], p["body_widest_z_front"])]
+
+
+def measured_canopy(p):
+    import os, numpy as np
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "body_sections.json")
+    data = json.load(open(path))
+    n = data["points_per_level"]
+    levels = [(p["canopy_base_y"], _resample(hull_polygon(p), n))]
+    secs = [(float(y), np.array(pts)) for y, pts in data["sections"].items()]
+    secs.sort()
+    levels += secs
+    ytop, ptop = secs[-1]
+    c = ptop.mean(axis=0)
+    levels.append((p["canopy_top_y"], c + (ptop - c) * p["canopy_top_scale"]))
+    wp = None
+    for i, (y, pts) in enumerate(levels):
+        if wp is None:
+            wp = cq.Workplane("XZ").workplane(offset=-y)
+        else:
+            wp = wp.workplane(offset=-(y - levels[i - 1][0]))
+        wp = wp.polyline([tuple(q) for q in pts]).close()
+    return wp.loft(ruled=False, combine=True)
+
+
 def body(p):
     pts = [(-p["body_front_half_width"], p["body_front_z"]),
            (p["body_front_half_width"], p["body_front_z"]),
@@ -60,6 +110,11 @@ def body(p):
            (-p["body_half_width"], p["body_widest_z_front"])]
     # workplane XZ has its normal along -Y, so extrude negative to go +Y
     hull = (cq.Workplane("XZ").polyline(pts).close().extrude(-p["body_height"]))
+    if p.get("use_measured_canopy"):
+        try:
+            return hull.union(measured_canopy(p))
+        except Exception as e:  # fall back to the simple tapered canopy below
+            print("measured canopy failed, using simple canopy:", e)
     try:
         hull = hull.edges("|Y").fillet(p["body_edge_fillet"])
     except Exception:
