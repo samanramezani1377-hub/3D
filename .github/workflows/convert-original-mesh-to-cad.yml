@@ -15,11 +15,30 @@ jobs:
         with:
           ref: demo
 
+      # Cache downloaded Debian packages between runs. GitHub-hosted runners are
+      # fresh each time, so caching the .deb archives avoids re-downloading most
+      # of FreeCAD and its dependencies on subsequent runs.
+      - name: Cache FreeCAD apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives/*.deb
+          key: ubuntu-22.04-freecad-apt-v1
+          restore-keys: |
+            ubuntu-22.04-freecad-apt-
+
+      - name: Set up Python and cache pip downloads
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: .github/workflows/convert-original-mesh-to-cad.yml
+
       - name: Install FreeCAD and mesh inspection tools
         run: |
+          sudo chmod -R a+rwX /var/cache/apt/archives
           sudo apt-get update
-          sudo apt-get install -y freecad
-          python3 -m pip install --upgrade 'numpy==1.24.4' 'trimesh<5.2'
+          sudo apt-get install -y --no-install-recommends freecad
+          python -m pip install --upgrade 'numpy==1.24.4' 'trimesh<5.2'
 
       - name: Fetch the original mesh from main (read-only)
         run: |
