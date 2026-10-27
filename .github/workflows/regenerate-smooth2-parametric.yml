@@ -2,6 +2,11 @@ name: Regenerate smooth2 parametric quadcopter
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - demo
+    paths:
+      - "cad/parametric/drone_parametric.py"
 
 permissions:
   contents: write
@@ -12,6 +17,7 @@ concurrency:
 
 jobs:
   regenerate:
+    if: github.ref == 'refs/heads/demo'
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
@@ -47,18 +53,15 @@ jobs:
             test -s "$out/$f" || { echo "Missing or empty generated file: $out/$f"; exit 1; }
           done
           python - <<'PY'
-          import json, os
+          import os
           out = "output/قالب گیری شده/smooth2-parametric"
-          report = {}
           for name in ("drone_parametric.step", "drone_parametric.stl",
                        "led_strip_green.step", "led_strip_green.stl"):
               path = os.path.join(out, name)
-              report[name] = {"bytes": os.path.getsize(path)}
-              if os.path.getsize(path) < 100:
-                  raise SystemExit(f"Output unexpectedly small: {path}")
-          with open(os.path.join(out, "ci-validation.json"), "w", encoding="utf-8") as f:
-              json.dump({"status": "generated_files_present", "files": report}, f, indent=2)
-          print(json.dumps(report, indent=2))
+              size = os.path.getsize(path)
+              if size < 100:
+                  raise SystemExit(f"Output unexpectedly small: {path} ({size} bytes)")
+              print(f"{name}: {size} bytes")
           PY
 
       - name: Commit only the four requested CAD exports
