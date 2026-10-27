@@ -337,6 +337,15 @@ def export(shape, out_dir, name="drone_parametric"):
     os.makedirs(out_dir, exist_ok=True)
     cq.exporters.export(shape, os.path.join(out_dir, name + ".step"))
     cq.exporters.export(shape, os.path.join(out_dir, name + ".stl"), tolerance=0.05, angularTolerance=0.1)
+    try:                                    # close the tiny tessellation seams left by the swept LED groove
+        import trimesh
+        mesh = trimesh.load(os.path.join(out_dir, name + ".stl"))
+        if not mesh.is_watertight:
+            trimesh.repair.fill_holes(mesh)
+            trimesh.repair.fix_normals(mesh)
+            mesh.export(os.path.join(out_dir, name + ".stl"))
+    except Exception as e:
+        print("STL repair skipped:", e)
     led = getattr(build, "led_insert", None)
     if led is not None:
         cq.exporters.export(led, os.path.join(out_dir, "led_strip_green.step"))

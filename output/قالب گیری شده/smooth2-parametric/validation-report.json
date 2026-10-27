@@ -16,13 +16,13 @@
   ],
   "new_to_source_surface_distance_mm": {
     "mean": 1.45,
-    "median": 0.91,
-    "p95": 4.48
+    "median": 0.9,
+    "p95": 4.42
   },
   "source_to_new_surface_distance_mm": {
-    "mean": 1.69,
-    "median": 1.01,
-    "p95": 5.68
+    "mean": 1.67,
+    "median": 1.0,
+    "p95": 5.63
   },
   "guards_outer_roundness_at_y9": [
     {
@@ -67,5 +67,6 @@
     "Original propellers are noisy curved multi-blade shapes inside the mesh; new ones are simple 2-blade placeholders.",
     "Original motor/arm interior is a noisy blob; new arms/motors are clean primitives.",
     "Lower hull is parametric (polygon); canopy follows measured sections of the original."
-  ]
+  ],
+  "stl_note": "STEP is a single valid solid. The STL has ~5 open tessellation edges at the swept LED groove (set led_enabled=false for a fully watertight STL; slicers normally auto-repair this)."
 }
