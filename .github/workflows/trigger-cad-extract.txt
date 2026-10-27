@@ -1,1 +1,0 @@
-Trigger automatic extraction of the committed CAD archive on demo branch.
