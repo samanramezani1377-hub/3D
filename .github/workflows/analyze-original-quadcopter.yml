@@ -1,10 +1,6 @@
 name: Inspect original quadcopter geometry
 
 on:
-  push:
-    branches: [demo]
-    paths:
-      - ".github/workflows/analyze-original-quadcopter.yml"
   workflow_dispatch:
 
 permissions:
