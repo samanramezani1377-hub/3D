@@ -1,0 +1,59 @@
+name: Publish extracted exterior shell files
+
+on:
+  push:
+    branches:
+      - demo
+    paths:
+      - ".github/workflows/publish-exterior-shell-artifact.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish-extracted-artifact:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout demo
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+          fetch-depth: 0
+
+      - name: Download and extract the exact artifact from run 40447613671
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "output/قالب گیری شده"
+          curl --fail --silent --show-error --location \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/12708438730/zip" \
+            --output /tmp/exterior-shell-artifact.zip
+          unzip -o /tmp/exterior-shell-artifact.zip -d /tmp/exterior-shell-artifact
+          for file in \
+            quadcopter_exterior_shell_candidate.FCStd \
+            quadcopter_exterior_shell_candidate.step \
+            exterior-shell-report.json \
+            source-sha256.txt; do
+            test -s "/tmp/exterior-shell-artifact/${file}"
+            cp "/tmp/exterior-shell-artifact/${file}" "output/قالب گیری شده/${file}"
+          done
+          echo "Extracted files:"
+          find "output/قالب گیری شده" -maxdepth 1 -type f -printf '%f (%s bytes)\n'
+
+      - name: Commit extracted files to demo
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "output/قالب گیری شده/"
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Add extracted exterior shell files to قالب گیری شده"
+          git push origin HEAD:demo
