@@ -54,9 +54,10 @@ PARAMS = {
     "guard_use_profile": True,
     # front LED chevron (green light bar) ---------------------------------------
     "led_enabled": True,
-    "led_points_xy": [[-9.0, 17.0], [-6.0, 14.8], [-3.0, 14.8], [0.0, 14.8], [3.0, 14.8], [6.0, 14.8], [9.0, 17.0]],  # angular \\___/ light bar
+    "led_points_xy": [[-8.0, 15.8], [-5.5, 15.8], [-3.0, 15.8], [0.0, 15.8], [3.0, 15.8], [5.5, 15.8], [8.0, 15.8]],  # angular \\___/ light bar
     "led_radius": 0.9,               # light-bar radius
     "led_groove_radius": 1.2,        # groove cut in the shell (insert sits in it)
+    "led_embed_depth": 0.75,         # recess the insert into the shell
     # fixed front camera, tilted down --------------------------------------------
     "camera_enabled": True,
     "camera_width": 22.0,
@@ -271,28 +272,38 @@ def _surface_z(solid, x, y, zlo=30.0, zhi=95.0):
 
 
 def _led_path(p, solid):
+    """Smooth front LED path recessed slightly below the actual canopy surface."""
+    import numpy as np
     pts = []
     for x, y in p["led_points_xy"]:
         z = _surface_z(solid, x, y)
         if z is None:
             raise RuntimeError("LED point (%s,%s) is not on the shell" % (x, y))
+        z -= p.get("led_embed_depth", 0.75)
         pts.append(cq.Vector(x, y, z))
-    return pts
+    arr = np.array([[v.x, v.y, v.z] for v in pts], dtype=float)
+    try:
+        from scipy.interpolate import splprep, splev
+        tck, _ = splprep(arr.T, s=0.15, k=min(3, len(pts) - 1))
+        xyz = splev(np.linspace(0.0, 1.0, 40), tck)
+        return [cq.Vector(float(x), float(y), float(z)) for x, y, z in zip(*xyz)]
+    except Exception:
+        edge = cq.Edge.makeSpline(pts)
+        return [edge.startPoint(), *[edge.positionAt(i / 39.0) for i in range(1, 39)], edge.endPoint()]
 
 
 def _sweep_tube(pts, r):
-    edges = [cq.Edge.makeLine(pts[i], pts[i + 1]) for i in range(len(pts) - 1)]
-    path = cq.Wire.assembleEdges(edges)
+    edge = cq.Edge.makeSpline(pts)
+    path = cq.Wire.assembleEdges([edge])
     d = (pts[1] - pts[0]).normalized()
     plane = cq.Plane(origin=pts[0], xDir=cq.Vector(0, 1, 0) if abs(d.y) < 0.9 else cq.Vector(1, 0, 0), normal=d)
     return cq.Workplane(plane).circle(r).sweep(cq.Workplane(obj=path), transition="round")
 
 
 def led_parts(p, solid):
-    """(groove tool, light-bar insert) following the front surface of the dome."""
+    """Groove and matching green insert following a smooth, recessed canopy path."""
     pts = _led_path(p, solid)
     return _sweep_tube(pts, p["led_groove_radius"]), _sweep_tube(pts, p["led_radius"])
-
 
 def camera(p):
     w, h, dpt = p["camera_width"], p["camera_height"], p["camera_depth"]
