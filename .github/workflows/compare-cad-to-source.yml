@@ -20,10 +20,10 @@ jobs:
         with:
           ref: demo
 
-      - name: Install FreeCAD
+      - name: Install FreeCAD and spatial comparison tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends freecad curl
+          sudo apt-get install -y --no-install-recommends freecad curl python3-scipy
 
       - name: Download source mesh and CAD candidates
         shell: bash
@@ -38,60 +38,29 @@ jobs:
           test -s /tmp/cad-compare/quadcopter_tidy_mesh_cad.step
           test -s /tmp/cad-compare/quadcopter_tidy_solid_candidate.step
 
-      - name: Compare source mesh vertices against imported STEP geometry
+      - name: Tessellate STEP files and collect CAD diagnostics
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/cad-compare/compare.FCMacro <<'PY'
+          cat > /tmp/cad-compare/export_step.FCMacro <<'PY'
           import os, json, traceback
           import FreeCAD as App
-          import Part, Mesh
+          import Part
           root = '/tmp/cad-compare'
-          report = {
-              'source_mesh': 'main/quadcopter_tidy.obj',
-              'comparison_method': 'Sampled source-mesh vertex distance to STEP boundary using FreeCAD distToShape',
-              'sampling': {},
-              'files': {},
-              'errors': []
-          }
+          report = {'method': 'STEP face tessellation + bidirectional nearest-vertex distances via scipy cKDTree', 'files': {}, 'errors': []}
           try:
-              mesh = Mesh.Mesh(os.path.join(root, 'quadcopter_tidy.obj'))
-              points = list(mesh.Points)
-              if not points:
-                  raise RuntimeError('Source OBJ imported with no mesh vertices')
-              report['source_mesh_stats'] = {
-                  'vertices': len(points),
-                  'facets': len(mesh.Facets),
-                  'bounds_mm': [
-                      float(mesh.BoundBox.XMin), float(mesh.BoundBox.YMin), float(mesh.BoundBox.ZMin),
-                      float(mesh.BoundBox.XMax), float(mesh.BoundBox.YMax), float(mesh.BoundBox.ZMax)
-                  ],
-                  'extents_mm': [
-                      float(mesh.BoundBox.XLength), float(mesh.BoundBox.YLength), float(mesh.BoundBox.ZLength)
-                  ]
-              }
-              # Keep the expensive point-to-BREP distance checks bounded on GitHub-hosted runners.
-              sample_count = min(80, len(points))
-              stride = max(1, len(points) // sample_count)
-              sampled = points[::stride][:sample_count]
-              report['sampling'] = {'method': 'even stride through source OBJ vertex list', 'sampled_vertices': len(sampled), 'note': 'Reduced sample count to keep FreeCAD BREP distance calculations tractable on hosted runners', 'total_vertices': len(points)}
               for filename in ('quadcopter_tidy_mesh_cad.step', 'quadcopter_tidy_solid_candidate.step'):
-                  print('Starting distance checks for ' + filename + ' with ' + str(len(sampled)) + ' sampled vertices', flush=True)
+                  print('Importing and tessellating ' + filename, flush=True)
                   shape = Part.Shape()
                   shape.read(os.path.join(root, filename))
                   if shape.isNull():
                       raise RuntimeError(filename + ' imported as null shape')
-                  distances = []
-                  for index, p in enumerate(sampled):
-                      vector = App.Vector(float(p.x), float(p.y), float(p.z))
-                      vertex = Part.Vertex(vector)
-                      result = shape.distToShape(vertex)
-                      distances.append(float(result[0]))
-                      if (index + 1) % 20 == 0:
-                          print('  checked ' + str(index + 1) + '/' + str(len(sampled)) + ' vertices for ' + filename, flush=True)
-                  sorted_d = sorted(distances)
-                  def percentile(frac):
-                      return sorted_d[min(len(sorted_d)-1, int(round(frac*(len(sorted_d)-1))))]
+                  vertices, facets = shape.tessellate(0.05)
+                  points = [[float(p.x), float(p.y), float(p.z)] for p in vertices]
+                  if not points:
+                      raise RuntimeError(filename + ' tessellation produced no vertices')
+                  with open(os.path.join(root, filename + '.tessellation.json'), 'w') as f:
+                      json.dump({'vertices': points, 'triangles': len(facets)}, f)
                   bb = shape.BoundBox
                   report['files'][filename] = {
                       'valid': bool(shape.isValid()),
@@ -102,24 +71,17 @@ jobs:
                       'volume_mm3': float(shape.Volume),
                       'bounds_mm': [float(bb.XMin), float(bb.YMin), float(bb.ZMin), float(bb.XMax), float(bb.YMax), float(bb.ZMax)],
                       'extents_mm': [float(bb.XLength), float(bb.YLength), float(bb.ZLength)],
-                      'source_vertex_distance_mm': {
-                          'min': min(distances),
-                          'mean': sum(distances)/len(distances),
-                          'p95': percentile(0.95),
-                          'max': max(distances),
-                          'within_0_01mm': sum(d <= 0.01 for d in distances),
-                          'within_0_1mm': sum(d <= 0.1 for d in distances),
-                          'sample_count': len(distances)
-                      }
+                      'tessellated_vertices': len(points),
+                      'tessellated_triangles': len(facets)
                   }
-              report['interpretation'] = 'Distance sampling checks whether sampled source-mesh vertices lie on the imported STEP boundary. It does not prove full surface equivalence or recover smooth/parametric design features.'
-              with open(os.path.join(root, 'geometry-comparison-report.json'), 'w') as f:
+                  print('Tessellated ' + filename + ': ' + str(len(points)) + ' vertices', flush=True)
+              with open(os.path.join(root, 'cad-diagnostics.json'), 'w') as f:
                   json.dump(report, f, indent=2)
-              print(json.dumps(report, indent=2))
+              print(json.dumps(report, indent=2), flush=True)
           except Exception as e:
               report['errors'].append(str(e))
               traceback.print_exc()
-              with open(os.path.join(root, 'geometry-comparison-report.json'), 'w') as f:
+              with open(os.path.join(root, 'cad-diagnostics.json'), 'w') as f:
                   json.dump(report, f, indent=2)
               raise
           PY
@@ -129,8 +91,74 @@ jobs:
             if [ -x "$candidate" ]; then FC="$candidate"; break; fi
           done
           if [ -z "$FC" ]; then echo 'FreeCADCmd executable not found' >&2; exit 1; fi
-          env -u LD_LIBRARY_PATH "$FC" /tmp/cad-compare/compare.FCMacro
-          python3 -c "import json; p='/tmp/cad-compare/geometry-comparison-report.json'; r=json.load(open(p)); assert not r.get('errors'), 'Geometry comparison failed: ' + repr(r.get('errors')); assert len(r.get('files', {})) == 2, 'Comparison did not produce both STEP results'"
+          env -u LD_LIBRARY_PATH "$FC" /tmp/cad-compare/export_step.FCMacro
+
+      - name: Compare source and STEP tessellation vertices efficiently
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/cad-compare/compare_points.py <<'PY'
+          import json, math, os
+          import numpy as np
+          from scipy.spatial import cKDTree
+          root = '/tmp/cad-compare'
+          report = json.load(open(os.path.join(root, 'cad-diagnostics.json')))
+          source = []
+          with open(os.path.join(root, 'quadcopter_tidy.obj'), 'r', encoding='utf-8', errors='replace') as f:
+              for line in f:
+                  if line.startswith('v '):
+                      fields = line.split()
+                      if len(fields) >= 4:
+                          source.append([float(fields[1]), float(fields[2]), float(fields[3])])
+          if not source:
+              raise RuntimeError('Could not parse any source OBJ vertices')
+          source = np.asarray(source, dtype=np.float64)
+          report['source_mesh'] = {
+              'path': 'main/quadcopter_tidy.obj',
+              'vertices': int(len(source)),
+              'bounds_mm': np.concatenate((source.min(axis=0), source.max(axis=0))).tolist(),
+              'extents_mm': (source.max(axis=0) - source.min(axis=0)).tolist()
+          }
+          for filename in ('quadcopter_tidy_mesh_cad.step', 'quadcopter_tidy_solid_candidate.step'):
+              tess_path = os.path.join(root, filename + '.tessellation.json')
+              tess = json.load(open(tess_path))
+              target = np.asarray(tess['vertices'], dtype=np.float64)
+              if not len(target):
+                  raise RuntimeError(filename + ' has no tessellated vertices')
+              print('Building spatial index for ' + filename, flush=True)
+              source_to_cad = cKDTree(target).query(source, k=1, workers=1)[0]
+              cad_to_source = cKDTree(source).query(target, k=1, workers=1)[0]
+              def stats(values):
+                  return {
+                      'min_mm': float(np.min(values)),
+                      'mean_mm': float(np.mean(values)),
+                      'p95_mm': float(np.percentile(values, 95)),
+                      'max_mm': float(np.max(values)),
+                      'within_0_01mm': int(np.count_nonzero(values <= 0.01)),
+                      'within_0_1mm': int(np.count_nonzero(values <= 0.1)),
+                      'within_1mm': int(np.count_nonzero(values <= 1.0)),
+                      'sample_count': int(len(values))
+                  }
+              report['files'][filename]['vertex_nearest_neighbor_distances_mm'] = {
+                  'source_to_step_tessellation': stats(source_to_cad),
+                  'step_tessellation_to_source': stats(cad_to_source),
+                  'interpretation': 'Bidirectional nearest-vertex comparison of the source OBJ point set and a 0.05 mm FreeCAD tessellation of STEP. This is a fast vertex-set approximation, not an exact point-to-triangle surface-distance proof.'
+              }
+              print('Compared ' + filename + ': source→STEP mean=' + str(float(np.mean(source_to_cad))) + ' mm; STEP→source mean=' + str(float(np.mean(cad_to_source))) + ' mm', flush=True)
+          report['comparison_method'] = 'FreeCAD tessellation at 0.05 mm followed by bidirectional nearest-vertex distances using scipy.spatial.cKDTree'
+          report['limitations'] = [
+              'Nearest-vertex distances are an approximation and are sensitive to differing tessellation vertex placement.',
+              'This does not prove exact full-surface equivalence or reconstruct smooth/parametric CAD design features.'
+          ]
+          if report.get('errors'):
+              raise RuntimeError('CAD diagnostics reported errors: ' + repr(report['errors']))
+          out = os.path.join(root, 'geometry-comparison-report.json')
+          with open(out, 'w') as f:
+              json.dump(report, f, indent=2)
+          print(json.dumps(report, indent=2), flush=True)
+          PY
+          /usr/bin/python3 /tmp/cad-compare/compare_points.py
+          python3 -c "import json; r=json.load(open('/tmp/cad-compare/geometry-comparison-report.json')); assert len(r.get('files', {})) == 2; assert all('vertex_nearest_neighbor_distances_mm' in v for v in r['files'].values())"
 
       - name: Publish geometry comparison report to demo
         if: success()
@@ -142,10 +170,12 @@ jobs:
           git add output/original-quadcopter-mesh-cad/downloaded-cad/geometry-comparison-report.json
           if git diff --cached --quiet; then echo 'Geometry comparison report unchanged'; else git commit -m 'Add source mesh to CAD geometry comparison report'; git push origin HEAD:demo; fi
 
-      - name: Upload comparison report even on failure
+      - name: Upload diagnostics and comparison report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cad-geometry-comparison-report
-          path: /tmp/cad-compare/geometry-comparison-report.json
+          name: cad-geometry-comparison-reports
+          path: |
+            /tmp/cad-compare/cad-diagnostics.json
+            /tmp/cad-compare/geometry-comparison-report.json
           if-no-files-found: ignore
