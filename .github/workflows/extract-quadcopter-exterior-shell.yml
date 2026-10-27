@@ -1,0 +1,152 @@
+name: Extract independent quadcopter exterior shell
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extract-exterior-shell:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout demo branch only
+        uses: actions/checkout@v4
+        with:
+          ref: demo
+          lfs: true
+
+      - name: Install FreeCAD
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends freecad
+
+      - name: Locate existing final CAD file without regenerating it
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="output/original-quadcopter-mesh-cad/downloaded-cad/quadcopter_tidy_mesh_cad.FCStd"
+          test -s "$SRC"
+          mkdir -p build/exterior-shell
+          cp "$SRC" build/exterior-shell/source-existing.FCStd
+          sha256sum "$SRC" | tee build/exterior-shell/source-sha256.txt
+
+      - name: Extract a standalone exterior shell from existing CAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > build/exterior-shell/extract_exterior.FCMacro <<'PY'
+          import os, json, hashlib, traceback
+          import FreeCAD as App
+          import Part
+
+          root = os.path.abspath("build/exterior-shell")
+          source_path = os.path.join(root, "source-existing.FCStd")
+          output_fcstd = os.path.join(root, "quadcopter_exterior_shell_candidate.FCStd")
+          output_step = os.path.join(root, "quadcopter_exterior_shell_candidate.step")
+          report_path = os.path.join(root, "exterior-shell-report.json")
+
+          def shape_info(shape):
+              bb = shape.BoundBox
+              return {
+                  "valid": bool(shape.isValid()),
+                  "null": bool(shape.isNull()),
+                  "faces": len(shape.Faces),
+                  "shells": len(shape.Shells),
+                  "solids": len(shape.Solids),
+                  "closed": bool(shape.isClosed()),
+                  "volume_mm3": float(shape.Volume),
+                  "bounds_mm": [bb.XMin, bb.YMin, bb.ZMin, bb.XMax, bb.YMax, bb.ZMax],
+                  "extents_mm": [bb.XLength, bb.YLength, bb.ZLength]
+              }
+
+          try:
+              source_doc = App.openDocument(source_path)
+              try:
+                  source_obj = source_doc.getObject("SolidCandidate")
+                  if source_obj is None or not hasattr(source_obj, "Shape"):
+                      raise RuntimeError("Existing FCStd has no SolidCandidate object.")
+                  source_shape = source_obj.Shape
+                  if source_shape.isNull() or not source_shape.isValid():
+                      raise RuntimeError("Existing SolidCandidate shape is null or invalid.")
+                  shells = source_shape.Shells
+                  if len(shells) != 1:
+                      raise RuntimeError("Expected exactly one exterior shell; found %d." % len(shells))
+                  exterior_shell = shells[0]
+                  if exterior_shell.isNull() or not exterior_shell.isValid():
+                      raise RuntimeError("Extracted exterior shell is invalid.")
+                  if not exterior_shell.isClosed():
+                      raise RuntimeError("Extracted exterior shell is not closed.")
+
+                  source_info = shape_info(source_shape)
+                  shell_info = shape_info(exterior_shell)
+                  App.closeDocument(source_doc.Name)
+
+                  out_doc = App.newDocument("QuadcopterExteriorShell")
+                  shell_obj = out_doc.addObject("Part::Feature", "ExteriorShell")
+                  shell_obj.Label = "Standalone exterior shell candidate (faceted reference)"
+                  shell_obj.Shape = exterior_shell.copy()
+                  out_doc.recompute()
+                  if shell_obj.Shape.isNull() or not shell_obj.Shape.isValid() or not shell_obj.Shape.isClosed():
+                      raise RuntimeError("Standalone shell object failed validation.")
+                  out_doc.saveAs(output_fcstd)
+                  Part.export([shell_obj], output_step)
+                  App.closeDocument(out_doc.Name)
+
+                  with open(source_path, "rb") as f:
+                      source_sha = hashlib.sha256(f.read()).hexdigest()
+                  report = {
+                      "status": "success",
+                      "source": "existing final file on demo: output/original-quadcopter-mesh-cad/downloaded-cad/quadcopter_tidy_mesh_cad.FCStd",
+                      "source_sha256": source_sha,
+                      "source_branch_modified": False,
+                      "main_branch_modified": False,
+                      "source_file_regenerated": False,
+                      "outputs": [
+                          os.path.basename(output_fcstd),
+                          os.path.basename(output_step)
+                      ],
+                      "source_solid": source_info,
+                      "exterior_shell": shell_info,
+                      "geometry_policy": "Extracted the existing SolidCandidate outer shell into a standalone document; original final files are not modified.",
+                      "important_limitation": "This is an independent shell file, not yet smooth analytic-surface reconstruction. Its faceted faces are inherited from the existing mesh-derived CAD. This artifact is a safe baseline for subsequent surface fitting and reverse engineering; it does not claim to remove mesh-related faceting.",
+                      "next_stage": "Fit and validate analytic/freeform surfaces against this shell in a separate non-destructive stage; keep the source and this baseline artifact unchanged."
+                  }
+                  with open(report_path, "w") as f:
+                      json.dump(report, f, indent=2)
+                  print(json.dumps(report, indent=2))
+              except Exception:
+                  try:
+                      App.closeDocument(source_doc.Name)
+                  except Exception:
+                      pass
+                  raise
+          except Exception:
+              traceback.print_exc()
+              raise
+          PY
+
+          if command -v FreeCADCmd >/dev/null 2>&1; then
+            FREECAD_CMD="$(command -v FreeCADCmd)"
+          elif command -v freecadcmd >/dev/null 2>&1; then
+            FREECAD_CMD="$(command -v freecadcmd)"
+          else
+            echo "FreeCAD command-line executable not found" >&2
+            exit 1
+          fi
+          env -u LD_LIBRARY_PATH "$FREECAD_CMD" build/exterior-shell/extract_exterior.FCMacro
+          test -s build/exterior-shell/quadcopter_exterior_shell_candidate.FCStd
+          test -s build/exterior-shell/quadcopter_exterior_shell_candidate.step
+          test -s build/exterior-shell/exterior-shell-report.json
+
+      - name: Upload independent shell candidate and validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: quadcopter-exterior-shell-candidate
+          if-no-files-found: error
+          path: |
+            build/exterior-shell/quadcopter_exterior_shell_candidate.FCStd
+            build/exterior-shell/quadcopter_exterior_shell_candidate.step
+            build/exterior-shell/exterior-shell-report.json
+            build/exterior-shell/source-sha256.txt
