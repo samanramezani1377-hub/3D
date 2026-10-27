@@ -1,12 +1,8 @@
 name: Convert original quadcopter mesh to editable CAD
 
 on:
+  # Run only when explicitly requested; avoid expensive FreeCAD conversion on pushes.
   workflow_dispatch:
-  push:
-    branches:
-      - demo
-    paths:
-      - '.github/workflows/convert-original-mesh-to-cad.yml'
 
 permissions:
   contents: read
