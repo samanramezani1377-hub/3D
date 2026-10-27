@@ -30,7 +30,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends freecad python3-numpy python3-pip
-          python3 -m pip install --user --disable-pip-version-check 'numpy==1.26.4' 'trimesh==4.4.9' 'fast-simplification==0.1.9'
+          python3 -m pip install --user --disable-pip-version-check 'numpy==2.1.3' 'trimesh==4.4.9' 'fast-simplification==0.1.9'
 
       - name: Solidify the existing smoothed STEP and export working mesh
         shell: bash
