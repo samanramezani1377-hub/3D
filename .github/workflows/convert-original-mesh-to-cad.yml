@@ -1,11 +1,16 @@
 name: Convert original quadcopter mesh to editable CAD
 
 on:
-  # Run only when explicitly requested; avoid expensive FreeCAD conversion on pushes.
   workflow_dispatch:
+  # Rebuild the canonical final files when this workflow is fixed on demo.
+  push:
+    branches:
+      - demo
+    paths:
+      - ".github/workflows/convert-original-mesh-to-cad.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   convert:
@@ -161,6 +166,44 @@ jobs:
                   json.dump(report, f, indent=2)
               print(json.dumps(report, indent=2))
               App.closeDocument(doc.Name)
+
+              # Re-open the saved native CAD file and validate the saved objects.
+              validation = {"files": {}, "errors": []}
+              reopened = App.openDocument(doc_path)
+              try:
+                  objects = []
+                  shapes = []
+                  for obj in reopened.Objects:
+                      objects.append({"name": obj.Name, "type": obj.TypeId})
+                      if hasattr(obj, "Shape") and not obj.Shape.isNull():
+                          s = obj.Shape
+                          bb2 = s.BoundBox
+                          shapes.append({
+                              "name": obj.Name,
+                              "valid": bool(s.isValid()),
+                              "faces": int(len(s.Faces)),
+                              "solids": int(len(s.Solids)),
+                              "closed": bool(s.isClosed()),
+                              "volume": float(s.Volume),
+                              "bounds_mm": [bb2.XLength, bb2.YLength, bb2.ZLength]
+                          })
+                  validation["files"][os.path.basename(doc_path)] = {
+                      "opened": True, "objects": objects, "shapes": shapes
+                  }
+              finally:
+                  App.closeDocument(reopened.Name)
+
+              for path, kind in ((step_path, "faceted STEP"), (solid_step_path, "solid-candidate STEP")):
+                  if os.path.isfile(path) and os.path.getsize(path) > 0:
+                      validation["files"][os.path.basename(path)] = {
+                          "exists": True, "size_bytes": os.path.getsize(path), "type": kind
+                      }
+                  elif kind == "faceted STEP":
+                      validation["errors"].append("Faceted STEP export is missing or empty.")
+              with open(os.path.join(root, "validation-report.json"), "w") as f:
+                  json.dump(validation, f, indent=2)
+              if validation["errors"]:
+                  raise RuntimeError("; ".join(validation["errors"]))
           except Exception:
               traceback.print_exc()
               raise
@@ -180,6 +223,34 @@ jobs:
           test -s build/original-mesh-cad/quadcopter_tidy_mesh_cad.step
           test -s build/original-mesh-cad/cad-conversion-report.json
 
+      - name: Refresh canonical final files on demo
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEST="output/original-quadcopter-mesh-cad/downloaded-cad"
+          mkdir -p "$DEST"
+          cp build/original-mesh-cad/quadcopter_tidy_mesh_cad.FCStd "$DEST/"
+          cp build/original-mesh-cad/quadcopter_tidy_mesh_cad.step "$DEST/"
+          cp build/original-mesh-cad/source-mesh-report.json "$DEST/"
+          cp build/original-mesh-cad/cad-conversion-report.json "$DEST/"
+          cp build/original-mesh-cad/validation-report.json "$DEST/"
+          if [ -s build/original-mesh-cad/quadcopter_tidy_solid_candidate.step ]; then
+            cp build/original-mesh-cad/quadcopter_tidy_solid_candidate.step "$DEST/"
+          else
+            rm -f "$DEST/quadcopter_tidy_solid_candidate.step"
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$DEST/quadcopter_tidy_mesh_cad.FCStd" "$DEST/quadcopter_tidy_mesh_cad.step" \
+            "$DEST/quadcopter_tidy_solid_candidate.step" "$DEST/source-mesh-report.json" \
+            "$DEST/cad-conversion-report.json" "$DEST/validation-report.json"
+          if git diff --cached --quiet; then
+            echo "Canonical CAD outputs are already up to date."
+          else
+            git commit -m "Refresh final CAD conversion outputs"
+            git push origin HEAD:demo
+          fi
+
       - name: Upload converted CAD files and reports
         uses: actions/upload-artifact@v4
         with:
@@ -190,3 +261,4 @@ jobs:
             build/original-mesh-cad/quadcopter_tidy_solid_candidate.step
             build/original-mesh-cad/source-mesh-report.json
             build/original-mesh-cad/cad-conversion-report.json
+            build/original-mesh-cad/validation-report.json
