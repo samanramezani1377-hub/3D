@@ -38,6 +38,14 @@ PARAMS = {
     "guard_wall": 4.5,
     "guard_height": 17.0,
     "guard_edge_fillet": 1.8,
+    # propellers (simple 2-blade, one per motor) --------------------------------
+    "include_props": True,
+    "prop_radius": 29.0,            # must stay < guard inner radius (guard_outer_radius - guard_wall)
+    "prop_chord": 7.0,
+    "prop_thickness": 1.2,
+    "prop_y": 14.0,                 # blade plane height
+    "prop_hub_radius": 4.0,
+    "prop_hub_height": 4.0,
 }
 
 
@@ -106,12 +114,31 @@ def motor(p, x, z):
     return hub.union(can)
 
 
+def prop(p, x, z):
+    blade = (cq.Workplane("XZ").workplane(offset=-p["prop_y"]).center(x, z)
+             .rect(2 * p["prop_radius"], p["prop_chord"]).extrude(-p["prop_thickness"]))
+    blade = blade.edges("|Y").fillet(min(p["prop_chord"], p["prop_thickness"] * 2) / 2.5)
+    hub = (cq.Workplane("XZ").workplane(offset=-p["prop_y"] - p["prop_thickness"] / 2 + p["prop_hub_height"] / 2 - p["prop_hub_height"] / 2)
+           .center(x, z).circle(p["prop_hub_radius"]).extrude(-p["prop_hub_height"]))
+    return blade.union(hub)
+
+
 def build(p=None):
     p = {**PARAMS, **(p or {})}
+    assert p["prop_radius"] < p["guard_outer_radius"] - p["guard_wall"], "prop would hit the guard"
     model = body(p)
-    for (x, z) in stations(p):
+    for i, (x, z) in enumerate(stations(p)):
         model = model.union(arm(p, x, z)).union(guard(p, x, z)).union(motor(p, x, z))
+        if p["include_props"]:
+            model = model.union(prop(p, x, z))
     return model
+
+
+def export(shape, out_dir, name="drone_parametric"):
+    import os
+    os.makedirs(out_dir, exist_ok=True)
+    cq.exporters.export(shape, os.path.join(out_dir, name + ".step"))
+    cq.exporters.export(shape, os.path.join(out_dir, name + ".stl"), tolerance=0.05, angularTolerance=0.1)
 
 
 if __name__ == "__main__":
@@ -121,3 +148,6 @@ if __name__ == "__main__":
     shape = build(params)
     bb = shape.val().BoundingBox()
     print("bbox", bb.xmin, bb.ymin, bb.zmin, bb.xmax, bb.ymax, bb.zmax, "valid", shape.val().isValid())
+    out = "output/قالب گیری شده/smooth2-parametric"
+    export(shape, out)
+    json.dump({**PARAMS, **params}, open(out + "/drone_parametric.params.json", "w"), indent=2)

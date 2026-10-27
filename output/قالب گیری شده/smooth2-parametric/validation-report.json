@@ -1,0 +1,120 @@
+{
+  "stage": 4,
+  "solids": 1,
+  "shape_valid": true,
+  "stl_watertight": true,
+  "volume_mm3": 144660.5,
+  "source_volume_mm3": 189355.4,
+  "bounds_mm": [
+    [
+      -72.5,
+      -0.0,
+      -75.0
+    ],
+    [
+      72.5,
+      25.0,
+      75.0
+    ]
+  ],
+  "source_bounds_mm": [
+    [
+      -72.38,
+      0.0,
+      -75.03
+    ],
+    [
+      72.35,
+      26.16,
+      75.02
+    ]
+  ],
+  "extents_mm": [
+    145.0,
+    25.0,
+    150.0
+  ],
+  "source_extents_mm": [
+    144.73,
+    26.16,
+    150.05
+  ],
+  "guards_outer_roundness": [
+    {
+      "center": [
+        37.0,
+        39.5
+      ],
+      "samples": 180,
+      "outer_R_min": 35.49,
+      "outer_R_max": 35.5,
+      "roundness_error_mm": 0.01
+    },
+    {
+      "center": [
+        37.0,
+        -39.5
+      ],
+      "samples": 180,
+      "outer_R_min": 35.49,
+      "outer_R_max": 35.5,
+      "roundness_error_mm": 0.01
+    },
+    {
+      "center": [
+        -37.0,
+        39.5
+      ],
+      "samples": 180,
+      "outer_R_min": 35.49,
+      "outer_R_max": 35.5,
+      "roundness_error_mm": 0.01
+    },
+    {
+      "center": [
+        -37.0,
+        -39.5
+      ],
+      "samples": 179,
+      "outer_R_min": 35.49,
+      "outer_R_max": 35.5,
+      "roundness_error_mm": 0.01
+    }
+  ],
+  "source_guard_radius_spread_for_comparison": [
+    {
+      "quadrant": [
+        1,
+        1
+      ],
+      "source_radius_spread_mm": 13.12
+    },
+    {
+      "quadrant": [
+        1,
+        -1
+      ],
+      "source_radius_spread_mm": 9.23
+    },
+    {
+      "quadrant": [
+        -1,
+        1
+      ],
+      "source_radius_spread_mm": 12.78
+    },
+    {
+      "quadrant": [
+        -1,
+        -1
+      ],
+      "source_radius_spread_mm": 6.77
+    }
+  ],
+  "limits": [
+    "Parametric model is a clean re-construction from measurements, not a feature-exact copy of the mesh; volume is lower because the mesh interior was a noisy solid blob.",
+    "Propellers are simple placeholders (flat 2-blade), clearance to guard checked by assertion only.",
+    "Not verified for printing/flight."
+  ],
+  "roundness_note": "Outer-wall radius sampled around each motor axis; the single stray sample near x=0 on the body's rear edge (z=-45) is excluded because it belongs to the body tail, not the ring."
+}
