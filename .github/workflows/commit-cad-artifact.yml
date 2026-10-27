@@ -7,6 +7,7 @@ on:
       - demo
     paths:
       - ".github/workflows/commit-cad-artifact.yml"
+      - ".github/workflows/trigger-cad-extract.txt"
 
 permissions:
   contents: write
@@ -27,17 +28,22 @@ jobs:
           test -s output/original-quadcopter-mesh-cad.zip
           mkdir -p cad/original
           unzip -o output/original-quadcopter-mesh-cad.zip -d /tmp/quadcopter-cad
-          cp /tmp/quadcopter-cad/quadcopter_tidy_mesh_cad.FCStd cad/original/
-          cp /tmp/quadcopter-cad/source-mesh-report.json cad/original/
-          cp /tmp/quadcopter-cad/cad-conversion-report.json cad/original/
+          find /tmp/quadcopter-cad -maxdepth 3 -type f -printf '%p\n'
+          project="$(find /tmp/quadcopter-cad -type f -name 'quadcopter_tidy_mesh_cad.FCStd' -print -quit)"
+          test -n "$project"
+          cp "$project" cad/original/
+          for report in source-mesh-report.json cad-conversion-report.json; do
+            found="$(find /tmp/quadcopter-cad -type f -name "$report" -print -quit || true)"
+            if [ -n "$found" ]; then cp "$found" cad/original/; fi
+          done
           ls -lh cad/original/
 
       - name: Commit editable FreeCAD project and reports
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add cad/original/quadcopter_tidy_mesh_cad.FCStd cad/original/source-mesh-report.json cad/original/cad-conversion-report.json
+          git config user.email "41898282+users.noreply.github.com"
+          git add cad/original/
           if git diff --cached --quiet; then
             echo "CAD project and reports are already committed."
           else
