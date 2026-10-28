@@ -373,9 +373,12 @@ def led_slot(p, solid, fs=1.0):
     # the nose slopes back as it rises: take the most set-back shell point over the whole pocket footprint
     xs = np.linspace(-max(L, PL) / 2, max(L, PL) / 2, 9)
     ys = np.linspace(y0 - PH / 2, y0 + PH / 2, 5)
+    # The wider pocket footprint can extend beyond the tapered canopy at its upper corners.
+    # Use actual shell intersections only; fail only if the slit region has no front surface at all.
     zs = [_surface_z(solid, float(x), float(y)) for x in xs for y in ys]
-    if any(z is None for z in zs):
-        raise RuntimeError("LED slit position is not on the front shell")
+    zs = [z for z in zs if z is not None]
+    if not zs:
+        raise RuntimeError("LED slit position does not intersect the front shell")
     zmax, zmin = max(zs), min(zs)
     zp = zmin - wall                                   # pocket front face
     slit = cq.Workplane("XY").box(L, h, (zmax + 1.0) - zp).translate((0, y0, (zmax + 1.0 + zp) / 2))
