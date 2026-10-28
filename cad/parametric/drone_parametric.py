@@ -66,18 +66,19 @@ PARAMS = {
     "led_pocket_length": 12.0,       # pocket behind the slit (x)
     "led_pocket_height": 4.0,        # (y)
     "led_pocket_depth": 6.0,         # how far the pocket goes inward (z)
-    # front camera: small module hidden INSIDE the nose, only a small lens barrel shows outside.
+    # front camera: small module hidden INSIDE the nose, only a small square housing (aligned with the lens axis) shows outside.
     # Sizes are in FINAL (scaled) mm. The lens axis points forward, tilted down by camera_tilt_down_deg.
     "camera_enabled": True,
     "camera_tilt_down_deg": 35.0,
-    "camera_y": 4.6,                 # height of the lens exit on the nose face
-    "camera_barrel_radius": 4.0,     # outer radius of the visible lens barrel
-    "camera_barrel_protrusion": 1.8, # how far the barrel sticks out of the nose face
-    "camera_lens_hole_radius": 2.8,  # opening of the lens
+    "camera_y": 6.4,                 # height of the lens exit on the nose face
+    "camera_block_size": 10.5,       # side of the square housing that sticks out (aligned with the lens axis)
+    "camera_block_protrusion": 3.5,  # how far the housing sticks out of the nose face
+    "camera_block_fillet": 0.8,      # rounding of the housing's corners
+    "camera_lens_hole_radius": 3.2,  # round lens opening inside the housing
     "camera_wall": 1.5,              # shell thickness between the outside and the camera pocket
-    "camera_cavity_w": 10.0,         # internal pocket for the camera module (width / height / depth)
-    "camera_cavity_h": 7.0,
-    "camera_cavity_d": 8.0,
+    "camera_cavity_w": 9.5,          # internal pocket for the camera module (width / height / depth)
+    "camera_cavity_h": 6.0,
+    "camera_cavity_d": 7.0,
     # propellers (simple 2-blade, one per motor) --------------------------------
     "include_props": True,
     "prop_radius": 25.5,            # must stay < guard inner radius (guard_outer_radius - guard_wall)
@@ -312,12 +313,16 @@ def led_slot(p, solid, fs=1.0):
 
 
 def camera_parts(p, fs=1.0):
-    """(barrel, cutter): lens barrel to add outside, and lens hole + internal pocket to cut. fs = scale factor."""
-    ro, rh = p["camera_barrel_radius"] / fs, p["camera_lens_hole_radius"] / fs
-    prot, wall = p["camera_barrel_protrusion"] / fs, p["camera_wall"] / fs
+    """(housing, cutter): square lens housing to add outside, and lens hole + internal pocket to cut. fs = scale factor."""
+    sz, rh = p["camera_block_size"] / fs, p["camera_lens_hole_radius"] / fs
+    prot, wall = p["camera_block_protrusion"] / fs, p["camera_wall"] / fs
     w, h, d = p["camera_cavity_w"] / fs, p["camera_cavity_h"] / fs, p["camera_cavity_d"] / fs
     # local frame: origin = lens exit on the nose face, axis +Z = looking forward
-    barrel = cq.Workplane("XY").workplane(offset=-1.0).circle(ro).extrude(prot + 1.0)
+    barrel = cq.Workplane("XY").workplane(offset=-1.0).rect(sz, sz).extrude(prot + 1.0)
+    try:
+        barrel = barrel.edges("|Z").fillet(p["camera_block_fillet"] / fs)
+    except Exception:
+        pass
     import math
     t = math.radians(p["camera_tilt_down_deg"])
     # the pocket's upper-front corner swings forward when tilted: push the pocket back so it keeps `wall`
