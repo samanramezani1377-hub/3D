@@ -97,12 +97,35 @@ PARAMS = {
     # model_scale: fixed uniform scale to final mm. It keeps the body at its approved size (it was the scale that
     # made the old layout exactly 240 mm). The bigger guards now make the footprint ~247 x 247 mm (limit lifted).
     # target_overall_mm: if set (and model_scale is None) the scale is derived so the largest extent equals it.
-    "joint_clearance": 0.25,       # per-side clearance before uniform model scaling
-    "joint_arm_start_radius": 23.0, # start of the male tongue along each diagonal arm
-    "joint_tip_width": 10.0,       # rounded leading tip, narrower than the 16 mm arm
-    "joint_lead_in_length": 6.0,   # gradual taper from rounded tip to full arm width
-    "joint_socket_start_radius": 22.75, # 0.25 mm radial allowance before the rounded tongue nose
-    "joint_socket_end_radius": 44.0,    # extends beyond the body edge so the socket opens outward
+    # Floor-mounted arm attachment: integral tongue + two vertical M3 fasteners per arm.
+    # Dimensions below are pre-scale model units; model_scale converts them to final millimetres.
+    "joint_clearance": 0.25,
+    "joint_tip_width": 10.0,
+    "joint_lead_in_length": 6.0,
+    "joint_tab_start_radius": 20.5,
+    "joint_tab_end_radius": 43.0,
+    "joint_tab_width": 16.5,
+    "joint_tab_thickness": 2.5,
+    "joint_tab_y": 4.0,
+    "joint_floor_pad_height": 2.0,
+    "joint_floor_pad_width": 16.5,
+    "joint_floor_pad_end_radius": 36.5,
+    "joint_arm_start_radius": 37.0,
+    "joint_entry_start_radius": 36.5,
+    "joint_entry_end_radius": 50.0,
+    "joint_entry_width": 18.0,
+    "joint_bolt_radii": [25.5, 32.5],
+    "joint_bolt_hole_radius": 1.3,
+    "joint_nut_af": 4.6,
+    "joint_nut_depth": 2.0,
+    "joint_nut_hole_radius": 1.2,
+    "joint_screw_shaft_radius": 1.15,
+    "joint_screw_length": 3.9,
+    "joint_screw_head_radius": 2.15,
+    "joint_screw_head_height": 2.3,
+    "joint_screw_socket_af": 1.95,
+    "joint_screw_socket_depth": 0.9,
+    "joint_nut_thickness": 1.9,
     "model_scale": 1.28548,
     "target_overall_mm": None,
 }
@@ -340,7 +363,7 @@ def radial_joint_profile(length, width, tip_width, lead_length):
 
 
 def arm(p, x, z, start_r=0.0, y_offset=0.0):
-    """Arm with a rounded, tapered male tongue for guided insertion into the body socket."""
+    """Main arm beam. Modular arms enter through the side opening at inner-floor level."""
     import math
     L = math.hypot(x, z)
     ang = math.degrees(math.atan2(z, x))
@@ -348,13 +371,98 @@ def arm(p, x, z, start_r=0.0, y_offset=0.0):
         raise ValueError("arm start radius must be within the motor station")
     tip_width = p.get("joint_tip_width", 10.0)
     lead_length = p.get("joint_lead_in_length", 6.0)
-    bar = radial_joint_profile(L - start_r, p["arm_width"], tip_width, lead_length).extrude(p["arm_height"])
-    # Local profile is radial-X / tangential-Y / vertical-Z; map to the model's Y-up frame.
+    bar_height = p["arm_height"] if y_offset == 0.0 else p["arm_height"] - y_offset - 1.0
+    if bar_height <= 0:
+        raise ValueError("arm root height must remain positive")
+    bar = radial_joint_profile(L - start_r, p["arm_width"], tip_width, lead_length).extrude(bar_height)
     bar = bar.rotate((0, 0, 0), (1, 0, 0), -90)
     bar = bar.rotate((0, 0, 0), (0, 1, 0), -ang)
     bar = bar.translate((start_r * math.cos(math.radians(ang)), y_offset,
                          start_r * math.sin(math.radians(ang))))
     return bar
+
+
+def radial_part(profile, x, z, angle_deg, y_base):
+    """Place a radial/tangential profile in the model's Y-up coordinate frame."""
+    return (profile.rotate((0, 0, 0), (1, 0, 0), -90)
+            .rotate((0, 0, 0), (0, 1, 0), -angle_deg)
+            .translate((x, y_base, z)))
+
+
+def mounting_tab(p, x, z):
+    """Integral flat arm tongue with two vertical clearance holes."""
+    import math
+    angle = math.degrees(math.atan2(z, x))
+    start, end = p["joint_tab_start_radius"], p["joint_tab_end_radius"]
+    tab = radial_joint_profile(end - start, p["joint_tab_width"],
+                               p["joint_tip_width"], p["joint_lead_in_length"]).extrude(p["joint_tab_thickness"])
+    tab = radial_part(tab, start * math.cos(math.radians(angle)),
+                      start * math.sin(math.radians(angle)), angle, p["joint_tab_y"])
+    for radius in p["joint_bolt_radii"]:
+        hx, hz = radius * math.cos(math.radians(angle)), radius * math.sin(math.radians(angle))
+        hole = (cq.Workplane("XZ").workplane(offset=-(p["joint_tab_y"] - 0.05))
+                .center(hx, hz).circle(p["joint_bolt_hole_radius"])
+                .extrude(-(p["joint_tab_thickness"] + 0.1)))
+        tab = tab.cut(hole)
+    return tab
+
+
+def floor_mounting_rail(p, x, z):
+    """Raised floor rib under the tongue; the body later receives matching hex-nut pockets."""
+    import math
+    angle = math.degrees(math.atan2(z, x))
+    start, end = p["joint_tab_start_radius"], p["joint_floor_pad_end_radius"]
+    rail = radial_joint_profile(end - start, p["joint_floor_pad_width"],
+                                p["joint_tip_width"], p["joint_lead_in_length"]).extrude(
+                                    p["joint_floor_pad_height"] + 0.02)
+    return radial_part(rail, start * math.cos(math.radians(angle)),
+                       start * math.sin(math.radians(angle)), angle,
+                       p["body_shell_thickness"] - 0.02)
+
+
+def arm_entry_slot(p, x, z):
+    """Side-wall opening for the arm beam; the floor plate remains intact."""
+    import math
+    angle = math.degrees(math.atan2(z, x))
+    start, end = p["joint_entry_start_radius"], p["joint_entry_end_radius"]
+    floor_y = p["body_shell_thickness"]
+    top_y = p["body_height"] + 0.2
+    cutter = cq.Workplane("XY").box(end - start, top_y - floor_y, p["joint_entry_width"])
+    cutter = cutter.rotate((0, 0, 0), (0, 1, 0), -angle)
+    return cutter.translate(((start + end) / 2 * math.cos(math.radians(angle)),
+                             (floor_y + top_y) / 2,
+                             (start + end) / 2 * math.sin(math.radians(angle))))
+
+
+def nut_part(p, x, z):
+    """Simplified nut envelope for assembly visualization; use real metal M3 nuts in the printed frame."""
+    import math
+    circ_dia = p["joint_nut_af"] / math.cos(math.radians(30.0))
+    thickness = p["joint_nut_thickness"]
+    bottom = p["joint_tab_y"] - p["joint_nut_depth"] + (p["joint_nut_depth"] - thickness) / 2
+    nut = (cq.Workplane("XZ").workplane(offset=-bottom).center(x, z)
+           .polygon(6, circ_dia).extrude(-thickness))
+    bore = (cq.Workplane("XZ").workplane(offset=-(bottom - 0.01)).center(x, z)
+            .circle(p["joint_nut_hole_radius"]).extrude(-(thickness + 0.02)))
+    return nut.cut(bore)
+
+
+def screw_part(p, x, z):
+    """Simplified vertical socket-head screw envelope, accessible from the top."""
+    import math
+    shaft_r, head_r = p["joint_screw_shaft_radius"], p["joint_screw_head_radius"]
+    head_h = p["joint_screw_head_height"]
+    tab_top = p["joint_tab_y"] + p["joint_tab_thickness"]
+    shaft_bottom = tab_top - p["joint_screw_length"]
+    shaft = (cq.Workplane("XZ").workplane(offset=-shaft_bottom).center(x, z)
+             .circle(shaft_r).extrude(-p["joint_screw_length"]))
+    head = (cq.Workplane("XZ").workplane(offset=-tab_top).center(x, z)
+            .circle(head_r).extrude(-head_h))
+    screw = shaft.union(head)
+    socket_dia = p["joint_screw_socket_af"] / math.cos(math.radians(30.0))
+    socket = (cq.Workplane("XZ").workplane(offset=-(tab_top + head_h + 0.01)).center(x, z)
+              .polygon(6, socket_dia).extrude(p["joint_screw_socket_depth"] + 0.01))
+    return screw.cut(socket)
 
 
 def motor(p, x, z):
@@ -510,50 +618,43 @@ def build(p=None):
 
 
 
-def joint_slot(p, x, z):
-    """Matching rounded/tapered female socket with print clearance on all sides."""
-    import math
-    clearance = p["joint_clearance"]
-    start = p["joint_socket_start_radius"]
-    end = p["joint_socket_end_radius"]
-    if end <= start:
-        raise ValueError("joint socket end must be beyond its start")
-    ang = math.degrees(math.atan2(z, x))
-    tip_width = p.get("joint_tip_width", 10.0) + 2 * clearance
-    lead_length = p.get("joint_lead_in_length", 6.0)
-    cutter = radial_joint_profile(end - start, p["arm_width"] + 2 * clearance,
-                                  tip_width, lead_length + clearance).extrude(
-                                      p["arm_height"] + 2 * clearance)
-    cutter = cutter.translate((0, 0, -clearance))
-    cutter = cutter.rotate((0, 0, 0), (1, 0, 0), -90)
-    cutter = cutter.rotate((0, 0, 0), (0, 1, 0), -ang)
-    cutter = cutter.translate((start * math.cos(math.radians(ang)), 0,
-                               start * math.sin(math.radians(ang))))
-    return cutter
+
 
 
 def build_modular(p=None):
-    """Build lower body shell and separate crown, four arm modules, and four props.
-
-    The crown split is intentionally plain; no joining/locking geometry is designed yet.
-    """
+    """Build the split body, four removable arms, vertical screws, nut placeholders and props."""
     import math
     p = {**PARAMS, **(p or {})}
     inner_min = (min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0)) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
     assert p["prop_radius"] < inner_min, "prop would hit the guard"
     start_r = p["joint_arm_start_radius"]
-    if start_r >= p["joint_socket_end_radius"]:
-        raise ValueError("arm tongue must extend into the body socket")
+    if start_r >= p["joint_entry_end_radius"]:
+        raise ValueError("arm root must meet the side-wall entry opening")
+    if len(p["joint_bolt_radii"]) != 2 or p["joint_bolt_radii"][0] >= p["joint_bolt_radii"][1]:
+        raise ValueError("each arm requires two ordered floor-fastener stations")
     stations_list = stations(p)
-    # Build both parts from the original hull and crown surfaces; no joining features are added.
     body_part, crown_part = body_shell_parts(p)
+    # Add low floor rails, open the side walls (not the floor), then cut the matching nut traps.
     for x, z in stations_list:
-        body_part = body_part.cut(joint_slot(p, x, z))
-    arm_parts = []
-    prop_parts = []
+        body_part = body_part.union(floor_mounting_rail(p, x, z))
     for x, z in stations_list:
-        module = arm(p, x, z, start_r=start_r).union(guard(p, x, z)).union(motor(p, x, z))
+        body_part = body_part.cut(arm_entry_slot(p, x, z))
+    arm_parts, prop_parts, screw_parts, nut_parts = [], [], [], []
+    for arm_index, (x, z) in enumerate(stations_list, 1):
+        angle = math.atan2(z, x)
+        module = arm(p, x, z, start_r=start_r, y_offset=p["body_shell_thickness"])
+        module = module.union(mounting_tab(p, x, z))
+        module = module.union(guard(p, x, z)).union(motor(p, x, z))
         arm_parts.append(module)
+        for bolt_index, radius in enumerate(p["joint_bolt_radii"], 1):
+            hx, hz = radius * math.cos(angle), radius * math.sin(angle)
+            nut_cutter = (cq.Workplane("XZ").workplane(offset=-(p["joint_tab_y"] - p["joint_nut_depth"]))
+                          .center(hx, hz).polygon(6, p["joint_nut_af"] / math.cos(math.radians(30.0)))
+                          .extrude(-p["joint_nut_depth"]))
+            body_part = body_part.cut(nut_cutter)
+            part_index = (arm_index - 1) * len(p["joint_bolt_radii"]) + bolt_index
+            screw_parts.append((f"screw_{part_index}", screw_part(p, hx, hz)))
+            nut_parts.append((f"nut_{part_index}", nut_part(p, hx, hz)))
         if p["include_props"]:
             prop_parts.append(prop(p, x, z))
     raw_shapes = [body_part.val()] + [s.val() for s in arm_parts] + [s.val() for s in prop_parts]
@@ -577,6 +678,10 @@ def build_modular(p=None):
         parts[f"arm_{i}"] = part
     for i, part in enumerate(prop_parts, 1):
         parts[f"prop_{i}"] = part
+    for name, part in screw_parts:
+        parts[name] = part
+    for name, part in nut_parts:
+        parts[name] = part
     if scale != 1.0:
         parts = {name: cq.Workplane("XY").newObject([shape.val().scale(scale)])
                  for name, shape in parts.items()}
