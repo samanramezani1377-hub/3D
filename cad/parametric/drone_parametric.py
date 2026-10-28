@@ -420,6 +420,47 @@ def prop(p, x, z):
     return blade.union(hub)
 
 
+def body_shell_parts(p):
+    """Return the lower hull shell and hollow crown as independent solids.
+
+    Build each component from its original source surfaces instead of cutting
+    the already-fused body at the hull/canopy seam. No joining or locking
+    features are added between the pieces.
+    """
+    if not (p.get("use_measured_canopy") and p.get("canopy_faceted")):
+        # Preserve compatibility for alternate parameter configurations.
+        full = body(p)
+        split_y = float(p["body_height"]) + 0.2
+        lower_box = cq.Workplane("XY").box(1000.0, split_y + 2.0, 1000.0).translate(
+            (0, (split_y - 2.0) / 2.0, 0))
+        crown_box = cq.Workplane("XY").box(1000.0, 100.0, 1000.0).translate(
+            (0, split_y + 50.0, 0))
+        return full.intersect(lower_box), full.intersect(crown_box)
+
+    pts = hull_polygon(p)
+    hull = cq.Workplane("XZ").polyline(pts).close().extrude(-p["body_height"])
+    crown = faceted_canopy(p)
+
+    wall = float(p.get("body_shell_thickness", 2.0))
+    if wall <= 0 or wall >= min(p["body_half_width"], p["body_height"]):
+        raise ValueError("body_shell_thickness must be positive and smaller than the body")
+    cz = (p["body_front_z"] + p["body_rear_z"]) / 2.0
+    scale_x = max(0.1, 1.0 - wall / p["body_half_width"])
+    scale_z = max(0.1, 1.0 - wall / ((p["body_front_z"] - p["body_rear_z"]) / 2.0))
+    inner_pts = [(x * scale_x, cz + (z - cz) * scale_z) for x, z in pts]
+    lower_void = cq.Workplane("XZ").polyline(inner_pts).close().extrude(-(p["body_height"] + 2.0))
+    lower_void = lower_void.translate((0, wall, 0))
+    lower = hull.cut(lower_void)
+
+    roof_void = faceted_canopy(p, inward=wall, open_bottom_y=p["body_height"] - 1.0,
+                               roof_drop=wall)
+    crown = crown.cut(roof_void)
+    for name, part in (("body_lower", lower), ("body_crown", crown)):
+        if not part.val().isValid() or len(part.val().Solids()) != 1:
+            raise RuntimeError(f"{name} generated from source surfaces is invalid or not one solid")
+    return lower, crown
+
+
 def build(p=None):
     p = {**PARAMS, **(p or {})}
     inner_min = (min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0)) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
@@ -484,22 +525,8 @@ def build_modular(p=None):
     if start_r >= p["joint_socket_end_radius"]:
         raise ValueError("arm tongue must extend into the body socket")
     stations_list = stations(p)
-    # Split the existing hollow body at the original hull/canopy boundary.
-    # This is a plain geometric split only: no clips, screws, lips, or mating features are added.
-    full_body = body(p)
-    # Offset the cut slightly into the crown to avoid a boolean exactly on the hull/crown seam.
-    split_y = float(p["body_height"]) + 0.2
-    lower_box = cq.Workplane("XY").box(1000.0, split_y + 2.0, 1000.0).translate(
-        (0, (split_y - 2.0) / 2.0, 0))
-    crown_box = cq.Workplane("XY").box(1000.0, 100.0, 1000.0).translate(
-        (0, split_y + 50.0, 0))
-    body_part = full_body.intersect(lower_box)
-    crown_part = full_body.intersect(crown_box)
-    if body_part.val().isNull() or crown_part.val().isNull():
-        raise RuntimeError("Body split at body_height produced an empty component")
-    for name, part in (("body_lower", body_part), ("body_crown", crown_part)):
-        if not part.val().isValid() or len(part.val().Solids()) != 1:
-            raise RuntimeError(f"{name} split geometry is invalid or not one solid")
+    # Build both parts from the original hull and crown surfaces; no joining features are added.
+    body_part, crown_part = body_shell_parts(p)
     for x, z in stations_list:
         body_part = body_part.cut(joint_slot(p, x, z))
     arm_parts = []
