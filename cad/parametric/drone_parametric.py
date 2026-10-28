@@ -706,11 +706,14 @@ def build_modular(p=None):
         crown_intersection = crown_part.val().intersect(module.val())
         lower_overlap = lower_intersection.Volume()
         crown_overlap = crown_intersection.Volume()
-        lb, cb = lower_intersection.BoundingBox(), crown_intersection.BoundingBox()
+        lb = lower_intersection.BoundingBox() if lower_overlap > 1e-8 else None
+        cb = crown_intersection.BoundingBox() if crown_overlap > 1e-8 else None
+        lb_text = (f"({lb.xmin:.3f},{lb.ymin:.3f},{lb.zmin:.3f})-"
+                   f"({lb.xmax:.3f},{lb.ymax:.3f},{lb.zmax:.3f})") if lb else "none"
+        cb_text = (f"({cb.xmin:.3f},{cb.ymin:.3f},{cb.zmin:.3f})-"
+                   f"({cb.xmax:.3f},{cb.ymax:.3f},{cb.zmax:.3f})") if cb else "none"
         print(f"arm_{arm_index} clearance check: lower_overlap={lower_overlap:.6f}, "
-              f"lower_bbox=({lb.xmin:.3f},{lb.ymin:.3f},{lb.zmin:.3f})-({lb.xmax:.3f},{lb.ymax:.3f},{lb.zmax:.3f}), "
-              f"crown_overlap={crown_overlap:.6f}, "
-              f"crown_bbox=({cb.xmin:.3f},{cb.ymin:.3f},{cb.zmin:.3f})-({cb.xmax:.3f},{cb.ymax:.3f},{cb.zmax:.3f})")
+              f"lower_bbox={lb_text}, crown_overlap={crown_overlap:.6f}, crown_bbox={cb_text}")
         if lower_overlap > 1e-4 or crown_overlap > 1e-4:
             raise RuntimeError(
                 f"arm_{arm_index} interferes with body/crown: "
