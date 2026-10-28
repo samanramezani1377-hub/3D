@@ -342,7 +342,7 @@ def motor(p, x, z):
     return hub.union(can)
 
 
-def _surface_z(solid, x, y, zlo=30.0, zhi=95.0):
+def _surface_z(solid, x, y, zlo=0.0, zhi=95.0):
     """Front surface z of the model at (x, y): bisection on inside/outside."""
     lo, hi = zlo, zhi
     if not solid.isInside(cq.Vector(x, y, lo)):
