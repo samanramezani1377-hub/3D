@@ -48,18 +48,23 @@ jobs:
         run: |
           set -euo pipefail
           out="output/قالب گیری شده/smooth2-parametric"
-          for f in drone_parametric.step drone_parametric.stl; do
-            test -s "$out/$f" || { echo "Missing or empty generated file: $out/$f"; exit 1; }
-          done
           python - <<'PY'
-          import os
+          import json, os
           out = "output/قالب گیری شده/smooth2-parametric"
-          for name in ("drone_parametric.step", "drone_parametric.stl"):
+          expected = ["drone_parametric.step", "drone_parametric.stl",
+                      "drone_parametric.params.json", "assembly-manifest.json"]
+          for prefix in ("body", "arm_1", "arm_2", "arm_3", "arm_4",
+                         "prop_1", "prop_2", "prop_3", "prop_4"):
+              expected.extend([prefix + ".step", prefix + ".stl"])
+          for name in expected:
               path = os.path.join(out, name)
-              size = os.path.getsize(path)
-              if size < 100:
-                  raise SystemExit(f"Output unexpectedly small: {path} ({size} bytes)")
-              print(f"{name}: {size} bytes")
+              if not os.path.isfile(path) or os.path.getsize(path) < 100:
+                  raise SystemExit(f"Missing or unexpectedly small output: {path}")
+              print(f"{name}: {os.path.getsize(path)} bytes")
+          with open(os.path.join(out, "assembly-manifest.json"), encoding="utf-8") as f:
+              manifest = json.load(f)
+          if len(manifest.get("parts", [])) != 9:
+              raise SystemExit("Assembly manifest should list body, four arm modules and four props")
           PY
 
       - name: Commit exports onto the latest demo branch safely
@@ -73,6 +78,17 @@ jobs:
           files=(
             "drone_parametric.step"
             "drone_parametric.stl"
+            "drone_parametric.params.json"
+            "assembly-manifest.json"
+            "body.step" "body.stl"
+            "arm_1.step" "arm_1.stl"
+            "arm_2.step" "arm_2.stl"
+            "arm_3.step" "arm_3.stl"
+            "arm_4.step" "arm_4.stl"
+            "prop_1.step" "prop_1.stl"
+            "prop_2.step" "prop_2.stl"
+            "prop_3.step" "prop_3.stl"
+            "prop_4.step" "prop_4.stl"
           )
           # Preserve the generated artifacts while synchronizing with any newer
           # commits that arrived on demo during the CAD build.
@@ -94,7 +110,18 @@ jobs:
 
             git add -- \
               "$out/drone_parametric.step" \
-              "$out/drone_parametric.stl"
+              "$out/drone_parametric.stl" \
+              "$out/drone_parametric.params.json" \
+              "$out/assembly-manifest.json" \
+              "$out/body.step" "$out/body.stl" \
+              "$out/arm_1.step" "$out/arm_1.stl" \
+              "$out/arm_2.step" "$out/arm_2.stl" \
+              "$out/arm_3.step" "$out/arm_3.stl" \
+              "$out/arm_4.step" "$out/arm_4.stl" \
+              "$out/prop_1.step" "$out/prop_1.stl" \
+              "$out/prop_2.step" "$out/prop_2.stl" \
+              "$out/prop_3.step" "$out/prop_3.stl" \
+              "$out/prop_4.step" "$out/prop_4.stl"
 
             if git diff --cached --quiet; then
               echo "Generated CAD exports already match origin/demo; nothing to commit."
