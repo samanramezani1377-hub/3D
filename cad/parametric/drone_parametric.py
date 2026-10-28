@@ -56,6 +56,9 @@ PARAMS = {
     "guard_profile_outer": [29.0, 32.1, 33.4, 34.4, 34.9, 35.3, 35.2, 34.2, 33.1, 31.0],
     "guard_profile_inner": [27.8, 27.8, 27.8, 28.0, 28.0, 27.5, 27.0, 27.0, 28.0, 28.5],
     "guard_use_profile": True,
+    # enlarge the guards in place (radii of the measured profile shifted outward, wall thickness kept) until they
+    # almost touch the body (0.6 mm gap, not fused): +2.7 model units -> outer radius ~48.9 mm final
+    "guard_grow": 2.7,
     # front LED slit (no separate part): a small slit through the front shell that opens into a small
     # pocket behind it, so a real LED can be glued from inside later. Sizes are in FINAL (scaled) mm.
     "led_enabled": True,
@@ -88,9 +91,11 @@ PARAMS = {
     "prop_hub_radius": 4.0,
     "prop_hub_height": 4.0,
     # overall size -------------------------------------------------------------
-    # The finished model is uniformly scaled so its LARGEST horizontal extent (x or z) equals this value (mm).
-    # With motor_x == motor_z the footprint is square, so it comes out 240 x 240. None = no scaling.
-    "target_overall_mm": 240.0,
+    # model_scale: fixed uniform scale to final mm. It keeps the body at its approved size (it was the scale that
+    # made the old layout exactly 240 mm). The bigger guards now make the footprint ~247 x 247 mm (limit lifted).
+    # target_overall_mm: if set (and model_scale is None) the scale is derived so the largest extent equals it.
+    "model_scale": 1.28548,
+    "target_overall_mm": None,
 }
 
 
@@ -237,7 +242,10 @@ def stations(p):
 
 def guard_profile(p, x, z):
     """Round guard ring made by revolving the measured barrel profile -> exact circles."""
-    ys, ro, ri = p["guard_profile_y"], p["guard_profile_outer"], p["guard_profile_inner"]
+    g = p.get("guard_grow", 0.0)
+    ys = p["guard_profile_y"]
+    ro = [r + g for r in p["guard_profile_outer"]]
+    ri = [r + g for r in p["guard_profile_inner"]]
     outer = [(r, y) for r, y in zip(ro, ys)]
     inner = [(r, y) for r, y in zip(ri, ys)][::-1]
     w = (cq.Workplane("XY").moveTo(*outer[0]).spline(outer[1:], includeCurrent=True)
@@ -346,7 +354,7 @@ def prop(p, x, z):
 
 def build(p=None):
     p = {**PARAMS, **(p or {})}
-    inner_min = min(p["guard_profile_inner"]) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
+    inner_min = (min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0)) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
     assert p["prop_radius"] < inner_min, "prop would hit the guard"
     model = body(p)
     for i, (x, z) in enumerate(stations(p)):
@@ -354,7 +362,9 @@ def build(p=None):
         if p["include_props"]:
             model = model.union(prop(p, x, z))
     f = 1.0
-    if p.get("target_overall_mm"):
+    if p.get("model_scale"):
+        f = p["model_scale"]
+    elif p.get("target_overall_mm"):
         bb = model.val().BoundingBox()
         f = p["target_overall_mm"] / max(bb.xlen, bb.zlen)
     if p["camera_enabled"]:

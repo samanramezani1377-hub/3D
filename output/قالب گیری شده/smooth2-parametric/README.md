@@ -26,3 +26,4 @@ Parametric rebuild of the `smooth 2` quadcopter (CadQuery). Generator: `cad/para
 - The middle of the body is wider (`body_half_width`, `mid_widen*`), tail narrower.
 - Separate `led_strip_green.*` files removed; the LED is only a slit + pocket in `drone_parametric.*`.
 - Camera: much smaller; the module sits in a pocket inside the nose and only a small square housing (aligned with the lens axis, lens opening inside it) shows on the nose face. Lens axis points forward, tilted 35 deg down (`camera_*` parameters, final mm). The old external camera box was removed.
+- Guards enlarged in place (`guard_grow` = 2.7 model units, wall thickness unchanged): outer radius ~48.9 mm final, 0.6 mm from the body at the closest point (not fused; arms still connect). The body keeps its size via the fixed `model_scale` (1.28548). Footprint is now ~247 x 247 mm (the 240 limit was lifted on request); `target_overall_mm` is None.
