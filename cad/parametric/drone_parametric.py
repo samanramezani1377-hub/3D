@@ -76,7 +76,7 @@ PARAMS = {
     # Sizes are in FINAL (scaled) mm. The lens axis points forward, tilted down by camera_tilt_down_deg.
     "camera_enabled": True,
     "camera_tilt_down_deg": 35.0,
-    "camera_y": 6.4,                 # height of the lens exit on the nose face
+    "camera_y": 8.35,                # center the lens housing vertically on the scaled nose face (body_height * model_scale / 2)
     "camera_block_size": 10.5,       # side of the square housing that sticks out (aligned with the lens axis)
     "camera_block_protrusion": 3.5,  # how far the housing sticks out of the nose face
     "camera_block_fillet": 0.8,      # rounding of the housing's corners
