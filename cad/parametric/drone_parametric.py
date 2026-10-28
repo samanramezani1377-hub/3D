@@ -343,17 +343,25 @@ def motor(p, x, z):
 
 
 def _surface_z(solid, x, y, zlo=0.0, zhi=95.0):
-    """Front surface z of the model at (x, y): bisection on inside/outside."""
-    lo, hi = zlo, zhi
-    if not solid.isInside(cq.Vector(x, y, lo)):
-        return None
-    for _ in range(40):
-        mid = 0.5 * (lo + hi)
-        if solid.isInside(cq.Vector(x, y, mid)):
-            lo = mid
-        else:
-            hi = mid
-    return 0.5 * (lo + hi)
+    """Find the foremost (+Z) shell surface at (x, y), including hollow canopy walls."""
+    step = 0.25
+    outside_z = zhi
+    z = zhi
+    while z >= zlo:
+        if solid.isInside(cq.Vector(x, y, z)):
+            # Scan from the front until we enter the first solid wall; then bisect its front face.
+            inside_z = z
+            lo, hi = inside_z, outside_z
+            for _ in range(40):
+                mid = 0.5 * (lo + hi)
+                if solid.isInside(cq.Vector(x, y, mid)):
+                    lo = mid
+                else:
+                    hi = mid
+            return 0.5 * (lo + hi)
+        outside_z = z
+        z -= step
+    return None
 
 
 def led_slot(p, solid, fs=1.0):
