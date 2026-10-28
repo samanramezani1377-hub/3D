@@ -128,7 +128,8 @@ jobs:
               "$out/drone_parametric.params.json" \
               "$out/assembly-manifest.json" \
               "$out/validation-report.json" \
-              "$out/body.step" "$out/body.stl" \
+              "$out/body_lower.step" "$out/body_lower.stl" \
+              "$out/body_crown.step" "$out/body_crown.stl" \
               "$out/arm_1.step" "$out/arm_1.stl" \
               "$out/arm_2.step" "$out/arm_2.stl" \
               "$out/arm_3.step" "$out/arm_3.stl" \
@@ -137,7 +138,7 @@ jobs:
               "$out/prop_2.step" "$out/prop_2.stl" \
               "$out/prop_3.step" "$out/prop_3.stl" \
               "$out/prop_4.step" "$out/prop_4.stl"
-            # Remove the obsolete unsplit body exports so only the two body pieces remain.
+            # Remove obsolete unsplit body exports; keep only the two current body parts.
             git rm -f --ignore-unmatch "$out/body.step" "$out/body.stl"
 
             if git diff --cached --quiet; then
