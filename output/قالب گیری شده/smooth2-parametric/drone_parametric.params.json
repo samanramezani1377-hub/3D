@@ -86,7 +86,7 @@
   "led_pocket_depth": 6.0,
   "camera_enabled": true,
   "camera_tilt_down_deg": 35.0,
-  "camera_y": 6.4,
+  "camera_y": 8.35,
   "camera_block_size": 10.5,
   "camera_block_protrusion": 3.5,
   "camera_block_fillet": 0.8,
