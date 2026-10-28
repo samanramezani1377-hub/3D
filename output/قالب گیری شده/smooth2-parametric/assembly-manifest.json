@@ -61,7 +61,7 @@
     "type": "radial slide-in rectangular tongue and socket",
     "clearance_per_side_model_units": 0.25,
     "arm_start_radius_model_units": 23.0,
-    "socket_start_radius_model_units": 22.5,
+    "socket_start_radius_model_units": 22.75,
     "socket_end_radius_model_units": 44.0,
     "note": "Dimensions are uniformly scaled with the CAD model. Verify print-fit with a small test coupon before printing all parts."
   }
