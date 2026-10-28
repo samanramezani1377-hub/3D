@@ -273,6 +273,7 @@ def guard(p, x, z):
     return ring
 
 
+# The arm and body socket share this rounded, tapered plan-view profile.
 def radial_joint_profile(length, width, tip_width, lead_length):
     """Plan-view outline with a rounded inner nose and tapered lead-in; extrude along local Z."""
     if length <= 0 or width <= 0 or tip_width <= 0 or tip_width >= width:
