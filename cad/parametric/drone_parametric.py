@@ -94,6 +94,10 @@ PARAMS = {
     # model_scale: fixed uniform scale to final mm. It keeps the body at its approved size (it was the scale that
     # made the old layout exactly 240 mm). The bigger guards now make the footprint ~247 x 247 mm (limit lifted).
     # target_overall_mm: if set (and model_scale is None) the scale is derived so the largest extent equals it.
+    "joint_clearance": 0.25,       # per-side clearance before uniform model scaling
+    "joint_arm_start_radius": 23.0, # start of the male tongue along each diagonal arm
+    "joint_socket_start_radius": 22.5,
+    "joint_socket_end_radius": 44.0, # extends beyond the body edge so the socket opens outward
     "model_scale": 1.28548,
     "target_overall_mm": None,
 }
@@ -267,17 +271,21 @@ def guard(p, x, z):
     return ring
 
 
-def arm(p, x, z):
-    """Straight bar from the body centre line to the motor axis."""
+def arm(p, x, z, start_r=0.0, y_offset=0.0):
+    """Straight arm bar; start_r lets the inner end become a slide-in tongue."""
     import math
     L = math.hypot(x, z)
     ang = math.degrees(math.atan2(z, x))
-    bar = (cq.Workplane("XY").box(L, p["arm_width"], p["arm_height"], centered=(False, True, False))
+    if start_r < 0 or start_r >= L:
+        raise ValueError("arm start radius must be within the motor station")
+    bar = (cq.Workplane("XY").box(L - start_r, p["arm_width"], p["arm_height"], centered=(False, True, False))
            .rotate((0, 0, 0), (0, 0, 1), 0))
     # box is built along +X in the XY plane with Z up; map to our Y-up frame:
     # build in (x, z) plan with height along Y by rotating about X.
     bar = bar.rotate((0, 0, 0), (1, 0, 0), -90)          # box height Z -> Y, width Y -> -Z
     bar = bar.rotate((0, 0, 0), (0, 1, 0), -ang)          # aim at the motor (x, z)
+    bar = bar.translate((start_r * math.cos(math.radians(ang)), y_offset,
+                         start_r * math.sin(math.radians(ang))))
     return bar
 
 
@@ -378,6 +386,113 @@ def build(p=None):
     return model
 
 
+
+def joint_slot(p, x, z):
+    """Clearance cutter for a radial slide-in arm socket in the lower body."""
+    import math
+    clearance = p["joint_clearance"]
+    start = p["joint_socket_start_radius"]
+    end = p["joint_socket_end_radius"]
+    if end <= start:
+        raise ValueError("joint socket end must be beyond its start")
+    ang = math.degrees(math.atan2(z, x))
+    cutter = (cq.Workplane("XY")
+              .box(end - start, p["arm_width"] + 2 * clearance,
+                   p["arm_height"] + 2 * clearance,
+                   centered=(False, True, False))
+              .rotate((0, 0, 0), (1, 0, 0), -90)
+              .rotate((0, 0, 0), (0, 1, 0), -ang)
+              .translate((start * math.cos(math.radians(ang)), -clearance,
+                          start * math.sin(math.radians(ang))))
+    return cutter
+
+
+def build_modular(p=None):
+    """Build a separate body plus four removable arm/guard/motor modules and four props."""
+    import math
+    p = {**PARAMS, **(p or {})}
+    inner_min = (min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0)) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
+    assert p["prop_radius"] < inner_min, "prop would hit the guard"
+    start_r = p["joint_arm_start_radius"]
+    if start_r >= p["joint_socket_end_radius"]:
+        raise ValueError("arm tongue must extend into the body socket")
+    stations_list = stations(p)
+    body_part = body(p)
+    for x, z in stations_list:
+        body_part = body_part.cut(joint_slot(p, x, z))
+    arm_parts = []
+    prop_parts = []
+    for x, z in stations_list:
+        module = arm(p, x, z, start_r=start_r).union(guard(p, x, z)).union(motor(p, x, z))
+        arm_parts.append(module)
+        if p["include_props"]:
+            prop_parts.append(prop(p, x, z))
+    raw_shapes = [body_part.val()] + [s.val() for s in arm_parts] + [s.val() for s in prop_parts]
+    raw_compound = cq.Compound.makeCompound(raw_shapes)
+    bb = raw_compound.BoundingBox()
+    if p.get("model_scale"):
+        scale = p["model_scale"]
+    elif p.get("target_overall_mm"):
+        scale = p["target_overall_mm"] / max(bb.xlen, bb.zlen)
+    else:
+        scale = 1.0
+    # Camera and LED features belong to the body only; dimensions remain final-mm based.
+    if p["camera_enabled"]:
+        barrel, cutter = camera_parts(p, scale)
+        body_part = body_part.union(barrel).cut(cutter)
+    if p["led_enabled"]:
+        body_part = body_part.cut(led_slot(p, body_part.val(), scale))
+    parts = {"body": body_part}
+    for i, part in enumerate(arm_parts, 1):
+        parts[f"arm_{i}"] = part
+    for i, part in enumerate(prop_parts, 1):
+        parts[f"prop_{i}"] = part
+    if scale != 1.0:
+        parts = {name: cq.Workplane("XY").newObject([shape.val().scale(scale)])
+                 for name, shape in parts.items()}
+        print("uniform scale factor", round(scale, 5))
+    for name, part in parts.items():
+        if not part.val().isValid():
+            raise RuntimeError(f"Invalid CAD part: {name}")
+        solid_count = len(part.val().Solids())
+        print(f"part {name}: valid=True solids={solid_count}")
+        if name.startswith("arm_") and solid_count != 1:
+            raise RuntimeError(f"{name} is not a single connected solid ({solid_count} solids)")
+    return parts, scale
+
+
+def export_modular(parts, out_dir):
+    """Export the full assembled model and every separately printable component."""
+    import os, json
+    os.makedirs(out_dir, exist_ok=True)
+    compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
+    assembly = cq.Workplane("XY").newObject([compound])
+    export(assembly, out_dir, "drone_parametric")
+    for name, part in parts.items():
+        export(part, out_dir, name)
+    manifest = {
+        "assembly": "drone_parametric.step",
+        "branch_scope": "demo",
+        "parts": [
+            {"name": name, "step": f"{name}.step", "stl": f"{name}.stl",
+             "role": ("central body with four female sockets" if name == "body"
+                      else "removable arm + propeller guard + motor" if name.startswith("arm_")
+                      else "separate propeller")}
+            for name in parts
+        ],
+        "joint": {
+            "type": "radial slide-in rectangular tongue and socket",
+            "clearance_per_side_model_units": PARAMS["joint_clearance"],
+            "arm_start_radius_model_units": PARAMS["joint_arm_start_radius"],
+            "socket_start_radius_model_units": PARAMS["joint_socket_start_radius"],
+            "socket_end_radius_model_units": PARAMS["joint_socket_end_radius"],
+            "note": "Dimensions are uniformly scaled with the CAD model. Verify print-fit with a small test coupon before printing all parts."
+        }
+    }
+    with open(os.path.join(out_dir, "assembly-manifest.json"), "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+
 def export(shape, out_dir, name="drone_parametric"):
     import os
     os.makedirs(out_dir, exist_ok=True)
@@ -397,13 +512,16 @@ def export(shape, out_dir, name="drone_parametric"):
 if __name__ == "__main__":
     params = {}
     if len(sys.argv) > 2 and sys.argv[1] == "--params":
-        params = json.load(open(sys.argv[2]))
-    shape = build(params)
-    bb = shape.val().BoundingBox()
-    print("bbox", bb.xmin, bb.ymin, bb.zmin, bb.xmax, bb.ymax, bb.zmax, "valid", shape.val().isValid())
+        params = json.load(open(sys.argv[2], encoding="utf-8"))
+    parts, scale = build_modular(params)
+    compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
+    bb = compound.BoundingBox()
+    print("assembly bbox", bb.xlen, bb.ylen, bb.zlen, "valid", compound.isValid(),
+          "solids", len(compound.Solids()))
     out = "output/قالب گیری شده/smooth2-parametric"
-    export(shape, out)
-    json.dump({**PARAMS, **params}, open(out + "/drone_parametric.params.json", "w"), indent=2)
+    export_modular(parts, out)
+    with open(out + "/drone_parametric.params.json", "w", encoding="utf-8") as f:
+        json.dump({**PARAMS, **params}, f, indent=2, ensure_ascii=False)
 
 # Harmless commit to trigger the demo-branch regeneration workflow; no model changes.
 
