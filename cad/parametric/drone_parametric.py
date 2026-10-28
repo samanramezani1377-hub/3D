@@ -472,7 +472,10 @@ def joint_slot(p, x, z):
 
 
 def build_modular(p=None):
-    """Build a separate body plus four removable arm/guard/motor modules and four props."""
+    """Build lower body shell and separate crown, four arm modules, and four props.
+
+    The crown split is intentionally plain; no joining/locking geometry is designed yet.
+    """
     import math
     p = {**PARAMS, **(p or {})}
     inner_min = (min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0)) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
@@ -481,7 +484,21 @@ def build_modular(p=None):
     if start_r >= p["joint_socket_end_radius"]:
         raise ValueError("arm tongue must extend into the body socket")
     stations_list = stations(p)
-    body_part = body(p)
+    # Split the existing hollow body at the original hull/canopy boundary.
+    # This is a plain geometric split only: no clips, screws, lips, or mating features are added.
+    full_body = body(p)
+    split_y = float(p["body_height"])
+    lower_box = cq.Workplane("XY").box(1000.0, split_y + 2.0, 1000.0).translate(
+        (0, (split_y - 2.0) / 2.0, 0))
+    crown_box = cq.Workplane("XY").box(1000.0, 100.0, 1000.0).translate(
+        (0, split_y + 50.0, 0))
+    body_part = full_body.intersect(lower_box)
+    crown_part = full_body.intersect(crown_box)
+    if body_part.val().isNull() or crown_part.val().isNull():
+        raise RuntimeError("Body split at body_height produced an empty component")
+    for name, part in (("body_lower", body_part), ("body_crown", crown_part)):
+        if not part.val().isValid() or len(part.val().Solids()) != 1:
+            raise RuntimeError(f"{name} split geometry is invalid or not one solid")
     for x, z in stations_list:
         body_part = body_part.cut(joint_slot(p, x, z))
     arm_parts = []
@@ -506,7 +523,7 @@ def build_modular(p=None):
         body_part = body_part.union(barrel).cut(cutter)
     if p["led_enabled"]:
         body_part = body_part.cut(led_slot(p, body_part.val(), scale))
-    parts = {"body": body_part}
+    parts = {"body_lower": body_part, "body_crown": crown_part}
     for i, part in enumerate(arm_parts, 1):
         parts[f"arm_{i}"] = part
     for i, part in enumerate(prop_parts, 1):
@@ -550,7 +567,8 @@ def export_modular(parts, out_dir):
         },
         "parts": [
             {"name": name, "step": f"{name}.step", "stl": f"{name}.stl",
-             "role": ("central body with four female sockets" if name == "body"
+             "role": ("lower body shell: flat floor and side walls, with four female sockets" if name == "body_lower"
+                      else "separate upper crown/canopy; no joining features designed yet" if name == "body_crown"
                       else "removable arm + propeller guard + motor" if name.startswith("arm_")
                       else "separate propeller")}
             for name in parts
@@ -663,5 +681,6 @@ if __name__ == "__main__":
     with open(out + "/drone_parametric.params.json", "w", encoding="utf-8") as f:
         json.dump({**PARAMS, **params}, f, indent=2, ensure_ascii=False)
 
-# Modular export: body with female sockets, four removable arm/guard/motor modules,
-# and separate propellers. Regeneration is restricted to the demo branch.
+# Modular export: lower body shell, separate crown, four removable arm/guard/motor modules,
+# and separate propellers. The crown-to-lower-body joining method is intentionally undecided.
+# Regeneration is restricted to the demo branch.
