@@ -72,11 +72,10 @@ PARAMS = {
     "led_pocket_length": 12.0,       # pocket behind the slit (x)
     "led_pocket_height": 4.0,        # (y)
     "led_pocket_depth": 6.0,         # how far the pocket goes inward (z)
-    # Front camera: centered on the flat nose face at x=0 and camera_y height.
-    # The housing is embedded 1 mm into the nose and protrudes by camera_block_protrusion.
-    # The lens axis points forward and 15 degrees down; dimensions are in FINAL (scaled) mm.
+    # front camera: small module hidden INSIDE the nose, only a small square housing (aligned with the lens axis) shows outside.
+    # Sizes are in FINAL (scaled) mm. The lens axis points forward, tilted down by camera_tilt_down_deg.
     "camera_enabled": True,
-    "camera_tilt_down_deg": 15.0,
+    "camera_tilt_down_deg": 35.0,
     "camera_y": 6.4,                 # height of the lens exit on the nose face
     "camera_block_size": 10.5,       # side of the square housing that sticks out (aligned with the lens axis)
     "camera_block_protrusion": 3.5,  # how far the housing sticks out of the nose face
