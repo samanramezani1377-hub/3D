@@ -487,7 +487,8 @@ def build_modular(p=None):
     # Split the existing hollow body at the original hull/canopy boundary.
     # This is a plain geometric split only: no clips, screws, lips, or mating features are added.
     full_body = body(p)
-    split_y = float(p["body_height"])
+    # Offset the cut slightly into the crown to avoid a boolean exactly on the hull/crown seam.
+    split_y = float(p["body_height"]) + 0.2
     lower_box = cq.Workplane("XY").box(1000.0, split_y + 2.0, 1000.0).translate(
         (0, (split_y - 2.0) / 2.0, 0))
     crown_box = cq.Workplane("XY").box(1000.0, 100.0, 1000.0).translate(
