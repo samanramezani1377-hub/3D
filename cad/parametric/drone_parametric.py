@@ -528,6 +528,13 @@ def export_modular(parts, out_dir):
     manifest = {
         "assembly": "drone_parametric.step",
         "branch_scope": "demo",
+        "export_orientation": {
+            "vertical_axis": "+Z",
+            "camera_front_direction": "-Y",
+            "flat_underside_direction": "-Z",
+            "transform_from_design_coordinates": "(x, y, z) -> (x, -z, y)",
+            "rotation_degrees_about_X": 90
+        },
         "parts": [
             {"name": name, "step": f"{name}.step", "stl": f"{name}.stl",
              "role": ("central body with four female sockets" if name == "body"
