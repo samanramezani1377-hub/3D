@@ -596,12 +596,33 @@ def build_modular(p=None):
 
 
 def export_modular(parts, out_dir):
-    """Export the full assembled model and every separately printable component."""
+    """Export a named STEP assembly plus a compound STL and each separate component."""
     import os, json
     os.makedirs(out_dir, exist_ok=True)
+
+    # STEP must be a real CadQuery Assembly, not a Workplane wrapping a Compound.
+    # A compound can look like one selectable object in some CAD viewers; named
+    # assembly children preserve body_lower and body_crown as separately selectable parts.
+    assembly = cq.Assembly(name="drone_parametric")
+    for name, part in parts.items():
+        assembly.add(part.val(), name=name)
+    assembly.save(os.path.join(out_dir, "drone_parametric.step"), exportType="STEP")
+
+    # Keep the convenient whole-model STL as a compound mesh.
     compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
-    assembly = cq.Workplane("XY").newObject([compound])
-    export(assembly, out_dir, "drone_parametric")
+    cq.exporters.export(cq.Workplane("XY").newObject([compound]),
+                        os.path.join(out_dir, "drone_parametric.stl"),
+                        tolerance=0.05, angularTolerance=0.1)
+    try:
+        import trimesh
+        mesh = trimesh.load(os.path.join(out_dir, "drone_parametric.stl"))
+        if not mesh.is_watertight:
+            trimesh.repair.fill_holes(mesh)
+            trimesh.repair.fix_normals(mesh)
+            mesh.export(os.path.join(out_dir, "drone_parametric.stl"))
+    except Exception as e:
+        print("Assembly STL repair skipped:", e)
+
     for name, part in parts.items():
         export(part, out_dir, name)
     manifest = {
