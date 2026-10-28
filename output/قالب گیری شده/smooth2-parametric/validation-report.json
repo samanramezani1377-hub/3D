@@ -2,14 +2,14 @@
   "report_version": 3,
   "generated_from": "cad/parametric/drone_parametric.py",
   "branch": "demo",
-  "validation_scope": "Existing build-time geometry checks and workflow output-presence checks; revised joint geometry awaits regenerated-output validation and physical print-fit test",
+  "validation_scope": "Fresh CadQuery in-memory geometry checks and workflow output-presence checks; no physical print-fit test",
   "assembly": {
     "shape_valid": true,
     "solid_count": 9,
     "bbox_mm": [
-      246.9467074126,
-      32.9082881,
-      246.9467074126
+      247.068422,
+      32.992664,
+      247.024488
     ]
   },
   "components": {
@@ -55,25 +55,23 @@
     "clearance_per_side_model_units": 0.25,
     "model_scale": 1.28548,
     "approx_clearance_per_side_mm": 0.32137,
-    "arm_start_radius_model_units": 23,
-    "tip_width_model_units": 10,
-    "lead_in_length_model_units": 6,
+    "arm_start_radius_model_units": 23.0,
+    "tip_width_model_units": 10.0,
+    "lead_in_length_model_units": 6.0,
     "socket_start_radius_model_units": 22.75,
-    "socket_end_radius_model_units": 44,
+    "socket_end_radius_model_units": 44.0,
     "rounded_tip": true,
     "matching_tapered_body_socket": true,
     "mechanical_locking_fastener_included": false,
-    "physical_fit_tested": false,
-    "revised_geometry_regenerated_and_validated": false
+    "physical_fit_tested": false
   },
   "stl_watertight": "not_checked",
   "step_round_trip_import": "not_checked",
   "known_limitations": [
     "CAD validity checks apply to in-memory CadQuery shapes before export.",
-    "GitHub Actions verified generated files exist and are non-empty; it did not re-import the exported STEP files.",
-    "Propellers remain separate components; the arm modules each contain one connected solid comprising arm, guard and motor.",
-    "The revised rounded/tapered joint geometry must be regenerated and checked by GitHub Actions before its exported files are treated as current.",
-    "No locking fastener is currently included; the joint is not yet verified against pull-out or flight loads.",
+    "The workflow checks that exported STEP/STL files exist and are non-empty; STEP round-trip import is not yet checked.",
+    "STL watertightness is not reported by this validation step.",
+    "The rounded/tapered key helps guide insertion but has no locking fastener; pull-out resistance and flight loads are not validated.",
     "Physical insertion force and printer-dependent fit have not been tested; print a small joint coupon before printing the complete parts."
   ]
 }

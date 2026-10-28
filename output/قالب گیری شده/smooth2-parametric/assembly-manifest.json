@@ -58,11 +58,14 @@
     }
   ],
   "joint": {
-    "type": "radial slide-in rectangular tongue and socket",
+    "type": "radial slide-in rounded tapered key tongue and matching socket",
     "clearance_per_side_model_units": 0.25,
     "arm_start_radius_model_units": 23.0,
+    "tip_width_model_units": 10.0,
+    "lead_in_length_model_units": 6.0,
     "socket_start_radius_model_units": 22.75,
     "socket_end_radius_model_units": 44.0,
-    "note": "Dimensions are uniformly scaled with the CAD model. Verify print-fit with a small test coupon before printing all parts."
+    "mechanical_locking_fastener_included": false,
+    "note": "Dimensions are uniformly scaled with the CAD model. The rounded taper guides insertion; a physical fit test and a separate mechanical retention review are still required."
   }
 }
