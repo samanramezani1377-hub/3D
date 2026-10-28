@@ -116,7 +116,8 @@ PARAMS = {
 
     "joint_bolt_positions": [[28.5, -4.5], [28.5, 4.5]],
     "joint_bolt_hole_radius": 1.3,
-    "joint_nut_af": 4.6,
+    "joint_nut_af": 4.3,              # metal M3 nut across-flats, scaled to ~5.53 mm
+    "joint_nut_pocket_af": 4.6,
     "joint_nut_depth": 2.0,
     "joint_nut_hole_radius": 1.2,
     "joint_screw_shaft_radius": 1.15,
@@ -652,7 +653,7 @@ def build_modular(p=None):
             hx = radial_offset * math.cos(angle) + tangent_offset * math.sin(angle)
             hz = radial_offset * math.sin(angle) - tangent_offset * math.cos(angle)
             nut_cutter = (cq.Workplane("XZ").workplane(offset=-(p["joint_tab_y"] - p["joint_nut_depth"]))
-                          .center(hx, hz).polygon(6, p["joint_nut_af"] / math.cos(math.radians(30.0)))
+                          .center(hx, hz).polygon(6, p["joint_nut_pocket_af"] / math.cos(math.radians(30.0)))
                           .extrude(-p["joint_nut_depth"]))
             body_part = body_part.cut(nut_cutter)
             part_index = (arm_index - 1) * len(p["joint_bolt_positions"]) + bolt_index
@@ -780,6 +781,7 @@ def export_modular(parts, out_dir):
             "fastener_axis_design_coordinates": "Y (vertical); screws installed top-down",
             "fastener_axis_export_coordinates": "Z (vertical)",
             "nut_retention": "hexagonal nut traps in reinforced floor rails; metal nuts are required",
+            "nut_pocket_clearance_per_side_mm": round((PARAMS["joint_nut_pocket_af"] - PARAMS["joint_nut_af"]) * PARAMS["model_scale"] / 2, 3),
             "side_wall_fasteners": False,
             "floor_plate_cut_through": False,
             "arm_entry_openings": 4,
