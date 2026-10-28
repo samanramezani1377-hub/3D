@@ -732,8 +732,9 @@ def export_modular(parts, out_dir):
     # A compound can look like one selectable object in some CAD viewers; named
     # assembly children preserve body_lower and body_crown as separately selectable parts.
     assembly = cq.Assembly(name="drone_parametric")
+    matte_black = cq.Color(0.035, 0.035, 0.035)
     for name, part in parts.items():
-        assembly.add(part.val(), name=name)
+        assembly.add(part.val(), name=name, color=matte_black)
     assembly.save(os.path.join(out_dir, "drone_parametric.step"), exportType="STEP")
 
     # Keep the convenient whole-model STL as a compound mesh.
