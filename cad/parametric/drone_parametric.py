@@ -699,9 +699,15 @@ def build_modular(p=None):
             raise RuntimeError(f"{name} is not a single connected solid ({solid_count} solids)")
     # Check that arm modules clear the lower shell and removable crown in the assembled pose.
     for arm_index, module in enumerate(arm_parts, 1):
-        lower_overlap = body_part.val().intersect(module.val()).Volume()
-        crown_overlap = crown_part.val().intersect(module.val()).Volume()
-        print(f"arm_{arm_index} clearance check: lower_overlap={lower_overlap:.6f}, crown_overlap={crown_overlap:.6f}")
+        lower_intersection = body_part.val().intersect(module.val())
+        crown_intersection = crown_part.val().intersect(module.val())
+        lower_overlap = lower_intersection.Volume()
+        crown_overlap = crown_intersection.Volume()
+        lb, cb = lower_intersection.BoundingBox(), crown_intersection.BoundingBox()
+        print(f"arm_{arm_index} clearance check: lower_overlap={lower_overlap:.6f}, "
+              f"lower_bbox=({lb.xmin:.3f},{lb.ymin:.3f},{lb.zmin:.3f})-({lb.xmax:.3f},{lb.ymax:.3f},{lb.zmax:.3f}), "
+              f"crown_overlap={crown_overlap:.6f}, "
+              f"crown_bbox=({cb.xmin:.3f},{cb.ymin:.3f},{cb.zmin:.3f})-({cb.xmax:.3f},{cb.ymax:.3f},{cb.zmax:.3f})")
         if lower_overlap > 1e-4 or crown_overlap > 1e-4:
             raise RuntimeError(
                 f"arm_{arm_index} interferes with body/crown: "
