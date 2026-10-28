@@ -99,7 +99,7 @@ PARAMS = {
     # target_overall_mm: if set (and model_scale is None) the scale is derived so the largest extent equals it.
     # Floor-mounted arm attachment: integral tongue + two vertical M3 fasteners per arm.
     # Dimensions below are pre-scale model units; model_scale converts them to final millimetres.
-    "joint_clearance": 0.25,
+    "joint_clearance": 1.0,
     "joint_tip_width": 10.0,
     "joint_lead_in_length": 6.0,
     "joint_tab_start_radius": 20.5,
@@ -113,7 +113,7 @@ PARAMS = {
     "joint_arm_start_radius": 37.0,
     "joint_entry_start_radius": 36.5,
     "joint_entry_end_radius": 50.0,
-    "joint_entry_width": 18.0,
+
     "joint_bolt_radii": [25.5, 32.5],
     "joint_bolt_hole_radius": 1.3,
     "joint_nut_af": 4.6,
@@ -427,7 +427,7 @@ def arm_entry_slot(p, x, z):
     start, end = p["joint_entry_start_radius"], p["joint_entry_end_radius"]
     floor_y = p["body_shell_thickness"]
     top_y = p["body_height"] + 0.2
-    cutter = cq.Workplane("XY").box(end - start, top_y - floor_y, p["joint_entry_width"])
+    cutter = cq.Workplane("XY").box(end - start, top_y - floor_y, p["arm_width"] + 2 * p["joint_clearance"])
     cutter = cutter.rotate((0, 0, 0), (0, 1, 0), -angle)
     return cutter.translate(((start + end) / 2 * math.cos(math.radians(angle)),
                              (floor_y + top_y) / 2,
@@ -697,6 +697,16 @@ def build_modular(p=None):
         print(f"part {name}: valid=True solids={solid_count}")
         if name.startswith("arm_") and solid_count != 1:
             raise RuntimeError(f"{name} is not a single connected solid ({solid_count} solids)")
+    # Check that arm modules clear the lower shell and removable crown in the assembled pose.
+    for arm_index, module in enumerate(arm_parts, 1):
+        lower_overlap = body_part.val().intersect(module.val()).Volume()
+        crown_overlap = crown_part.val().intersect(module.val()).Volume()
+        print(f"arm_{arm_index} clearance check: lower_overlap={lower_overlap:.6f}, crown_overlap={crown_overlap:.6f}")
+        if lower_overlap > 1e-4 or crown_overlap > 1e-4:
+            raise RuntimeError(
+                f"arm_{arm_index} interferes with body/crown: "
+                f"lower={lower_overlap:.6f}, crown={crown_overlap:.6f}"
+            )
     return parts, scale
 
 
