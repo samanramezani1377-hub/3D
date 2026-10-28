@@ -52,7 +52,7 @@ jobs:
           import json, os
           out = "output/قالب گیری شده/smooth2-parametric"
           expected = ["drone_parametric.step", "drone_parametric.stl",
-                      "drone_parametric.params.json", "assembly-manifest.json"]
+                      "drone_parametric.params.json", "assembly-manifest.json", "validation-report.json"]
           for prefix in ("body", "arm_1", "arm_2", "arm_3", "arm_4",
                          "prop_1", "prop_2", "prop_3", "prop_4"):
               expected.extend([prefix + ".step", prefix + ".stl"])
@@ -80,6 +80,7 @@ jobs:
             "drone_parametric.stl"
             "drone_parametric.params.json"
             "assembly-manifest.json"
+            "validation-report.json"
             "body.step" "body.stl"
             "arm_1.step" "arm_1.stl"
             "arm_2.step" "arm_2.stl"
@@ -113,6 +114,7 @@ jobs:
               "$out/drone_parametric.stl" \
               "$out/drone_parametric.params.json" \
               "$out/assembly-manifest.json" \
+              "$out/validation-report.json" \
               "$out/body.step" "$out/body.stl" \
               "$out/arm_1.step" "$out/arm_1.stl" \
               "$out/arm_2.step" "$out/arm_2.stl" \
