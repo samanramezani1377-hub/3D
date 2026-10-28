@@ -103,7 +103,9 @@
   "prop_hub_height": 4.0,
   "joint_clearance": 0.25,
   "joint_arm_start_radius": 23.0,
-  "joint_socket_start_radius": 22.5,
+  "joint_tip_width": 10.0,
+  "joint_lead_in_length": 6.0,
+  "joint_socket_start_radius": 22.75,
   "joint_socket_end_radius": 44.0,
   "model_scale": 1.28548,
   "target_overall_mm": null
