@@ -1,8 +1,8 @@
 {
-  "report_version": 2,
+  "report_version": 3,
   "generated_from": "cad/parametric/drone_parametric.py",
   "branch": "demo",
-  "validation_scope": "CadQuery build-time geometry checks and GitHub Actions output-presence checks; no physical print-fit test",
+  "validation_scope": "Existing build-time geometry checks and workflow output-presence checks; revised joint geometry awaits regenerated-output validation and physical print-fit test",
   "assembly": {
     "shape_valid": true,
     "solid_count": 9,
@@ -51,21 +51,29 @@
     }
   },
   "joint": {
-    "type": "radial rectangular slide-in tongue/socket",
+    "type": "radial slide-in rounded tapered key tongue/socket",
     "clearance_per_side_model_units": 0.25,
     "model_scale": 1.28548,
     "approx_clearance_per_side_mm": 0.32137,
     "arm_start_radius_model_units": 23,
-    "socket_start_radius_model_units": 22.5,
+    "tip_width_model_units": 10,
+    "lead_in_length_model_units": 6,
+    "socket_start_radius_model_units": 22.75,
     "socket_end_radius_model_units": 44,
-    "physical_fit_tested": false
+    "rounded_tip": true,
+    "matching_tapered_body_socket": true,
+    "mechanical_locking_fastener_included": false,
+    "physical_fit_tested": false,
+    "revised_geometry_regenerated_and_validated": false
   },
   "stl_watertight": "not_checked",
   "step_round_trip_import": "not_checked",
   "known_limitations": [
     "CAD validity checks apply to in-memory CadQuery shapes before export.",
     "GitHub Actions verified generated files exist and are non-empty; it did not re-import the exported STEP files.",
-    "Physical insertion force and printer-dependent fit have not been tested; print a small joint coupon before printing the complete parts.",
-    "Propellers remain separate components; the arm modules each contain one connected solid comprising arm, guard and motor."
+    "Propellers remain separate components; the arm modules each contain one connected solid comprising arm, guard and motor.",
+    "The revised rounded/tapered joint geometry must be regenerated and checked by GitHub Actions before its exported files are treated as current.",
+    "No locking fastener is currently included; the joint is not yet verified against pull-out or flight loads.",
+    "Physical insertion force and printer-dependent fit have not been tested; print a small joint coupon before printing the complete parts."
   ]
 }
