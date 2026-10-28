@@ -39,7 +39,7 @@ PARAMS = {
     "facet_ridge_lift": 1.6,         # extra height (mm) given to the top ridge vertices
     # rotor stations / arms ---------------------------------------------------
     "motor_x": 58.0,                # |x| of each motor axis
-    "motor_z": 39.5,                # |z| of each motor axis
+    "motor_z": 58.0,                # |z| of each motor axis (= motor_x -> square 4-rotor layout, was 39.5)
     "arm_width": 16.0,
     "arm_height": 12.0,
     "motor_radius": 6.0,
@@ -82,6 +82,10 @@ PARAMS = {
     "prop_y": 9.0,                 # blade plane height
     "prop_hub_radius": 4.0,
     "prop_hub_height": 4.0,
+    # overall size -------------------------------------------------------------
+    # The finished model is uniformly scaled so its LARGEST horizontal extent (x or z) equals this value (mm).
+    # With motor_x == motor_z the footprint is square, so it comes out 240 x 240. None = no scaling.
+    "target_overall_mm": 240.0,
 }
 
 
@@ -351,6 +355,14 @@ def build(p=None):
         groove, insert = led_parts(p, model.val())
         model = model.cut(groove)
         build.led_insert = insert              # exported separately (green part)
+    if p.get("target_overall_mm"):
+        bb = model.val().BoundingBox()
+        f = p["target_overall_mm"] / max(bb.xlen, bb.zlen)
+        model = cq.Workplane("XY").newObject([model.val().scale(f)])
+        if getattr(build, "led_insert", None) is not None:
+            build.led_insert = cq.Workplane("XY").newObject([build.led_insert.val().scale(f)])
+        build.scale_factor = f
+        print("uniform scale factor", round(f, 4))
     return model
 
 

@@ -26,7 +26,7 @@
   "facet_inset": 0.9,
   "facet_ridge_lift": 1.6,
   "motor_x": 58.0,
-  "motor_z": 39.5,
+  "motor_z": 58.0,
   "arm_width": 16.0,
   "arm_height": 12.0,
   "motor_radius": 6.0,
@@ -125,5 +125,6 @@
   "prop_thickness": 1.2,
   "prop_y": 9.0,
   "prop_hub_radius": 4.0,
-  "prop_hub_height": 4.0
+  "prop_hub_height": 4.0,
+  "target_overall_mm": 240.0
 }
