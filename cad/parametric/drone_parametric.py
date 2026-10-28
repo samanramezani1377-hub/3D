@@ -96,8 +96,10 @@ PARAMS = {
     # target_overall_mm: if set (and model_scale is None) the scale is derived so the largest extent equals it.
     "joint_clearance": 0.25,       # per-side clearance before uniform model scaling
     "joint_arm_start_radius": 23.0, # start of the male tongue along each diagonal arm
-    "joint_socket_start_radius": 22.5,
-    "joint_socket_end_radius": 44.0, # extends beyond the body edge so the socket opens outward
+    "joint_tip_width": 10.0,       # rounded leading tip, narrower than the 16 mm arm
+    "joint_lead_in_length": 6.0,   # gradual taper from rounded tip to full arm width
+    "joint_socket_start_radius": 22.75, # 0.25 mm radial allowance before the rounded tongue nose
+    "joint_socket_end_radius": 44.0,    # extends beyond the body edge so the socket opens outward
     "model_scale": 1.28548,
     "target_overall_mm": None,
 }
@@ -271,19 +273,35 @@ def guard(p, x, z):
     return ring
 
 
+def radial_joint_profile(length, width, tip_width, lead_length):
+    """Plan-view outline with a rounded inner nose and tapered lead-in; extrude along local Z."""
+    if length <= 0 or width <= 0 or tip_width <= 0 or tip_width >= width:
+        raise ValueError("invalid radial joint profile dimensions")
+    lead = min(max(lead_length, tip_width / 2), length)
+    r = tip_width / 2
+    return (cq.Workplane("XY")
+            .moveTo(r, -r)
+            .threePointArc((0, 0), (r, r))
+            .lineTo(lead, width / 2)
+            .lineTo(length, width / 2)
+            .lineTo(length, -width / 2)
+            .lineTo(lead, -width / 2)
+            .close())
+
+
 def arm(p, x, z, start_r=0.0, y_offset=0.0):
-    """Straight arm bar; start_r lets the inner end become a slide-in tongue."""
+    """Arm with a rounded, tapered male tongue for guided insertion into the body socket."""
     import math
     L = math.hypot(x, z)
     ang = math.degrees(math.atan2(z, x))
     if start_r < 0 or start_r >= L:
         raise ValueError("arm start radius must be within the motor station")
-    bar = (cq.Workplane("XY").box(L - start_r, p["arm_width"], p["arm_height"], centered=(False, True, False))
-           .rotate((0, 0, 0), (0, 0, 1), 0))
-    # box is built along +X in the XY plane with Z up; map to our Y-up frame:
-    # build in (x, z) plan with height along Y by rotating about X.
-    bar = bar.rotate((0, 0, 0), (1, 0, 0), -90)          # box height Z -> Y, width Y -> -Z
-    bar = bar.rotate((0, 0, 0), (0, 1, 0), -ang)          # aim at the motor (x, z)
+    tip_width = p.get("joint_tip_width", 10.0)
+    lead_length = p.get("joint_lead_in_length", 6.0)
+    bar = radial_joint_profile(L - start_r, p["arm_width"], tip_width, lead_length).extrude(p["arm_height"])
+    # Local profile is radial-X / tangential-Y / vertical-Z; map to the model's Y-up frame.
+    bar = bar.rotate((0, 0, 0), (1, 0, 0), -90)
+    bar = bar.rotate((0, 0, 0), (0, 1, 0), -ang)
     bar = bar.translate((start_r * math.cos(math.radians(ang)), y_offset,
                          start_r * math.sin(math.radians(ang))))
     return bar
@@ -388,7 +406,7 @@ def build(p=None):
 
 
 def joint_slot(p, x, z):
-    """Clearance cutter for a radial slide-in arm socket in the lower body."""
+    """Matching rounded/tapered female socket with print clearance on all sides."""
     import math
     clearance = p["joint_clearance"]
     start = p["joint_socket_start_radius"]
@@ -396,14 +414,16 @@ def joint_slot(p, x, z):
     if end <= start:
         raise ValueError("joint socket end must be beyond its start")
     ang = math.degrees(math.atan2(z, x))
-    cutter = (cq.Workplane("XY")
-              .box(end - start, p["arm_width"] + 2 * clearance,
-                   p["arm_height"] + 2 * clearance,
-                   centered=(False, True, False))
-              .rotate((0, 0, 0), (1, 0, 0), -90)
-              .rotate((0, 0, 0), (0, 1, 0), -ang)
-              .translate((start * math.cos(math.radians(ang)), -clearance,
-                          start * math.sin(math.radians(ang)))))
+    tip_width = p.get("joint_tip_width", 10.0) + 2 * clearance
+    lead_length = p.get("joint_lead_in_length", 6.0)
+    cutter = radial_joint_profile(end - start, p["arm_width"] + 2 * clearance,
+                                  tip_width, lead_length + clearance).extrude(
+                                      p["arm_height"] + 2 * clearance)
+    cutter = cutter.translate((0, 0, -clearance))
+    cutter = cutter.rotate((0, 0, 0), (1, 0, 0), -90)
+    cutter = cutter.rotate((0, 0, 0), (0, 1, 0), -ang)
+    cutter = cutter.translate((start * math.cos(math.radians(ang)), 0,
+                               start * math.sin(math.radians(ang))))
     return cutter
 
 
