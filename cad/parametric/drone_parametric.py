@@ -11,7 +11,7 @@ import cadquery as cq
 PARAMS = {
     # central body (plan polygon, mirrored left/right) ---------------------
     "body_height": 13.0,            # lower hull height (y 0..body_height)
-    "body_shell_thickness": 2.0,    # nominal shell thickness; underside remains open for electronics access
+    "body_shell_thickness": 2.0,    # nominal thickness of shell, flat bottom plate, and roof
     "body_half_width": 38.0,        # max half width (x) at the widest point (was 32: middle made wider)
     "body_front_z": 66.0,           # nose (+z)
     "body_rear_z": -52.0,           # tail (-z)
