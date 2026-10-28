@@ -683,4 +683,4 @@ if __name__ == "__main__":
 
 # Modular export: lower body shell, separate crown, four removable arm/guard/motor modules,
 # and separate propellers. The crown-to-lower-body joining method is intentionally undecided.
-# Regeneration is restricted to the demo branch.
+# Regeneration is restricted to the demo branch; no crown-to-base joining features are included yet.
