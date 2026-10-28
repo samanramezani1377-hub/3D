@@ -1,72 +1,71 @@
 {
-  "solids": 1,
-  "shape_valid": true,
-  "stl_watertight": false,
-  "volume_mm3": 201611.1,
-  "source_volume_mm3": 189355.4,
-  "extents_mm": [
-    144.66,
-    28.53,
-    153.67
-  ],
-  "source_extents_mm": [
-    144.73,
-    26.16,
-    150.05
-  ],
-  "new_to_source_surface_distance_mm": {
-    "mean": 1.45,
-    "median": 0.9,
-    "p95": 4.42
+  "report_version": 2,
+  "generated_from": "cad/parametric/drone_parametric.py",
+  "branch": "demo",
+  "validation_scope": "CadQuery build-time geometry checks and GitHub Actions output-presence checks; no physical print-fit test",
+  "assembly": {
+    "shape_valid": true,
+    "solid_count": 9,
+    "bbox_mm": [
+      246.9467074126,
+      32.9082881,
+      246.9467074126
+    ]
   },
-  "source_to_new_surface_distance_mm": {
-    "mean": 1.67,
-    "median": 1.0,
-    "p95": 5.63
-  },
-  "guards_outer_roundness_at_y9": [
-    {
-      "center": [
-        37.0,
-        39.5
-      ],
-      "outer_R_min": 35.28,
-      "outer_R_max": 35.286,
-      "roundness_error_mm": 0.006
+  "components": {
+    "body": {
+      "shape_valid": true,
+      "solid_count": 1
     },
-    {
-      "center": [
-        37.0,
-        -39.5
-      ],
-      "outer_R_min": 35.278,
-      "outer_R_max": 35.287,
-      "roundness_error_mm": 0.009
+    "arm_1": {
+      "shape_valid": true,
+      "solid_count": 1
     },
-    {
-      "center": [
-        -37.0,
-        39.5
-      ],
-      "outer_R_min": 35.28,
-      "outer_R_max": 35.286,
-      "roundness_error_mm": 0.006
+    "arm_2": {
+      "shape_valid": true,
+      "solid_count": 1
     },
-    {
-      "center": [
-        -37.0,
-        -39.5
-      ],
-      "outer_R_min": 35.278,
-      "outer_R_max": 35.287,
-      "roundness_error_mm": 0.009
+    "arm_3": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "arm_4": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "prop_1": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "prop_2": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "prop_3": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "prop_4": {
+      "shape_valid": true,
+      "solid_count": 1
     }
-  ],
-  "known_differences": [
-    "Original guard rings are slightly egg-shaped on the body side; new rings are exact circles by request.",
-    "Original propellers are noisy curved multi-blade shapes inside the mesh; new ones are simple 2-blade placeholders.",
-    "Original motor/arm interior is a noisy blob; new arms/motors are clean primitives.",
-    "Lower hull is parametric (polygon); canopy follows measured sections of the original."
-  ],
-  "stl_note": "STEP is a single valid solid. The STL has ~5 open tessellation edges at the swept LED groove (set led_enabled=false for a fully watertight STL; slicers normally auto-repair this)."
+  },
+  "joint": {
+    "type": "radial rectangular slide-in tongue/socket",
+    "clearance_per_side_model_units": 0.25,
+    "model_scale": 1.28548,
+    "approx_clearance_per_side_mm": 0.32137,
+    "arm_start_radius_model_units": 23,
+    "socket_start_radius_model_units": 22.5,
+    "socket_end_radius_model_units": 44,
+    "physical_fit_tested": false
+  },
+  "stl_watertight": "not_checked",
+  "step_round_trip_import": "not_checked",
+  "known_limitations": [
+    "CAD validity checks apply to in-memory CadQuery shapes before export.",
+    "GitHub Actions verified generated files exist and are non-empty; it did not re-import the exported STEP files.",
+    "Physical insertion force and printer-dependent fit have not been tested; print a small joint coupon before printing the complete parts.",
+    "Propellers remain separate components; the arm modules each contain one connected solid comprising arm, guard and motor."
+  ]
 }
