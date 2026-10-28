@@ -1,6 +1,8 @@
 """Parametric quadcopter model (rebuilt from the 'smooth 2' mesh measurements).
 
-Axes: Y is up, X-Z is the horizontal plane (same as the source mesh). Units: mm.
+Design coordinates are Y-up with X-Z as the plan; exported CAD is rotated to Z-up for
+common CAD/3D-printing orientation. Export transform: (x, y, z) -> (x, -z, y).
+Thus the camera/front points toward -Y and the flat underside faces -Z. Units: mm.
 Edit PARAMS (or pass --params file.json) and re-run to regenerate the model.
 """
 import json, sys
@@ -428,6 +430,8 @@ def build(p=None):
     if f != 1.0:
         model = cq.Workplane("XY").newObject([model.val().scale(f)])
         print("uniform scale factor", round(f, 4))
+    # Export convention: Z is vertical, the flat underside faces -Z, camera/front faces -Y.
+    model = model.rotate((0, 0, 0), (1, 0, 0), 90)
     return model
 
 
@@ -498,6 +502,10 @@ def build_modular(p=None):
         parts = {name: cq.Workplane("XY").newObject([shape.val().scale(scale)])
                  for name, shape in parts.items()}
         print("uniform scale factor", round(scale, 5))
+    # Apply one rigid transform to every component so assembly and individual exports agree.
+    # Old +Y (up) -> new +Z; old +Z (camera/front) -> new -Y; old -Y (underside) -> new -Z.
+    parts = {name: part.rotate((0, 0, 0), (1, 0, 0), 90)
+             for name, part in parts.items()}
     for name, part in parts.items():
         if not part.val().isValid():
             raise RuntimeError(f"Invalid CAD part: {name}")
