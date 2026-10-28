@@ -54,7 +54,9 @@ jobs:
           expected = ["drone_parametric.step", "drone_parametric.stl",
                       "drone_parametric.params.json", "assembly-manifest.json", "validation-report.json"]
           for prefix in ("body_lower", "body_crown", "arm_1", "arm_2", "arm_3", "arm_4",
-                         "prop_1", "prop_2", "prop_3", "prop_4"):
+                         "prop_1", "prop_2", "prop_3", "prop_4",
+                         "screw_1", "screw_2", "screw_3", "screw_4", "screw_5", "screw_6", "screw_7", "screw_8",
+                         "nut_1", "nut_2", "nut_3", "nut_4", "nut_5", "nut_6", "nut_7", "nut_8"):
               expected.extend([prefix + ".step", prefix + ".stl"])
           for name in expected:
               path = os.path.join(out, name)
@@ -63,8 +65,11 @@ jobs:
               print(f"{name}: {os.path.getsize(path)} bytes")
           with open(os.path.join(out, "assembly-manifest.json"), encoding="utf-8") as f:
               manifest = json.load(f)
-          if len(manifest.get("parts", [])) != 10:
-              raise SystemExit("Assembly manifest should list lower body, crown, four arm modules and four props")
+          if len(manifest.get("parts", [])) != 26:
+              raise SystemExit("Assembly manifest should list body/crown, four arms, four props, eight screws and eight nuts")
+          joint = manifest.get("joint", {})
+          if joint.get("fastener_count") != 8 or joint.get("side_wall_fasteners") is not False or joint.get("floor_plate_cut_through") is not False:
+              raise SystemExit("Arm joint metadata does not describe eight top-down floor fasteners with an intact floor plate")
           names = {p.get("name") for p in manifest.get("parts", [])}
           if not {"body_lower", "body_crown"}.issubset(names):
               raise SystemExit("Assembly manifest must contain separate body_lower and body_crown components")
@@ -103,6 +108,22 @@ jobs:
             "prop_2.step" "prop_2.stl"
             "prop_3.step" "prop_3.stl"
             "prop_4.step" "prop_4.stl"
+            "screw_1.step" "screw_1.stl"
+            "screw_2.step" "screw_2.stl"
+            "screw_3.step" "screw_3.stl"
+            "screw_4.step" "screw_4.stl"
+            "screw_5.step" "screw_5.stl"
+            "screw_6.step" "screw_6.stl"
+            "screw_7.step" "screw_7.stl"
+            "screw_8.step" "screw_8.stl"
+            "nut_1.step" "nut_1.stl"
+            "nut_2.step" "nut_2.stl"
+            "nut_3.step" "nut_3.stl"
+            "nut_4.step" "nut_4.stl"
+            "nut_5.step" "nut_5.stl"
+            "nut_6.step" "nut_6.stl"
+            "nut_7.step" "nut_7.stl"
+            "nut_8.step" "nut_8.stl"
           )
           # Preserve the generated artifacts while synchronizing with any newer
           # commits that arrived on demo during the CAD build.
@@ -137,7 +158,23 @@ jobs:
               "$out/prop_1.step" "$out/prop_1.stl" \
               "$out/prop_2.step" "$out/prop_2.stl" \
               "$out/prop_3.step" "$out/prop_3.stl" \
-              "$out/prop_4.step" "$out/prop_4.stl"
+              "$out/prop_4.step" "$out/prop_4.stl" \
+              "$out/screw_1.step" "$out/screw_1.stl" \
+              "$out/screw_2.step" "$out/screw_2.stl" \
+              "$out/screw_3.step" "$out/screw_3.stl" \
+              "$out/screw_4.step" "$out/screw_4.stl" \
+              "$out/screw_5.step" "$out/screw_5.stl" \
+              "$out/screw_6.step" "$out/screw_6.stl" \
+              "$out/screw_7.step" "$out/screw_7.stl" \
+              "$out/screw_8.step" "$out/screw_8.stl" \
+              "$out/nut_1.step" "$out/nut_1.stl" \
+              "$out/nut_2.step" "$out/nut_2.stl" \
+              "$out/nut_3.step" "$out/nut_3.stl" \
+              "$out/nut_4.step" "$out/nut_4.stl" \
+              "$out/nut_5.step" "$out/nut_5.stl" \
+              "$out/nut_6.step" "$out/nut_6.stl" \
+              "$out/nut_7.step" "$out/nut_7.stl" \
+              "$out/nut_8.step" "$out/nut_8.stl"
             # Remove obsolete unsplit body exports; keep only the two current body parts.
             git rm -f --ignore-unmatch "$out/body.step" "$out/body.stl"
 
