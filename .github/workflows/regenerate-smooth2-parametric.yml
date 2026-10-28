@@ -65,6 +65,15 @@ jobs:
               manifest = json.load(f)
           if len(manifest.get("parts", [])) != 9:
               raise SystemExit("Assembly manifest should list body, four arm modules and four props")
+          orientation = manifest.get("export_orientation", {})
+          if orientation.get("vertical_axis") != "+Z" or orientation.get("camera_front_direction") != "-Y" or orientation.get("flat_underside_direction") != "-Z":
+              raise SystemExit("Export orientation metadata does not match the approved Z-up convention")
+          with open(os.path.join(out, "validation-report.json"), encoding="utf-8") as f:
+              report = json.load(f)
+          bbox = report.get("assembly", {}).get("bbox_mm", [])
+          if len(bbox) != 3 or not (bbox[2] < bbox[0] * 0.25 and bbox[2] < bbox[1] * 0.25):
+              raise SystemExit(f"Expected Z-up footprint with thin vertical extent; got bbox_mm={bbox}")
+          print(f"Verified Z-up assembly bbox_mm={bbox}")
           PY
 
       - name: Commit exports onto the latest demo branch safely
