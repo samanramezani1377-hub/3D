@@ -9,14 +9,18 @@ import cadquery as cq
 PARAMS = {
     # central body (plan polygon, mirrored left/right) ---------------------
     "body_height": 13.0,            # lower hull height (y 0..body_height)
-    "body_half_width": 32.0,        # max half width (x) at the widest point
+    "body_half_width": 38.0,        # max half width (x) at the widest point (was 32: middle made wider)
     "body_front_z": 66.0,           # nose (+z)
     "body_rear_z": -52.0,           # tail (-z)
     "body_front_half_width": 9.0,
-    "body_rear_half_width": 19.0,
+    "body_rear_half_width": 16.0,
     "body_widest_z_front": 10.0,
     "body_widest_z_rear": -18.0,
     "body_edge_fillet": 0.8,
+    # extra widening of the dome through the middle of the body (plan view: narrow nose/tail, fat middle)
+    "mid_widen": 0.22,              # relative extra half width at the middle (0 = off)
+    "mid_widen_z": -4.0,            # z of the widest point of the dome
+    "mid_widen_sigma": 30.0,        # how far (mm) the widening spreads front/back
     # canopy (upper dome) ---------------------------------------------------
     "canopy_height": 12.0,
     "canopy_front_z": 44.0,
@@ -94,6 +98,15 @@ def _resample(pts, n):
     return np.c_[np.interp(t, seg, line[:, 0]), np.interp(t, seg, line[:, 1])]
 
 
+def widen_x(p, pts):
+    """Scale x of dome section points by a smooth bump centred on the body middle."""
+    import numpy as np
+    a = np.array(pts, float)
+    k, zc, sg = p.get("mid_widen", 0.0), p["mid_widen_z"], p["mid_widen_sigma"]
+    a[:, 0] *= 1.0 + k * np.exp(-((a[:, 1] - zc) / sg) ** 2)
+    return a
+
+
 def hull_polygon(p):
     return [(-p["body_front_half_width"], p["body_front_z"]),
             (p["body_front_half_width"], p["body_front_z"]),
@@ -123,10 +136,10 @@ def faceted_canopy(p):
     secs = sorted((float(y), np.array(q)) for y, q in data["sections"].items())
     lv = [(p["canopy_base_y"], pick(_resample(hull_polygon(p), n)))]
     for j, (y, q) in enumerate(secs):
-        a = pick(q); c = a.mean(axis=0)
+        a = widen_x(p, pick(q)); c = a.mean(axis=0)
         a[1::2] = c + (a[1::2] - c) * p["facet_inset"]          # zig-zag -> creases between triangles
         lv.append((y, a))
-    ytop, ptop = secs[-1]; a = pick(ptop); c = a.mean(axis=0)
+    ytop, ptop = secs[-1]; a = widen_x(p, pick(ptop)); c = a.mean(axis=0)
     top = c + (a - c) * p["canopy_top_scale"]
     lv.append((p["canopy_top_y"], top))
     P = [[cq.Vector(float(x), float(y), float(z)) for (x, z) in pts] for y, pts in lv]
@@ -156,8 +169,8 @@ def measured_canopy(p):
     data = json.load(open(path))
     n = data["points_per_level"]
     levels = [(p["canopy_base_y"], _resample(hull_polygon(p), n))]
-    secs = [(float(y), np.array(pts)) for y, pts in data["sections"].items()]
-    secs.sort()
+    secs = [(float(y), widen_x(p, pts)) for y, pts in data["sections"].items()]
+    secs.sort(key=lambda t: t[0])
     levels += secs
     ytop, ptop = secs[-1]
     c = ptop.mean(axis=0)

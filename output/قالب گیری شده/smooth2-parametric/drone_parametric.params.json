@@ -1,13 +1,16 @@
 {
   "body_height": 13.0,
-  "body_half_width": 35.0,
+  "body_half_width": 38.0,
   "body_front_z": 66.0,
   "body_rear_z": -52.0,
-  "body_front_half_width": 11.0,
-  "body_rear_half_width": 22.0,
+  "body_front_half_width": 9.0,
+  "body_rear_half_width": 16.0,
   "body_widest_z_front": 10.0,
   "body_widest_z_rear": -18.0,
-  "body_edge_fillet": 3.0,
+  "body_edge_fillet": 0.8,
+  "mid_widen": 0.22,
+  "mid_widen_z": -4.0,
+  "mid_widen_sigma": 30.0,
   "canopy_height": 12.0,
   "canopy_front_z": 44.0,
   "canopy_rear_z": -20.0,
@@ -22,7 +25,7 @@
   "facet_vertices": 14,
   "facet_inset": 0.9,
   "facet_ridge_lift": 1.6,
-  "motor_x": 37.0,
+  "motor_x": 58.0,
   "motor_z": 39.5,
   "arm_width": 16.0,
   "arm_height": 12.0,
@@ -74,36 +77,37 @@
   "led_enabled": true,
   "led_points_xy": [
     [
-      -9.0,
-      17.0
+      -8.0,
+      15.8
     ],
     [
-      -6.0,
-      16.7
+      -5.5,
+      15.8
     ],
     [
       -3.0,
-      16.4
+      15.8
     ],
     [
       0.0,
-      16.2
+      15.8
     ],
     [
       3.0,
-      16.4
+      15.8
     ],
     [
-      6.0,
-      16.7
+      5.5,
+      15.8
     ],
     [
-      9.0,
-      17.0
+      8.0,
+      15.8
     ]
   ],
   "led_radius": 0.9,
   "led_groove_radius": 1.2,
+  "led_embed_depth": 0.75,
   "camera_enabled": true,
   "camera_width": 22.0,
   "camera_height": 13.0,
