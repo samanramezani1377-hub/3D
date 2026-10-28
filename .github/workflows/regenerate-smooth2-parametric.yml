@@ -48,14 +48,13 @@ jobs:
         run: |
           set -euo pipefail
           out="output/قالب گیری شده/smooth2-parametric"
-          for f in drone_parametric.step drone_parametric.stl led_strip_green.step led_strip_green.stl; do
+          for f in drone_parametric.step drone_parametric.stl; do
             test -s "$out/$f" || { echo "Missing or empty generated file: $out/$f"; exit 1; }
           done
           python - <<'PY'
           import os
           out = "output/قالب گیری شده/smooth2-parametric"
-          for name in ("drone_parametric.step", "drone_parametric.stl",
-                       "led_strip_green.step", "led_strip_green.stl"):
+          for name in ("drone_parametric.step", "drone_parametric.stl"):
               path = os.path.join(out, name)
               size = os.path.getsize(path)
               if size < 100:
@@ -74,8 +73,6 @@ jobs:
           files=(
             "drone_parametric.step"
             "drone_parametric.stl"
-            "led_strip_green.step"
-            "led_strip_green.stl"
           )
           # Preserve the generated artifacts while synchronizing with any newer
           # commits that arrived on demo during the CAD build.
@@ -97,9 +94,7 @@ jobs:
 
             git add -- \
               "$out/drone_parametric.step" \
-              "$out/drone_parametric.stl" \
-              "$out/led_strip_green.step" \
-              "$out/led_strip_green.stl"
+              "$out/drone_parametric.stl"
 
             if git diff --cached --quiet; then
               echo "Generated CAD exports already match origin/demo; nothing to commit."

@@ -75,39 +75,13 @@
   ],
   "guard_use_profile": true,
   "led_enabled": true,
-  "led_points_xy": [
-    [
-      -8.0,
-      15.8
-    ],
-    [
-      -5.5,
-      15.8
-    ],
-    [
-      -3.0,
-      15.8
-    ],
-    [
-      0.0,
-      15.8
-    ],
-    [
-      3.0,
-      15.8
-    ],
-    [
-      5.5,
-      15.8
-    ],
-    [
-      8.0,
-      15.8
-    ]
-  ],
-  "led_radius": 0.9,
-  "led_groove_radius": 1.2,
-  "led_embed_depth": 0.75,
+  "led_y": 14.5,
+  "led_slit_length": 10.0,
+  "led_slit_height": 2.0,
+  "led_wall": 1.5,
+  "led_pocket_length": 12.0,
+  "led_pocket_height": 4.0,
+  "led_pocket_depth": 6.0,
   "camera_enabled": true,
   "camera_width": 22.0,
   "camera_height": 13.0,

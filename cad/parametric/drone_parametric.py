@@ -56,12 +56,16 @@ PARAMS = {
     "guard_profile_outer": [29.0, 32.1, 33.4, 34.4, 34.9, 35.3, 35.2, 34.2, 33.1, 31.0],
     "guard_profile_inner": [27.8, 27.8, 27.8, 28.0, 28.0, 27.5, 27.0, 27.0, 28.0, 28.5],
     "guard_use_profile": True,
-    # front LED chevron (green light bar) ---------------------------------------
+    # front LED slit (no separate part): a small slit through the front shell that opens into a small
+    # pocket behind it, so a real LED can be glued from inside later. Sizes are in FINAL (scaled) mm.
     "led_enabled": True,
-    "led_points_xy": [[-8.0, 15.8], [-5.5, 15.8], [-3.0, 15.8], [0.0, 15.8], [3.0, 15.8], [5.5, 15.8], [8.0, 15.8]],  # angular \\___/ light bar
-    "led_radius": 0.9,               # light-bar radius
-    "led_groove_radius": 1.2,        # groove cut in the shell (insert sits in it)
-    "led_embed_depth": 0.75,         # recess the insert into the shell
+    "led_y": 14.5,                   # height of the slit centre (model units, before scaling)
+    "led_slit_length": 10.0,         # slit width along x
+    "led_slit_height": 2.0,          # slit height
+    "led_wall": 1.5,                 # shell thickness the slit passes through
+    "led_pocket_length": 12.0,       # pocket behind the slit (x)
+    "led_pocket_height": 4.0,        # (y)
+    "led_pocket_depth": 6.0,         # how far the pocket goes inward (z)
     # fixed front camera, tilted down --------------------------------------------
     "camera_enabled": True,
     "camera_width": 22.0,
@@ -288,37 +292,24 @@ def _surface_z(solid, x, y, zlo=30.0, zhi=95.0):
     return 0.5 * (lo + hi)
 
 
-def _led_path(p, solid):
-    """Keep the LED straight in the front (X/Y) projection while conforming to canopy depth."""
+def led_slot(p, solid, fs=1.0):
+    """Cutter = slit through the front shell + a pocket right behind it (dims given in final mm, fs = scale)."""
     import numpy as np
-    anchors = p["led_points_xy"]
-    # The front-view line must be horizontal: interpolate only X; keep Y fixed.
-    x0, y0 = anchors[0]
-    x1, y1 = anchors[-1]
-    if abs(y1 - y0) > 1e-6 or any(abs(y - y0) > 1e-6 for _, y in anchors):
-        raise ValueError("led_points_xy must use a single Y value for a straight horizontal front-view LED")
-    pts = []
-    for x in np.linspace(x0, x1, 40):
-        z = _surface_z(solid, float(x), float(y0))
-        if z is None:
-            raise RuntimeError("LED path at x=%s, y=%s is not on the shell" % (x, y0))
-        # Recess toward the body interior; X/Y projection remains exactly horizontal.
-        z -= p.get("led_embed_depth", 0.75)
-        pts.append(cq.Vector(float(x), float(y0), float(z)))
-    return pts
+    y0 = p["led_y"]
+    L, h, wall = p["led_slit_length"] / fs, p["led_slit_height"] / fs, p["led_wall"] / fs
+    PL, PH, PD = p["led_pocket_length"] / fs, p["led_pocket_height"] / fs, p["led_pocket_depth"] / fs
+    # the nose slopes back as it rises: take the most set-back shell point over the whole pocket footprint
+    xs = np.linspace(-max(L, PL) / 2, max(L, PL) / 2, 9)
+    ys = np.linspace(y0 - PH / 2, y0 + PH / 2, 5)
+    zs = [_surface_z(solid, float(x), float(y)) for x in xs for y in ys]
+    if any(z is None for z in zs):
+        raise RuntimeError("LED slit position is not on the front shell")
+    zmax, zmin = max(zs), min(zs)
+    zp = zmin - wall                                   # pocket front face
+    slit = cq.Workplane("XY").box(L, h, (zmax + 1.0) - zp).translate((0, y0, (zmax + 1.0 + zp) / 2))
+    pocket = cq.Workplane("XY").box(PL, PH, PD + 0.2).translate((0, y0, (zp + 0.2 + zp - PD) / 2))
+    return slit.union(pocket)
 
-def _sweep_tube(pts, r):
-    edge = cq.Edge.makeSpline(pts)
-    path = cq.Wire.assembleEdges([edge])
-    d = (pts[1] - pts[0]).normalized()
-    plane = cq.Plane(origin=pts[0], xDir=cq.Vector(0, 1, 0) if abs(d.y) < 0.9 else cq.Vector(1, 0, 0), normal=d)
-    return cq.Workplane(plane).circle(r).sweep(cq.Workplane(obj=path), transition="round")
-
-
-def led_parts(p, solid):
-    """Groove and matching green insert following a smooth, recessed canopy path."""
-    pts = _led_path(p, solid)
-    return _sweep_tube(pts, p["led_groove_radius"]), _sweep_tube(pts, p["led_radius"])
 
 def camera(p):
     w, h, dpt = p["camera_width"], p["camera_height"], p["camera_depth"]
@@ -351,17 +342,14 @@ def build(p=None):
             model = model.union(prop(p, x, z))
     if p["camera_enabled"]:
         model = model.union(camera(p))
-    if p["led_enabled"]:
-        groove, insert = led_parts(p, model.val())
-        model = model.cut(groove)
-        build.led_insert = insert              # exported separately (green part)
+    f = 1.0
     if p.get("target_overall_mm"):
         bb = model.val().BoundingBox()
         f = p["target_overall_mm"] / max(bb.xlen, bb.zlen)
+    if p["led_enabled"]:
+        model = model.cut(led_slot(p, model.val(), f))
+    if f != 1.0:
         model = cq.Workplane("XY").newObject([model.val().scale(f)])
-        if getattr(build, "led_insert", None) is not None:
-            build.led_insert = cq.Workplane("XY").newObject([build.led_insert.val().scale(f)])
-        build.scale_factor = f
         print("uniform scale factor", round(f, 4))
     return model
 
@@ -380,10 +368,6 @@ def export(shape, out_dir, name="drone_parametric"):
             mesh.export(os.path.join(out_dir, name + ".stl"))
     except Exception as e:
         print("STL repair skipped:", e)
-    led = getattr(build, "led_insert", None)
-    if led is not None:
-        cq.exporters.export(led, os.path.join(out_dir, "led_strip_green.step"))
-        cq.exporters.export(led, os.path.join(out_dir, "led_strip_green.stl"), tolerance=0.02, angularTolerance=0.1)
 
 
 if __name__ == "__main__":

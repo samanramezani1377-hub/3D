@@ -16,7 +16,12 @@ Parametric rebuild of the `smooth 2` quadcopter (CadQuery). Generator: `cad/para
 
 ## Update 2 (reference render: faceted dome, LED, camera)
 - Dome is now a mirror-symmetric low-poly polyhedron of planar triangles (`canopy_faceted`, `facet_vertices`, `facet_inset`) built through the measured levels.
-- Front green LED chevron: a groove in the shell plus a separate insert `led_strip_green.step/.stl` (parameters `led_*`).
+- Front LED slit: a small slit through the front shell that opens into a pocket behind it, so an LED can be glued from inside. It is part of the one body (no separate LED part). Parameters `led_*` (sizes in final mm).
 - Fixed front camera tilted down 20 deg under the nose (`camera_*`).
 - Lower hull widened so it meets the guard rings (no air gap between body/arms and guards); arms are 16 x 12 mm.
 - Previews: `preview_overview.png`, `preview_front.png`.
+
+## Update 3 (size + LED slit)
+- Overall footprint is 240 x 240 mm: square rotor layout (`motor_x == motor_z`) and `target_overall_mm` uniformly scales the model so the largest horizontal extent is 240 mm.
+- The middle of the body is wider (`body_half_width`, `mid_widen*`), tail narrower.
+- Separate `led_strip_green.*` files removed; the LED is only a slit + pocket in `drone_parametric.*`.
