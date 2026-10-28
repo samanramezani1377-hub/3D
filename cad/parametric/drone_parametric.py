@@ -403,7 +403,7 @@ def joint_slot(p, x, z):
               .rotate((0, 0, 0), (1, 0, 0), -90)
               .rotate((0, 0, 0), (0, 1, 0), -ang)
               .translate((start * math.cos(math.radians(ang)), -clearance,
-                          start * math.sin(math.radians(ang))))
+                          start * math.sin(math.radians(ang)))))
     return cutter
 
 
