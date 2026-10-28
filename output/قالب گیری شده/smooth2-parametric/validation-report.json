@@ -5,10 +5,10 @@
   "validation_scope": "Fresh CadQuery in-memory geometry checks and workflow output-presence checks; no physical print-fit test",
   "assembly": {
     "shape_valid": true,
-    "solid_count": 10,
+    "solid_count": 26,
     "bbox_mm": [
-      247.068422,
-      247.024488,
+      247.082193,
+      247.035002,
       32.992664
     ]
   },
@@ -52,21 +52,98 @@
     "prop_4": {
       "shape_valid": true,
       "solid_count": 1
+    },
+    "screw_1": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "screw_2": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "screw_3": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "screw_4": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "screw_5": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "screw_6": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "screw_7": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "screw_8": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_1": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_2": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_3": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_4": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_5": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_6": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_7": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "nut_8": {
+      "shape_valid": true,
+      "solid_count": 1
     }
   },
   "joint": {
-    "type": "radial slide-in rounded tapered key tongue/socket",
-    "clearance_per_side_model_units": 0.25,
+    "type": "integral floor-mounted tongue with vertical fasteners",
     "model_scale": 1.28548,
-    "approx_clearance_per_side_mm": 0.32137,
-    "arm_start_radius_model_units": 23.0,
-    "tip_width_model_units": 10.0,
-    "lead_in_length_model_units": 6.0,
-    "socket_start_radius_model_units": 22.75,
-    "socket_end_radius_model_units": 44.0,
-    "rounded_tip": true,
-    "matching_tapered_body_socket": true,
-    "mechanical_locking_fastener_included": false,
+    "fastener_count": 8,
+    "fasteners_per_arm": 2,
+    "bolt_positions_radial_tangent_model_units": [
+      [
+        28.5,
+        -4.5
+      ],
+      [
+        28.5,
+        4.5
+      ]
+    ],
+    "bolt_clearance_hole_diameter_mm": 3.342,
+    "tab_thickness_mm": 3.214,
+    "floor_rail_height_mm": 2.571,
+    "nut_trap_depth_mm": 2.571,
+    "screws_vertical_and_top_accessible": true,
+    "nut_traps_in_floor_rails": true,
+    "side_wall_fasteners": false,
+    "floor_plate_cut_through": false,
+    "hole_centres_aligned_by_shared_coordinates": true,
+    "arm_tab_is_integral": true,
+    "hardware_geometry_is_simplified": true,
     "physical_fit_tested": false
   },
   "stl_watertight": "not_checked",
@@ -75,7 +152,7 @@
     "CAD validity checks apply to in-memory CadQuery shapes before export.",
     "The workflow checks that exported STEP/STL files exist and are non-empty; STEP round-trip import is not yet checked.",
     "STL watertightness is not reported by this validation step.",
-    "The rounded/tapered key helps guide insertion but has no locking fastener; pull-out resistance and flight loads are not validated.",
-    "Physical insertion force and printer-dependent fit have not been tested; print a small joint coupon before printing the complete parts."
+    "Screw and nut solids are simplified envelopes without threads; use real metal M3 hardware.",
+    "The mounting-hole coordinates are shared by the tabs and nut traps, but physical print-fit, screwdriver access in the printed body, and flight-load strength still require testing."
   ]
 }
