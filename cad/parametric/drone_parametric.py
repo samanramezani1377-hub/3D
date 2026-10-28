@@ -246,7 +246,8 @@ def body(p):
             pass
         outer = hull.union(canopy)
 
-    # Hollow the body from underneath, leaving side walls and a roof for electronics.
+    # Hollow the body internally while retaining a continuous, flat bottom plate.
+    # The same nominal wall thickness is kept on the floor, side walls, and roof.
     wall = float(p.get("body_shell_thickness", 2.0))
     if wall <= 0 or wall >= min(p["body_half_width"], p["body_height"]):
         raise ValueError("body_shell_thickness must be positive and smaller than the body")
@@ -255,8 +256,9 @@ def body(p):
     scale_z = max(0.1, 1.0 - wall / ((p["body_front_z"] - p["body_rear_z"]) / 2.0))
     inner_pts = [(x * scale_x, cz + (z - cz) * scale_z) for x, z in pts]
     # Workplane XZ extrudes along -Y; negative extrusion runs upward.
+    # Start the cavity at y=wall (not below y=0) so the outside underside stays closed and planar.
     lower_void = cq.Workplane("XZ").polyline(inner_pts).close().extrude(-(p["body_height"] + 2.0))
-    lower_void = lower_void.translate((0, -1.0, 0))  # cutter starts below the bottom -> open underside
+    lower_void = lower_void.translate((0, wall, 0))
     if p.get("use_measured_canopy") and p.get("canopy_faceted"):
         roof_void = faceted_canopy(p, inward=wall, open_bottom_y=p["body_height"] - 1.0,
                                    roof_drop=wall)
