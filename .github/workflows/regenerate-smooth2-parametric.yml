@@ -93,7 +93,8 @@ jobs:
             "drone_parametric.params.json"
             "assembly-manifest.json"
             "validation-report.json"
-            "body_lower.step" "body_lower.stl"\n            "body_crown.step" "body_crown.stl"
+            "body_lower.step" "body_lower.stl"
+            "body_crown.step" "body_crown.stl"
             "arm_1.step" "arm_1.stl"
             "arm_2.step" "arm_2.stl"
             "arm_3.step" "arm_3.stl"
@@ -136,6 +137,8 @@ jobs:
               "$out/prop_2.step" "$out/prop_2.stl" \
               "$out/prop_3.step" "$out/prop_3.stl" \
               "$out/prop_4.step" "$out/prop_4.stl"
+            # Remove the obsolete unsplit body exports so only the two body pieces remain.
+            git rm -f --ignore-unmatch "$out/body.step" "$out/body.stl"
 
             if git diff --cached --quiet; then
               echo "Generated CAD exports already match origin/demo; nothing to commit."
