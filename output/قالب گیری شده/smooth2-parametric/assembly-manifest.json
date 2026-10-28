@@ -10,10 +10,16 @@
   },
   "parts": [
     {
-      "name": "body",
-      "step": "body.step",
-      "stl": "body.stl",
-      "role": "central body with four female sockets"
+      "name": "body_lower",
+      "step": "body_lower.step",
+      "stl": "body_lower.stl",
+      "role": "lower body shell: flat floor and side walls, with four female sockets"
+    },
+    {
+      "name": "body_crown",
+      "step": "body_crown.step",
+      "stl": "body_crown.stl",
+      "role": "separate upper crown/canopy; no joining features designed yet"
     },
     {
       "name": "arm_1",

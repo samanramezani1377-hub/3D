@@ -5,7 +5,7 @@
   "validation_scope": "Fresh CadQuery in-memory geometry checks and workflow output-presence checks; no physical print-fit test",
   "assembly": {
     "shape_valid": true,
-    "solid_count": 9,
+    "solid_count": 10,
     "bbox_mm": [
       247.068422,
       247.024488,
@@ -13,7 +13,11 @@
     ]
   },
   "components": {
-    "body": {
+    "body_lower": {
+      "shape_valid": true,
+      "solid_count": 1
+    },
+    "body_crown": {
       "shape_valid": true,
       "solid_count": 1
     },
