@@ -501,16 +501,78 @@ def export_modular(parts, out_dir):
             for name in parts
         ],
         "joint": {
-            "type": "radial slide-in rectangular tongue and socket",
+            "type": "radial slide-in rounded tapered key tongue and matching socket",
             "clearance_per_side_model_units": PARAMS["joint_clearance"],
             "arm_start_radius_model_units": PARAMS["joint_arm_start_radius"],
+            "tip_width_model_units": PARAMS["joint_tip_width"],
+            "lead_in_length_model_units": PARAMS["joint_lead_in_length"],
             "socket_start_radius_model_units": PARAMS["joint_socket_start_radius"],
             "socket_end_radius_model_units": PARAMS["joint_socket_end_radius"],
-            "note": "Dimensions are uniformly scaled with the CAD model. Verify print-fit with a small test coupon before printing all parts."
+            "mechanical_locking_fastener_included": False,
+            "note": "Dimensions are uniformly scaled with the CAD model. The rounded taper guides insertion; a physical fit test and a separate mechanical retention review are still required."
         }
     }
     with open(os.path.join(out_dir, "assembly-manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+
+def write_validation_report(parts, scale, out_dir, params):
+    """Write a report from the freshly generated in-memory CAD shapes."""
+    import os, json
+    compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
+    bb = compound.BoundingBox()
+    components = {}
+    for name, part in parts.items():
+        shape = part.val()
+        components[name] = {
+            "shape_valid": bool(shape.isValid()),
+            "solid_count": len(shape.Solids())
+        }
+    p = {**PARAMS, **params}
+    report = {
+        "report_version": 3,
+        "generated_from": "cad/parametric/drone_parametric.py",
+        "branch": "demo",
+        "validation_scope": "Fresh CadQuery in-memory geometry checks and workflow output-presence checks; no physical print-fit test",
+        "assembly": {
+            "shape_valid": bool(compound.isValid()),
+            "solid_count": len(compound.Solids()),
+            "bbox_mm": [round(bb.xlen, 6), round(bb.ylen, 6), round(bb.zlen, 6)]
+        },
+        "components": components,
+        "joint": {
+            "type": "radial slide-in rounded tapered key tongue/socket",
+            "clearance_per_side_model_units": p["joint_clearance"],
+            "model_scale": scale,
+            "approx_clearance_per_side_mm": round(p["joint_clearance"] * scale, 5),
+            "arm_start_radius_model_units": p["joint_arm_start_radius"],
+            "tip_width_model_units": p["joint_tip_width"],
+            "lead_in_length_model_units": p["joint_lead_in_length"],
+            "socket_start_radius_model_units": p["joint_socket_start_radius"],
+            "socket_end_radius_model_units": p["joint_socket_end_radius"],
+            "rounded_tip": True,
+            "matching_tapered_body_socket": True,
+            "mechanical_locking_fastener_included": False,
+            "physical_fit_tested": False
+        },
+        "stl_watertight": "not_checked",
+        "step_round_trip_import": "not_checked",
+        "known_limitations": [
+            "CAD validity checks apply to in-memory CadQuery shapes before export.",
+            "The workflow checks that exported STEP/STL files exist and are non-empty; STEP round-trip import is not yet checked.",
+            "STL watertightness is not reported by this validation step.",
+            "The rounded/tapered key helps guide insertion but has no locking fastener; pull-out resistance and flight loads are not validated.",
+            "Physical insertion force and printer-dependent fit have not been tested; print a small joint coupon before printing the complete parts."
+        ]
+    }
+    if not report["assembly"]["shape_valid"]:
+        raise RuntimeError("Generated assembly compound is invalid")
+    if report["assembly"]["solid_count"] != len(parts):
+        raise RuntimeError(f"Assembly has {report['assembly']['solid_count']} solids; expected {len(parts)}")
+    if any(not v["shape_valid"] or v["solid_count"] != 1 for v in components.values()):
+        raise RuntimeError("One or more exported components is invalid or not a single solid")
+    with open(os.path.join(out_dir, "validation-report.json"), "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
 
 
 def export(shape, out_dir, name="drone_parametric"):
@@ -539,7 +601,10 @@ if __name__ == "__main__":
     print("assembly bbox", bb.xlen, bb.ylen, bb.zlen, "valid", compound.isValid(),
           "solids", len(compound.Solids()))
     out = "output/قالب گیری شده/smooth2-parametric"
+    if not compound.isValid() or len(compound.Solids()) != len(parts):
+        raise RuntimeError("Generated assembly failed validity/solid-count checks")
     export_modular(parts, out)
+    write_validation_report(parts, scale, out, params)
     with open(out + "/drone_parametric.params.json", "w", encoding="utf-8") as f:
         json.dump({**PARAMS, **params}, f, indent=2, ensure_ascii=False)
 
