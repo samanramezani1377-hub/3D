@@ -9,6 +9,7 @@ import cadquery as cq
 PARAMS = {
     # central body (plan polygon, mirrored left/right) ---------------------
     "body_height": 13.0,            # lower hull height (y 0..body_height)
+    "body_shell_thickness": 2.0,    # nominal shell thickness; underside remains open for electronics access
     "body_half_width": 38.0,        # max half width (x) at the widest point (was 32: middle made wider)
     "body_front_z": 66.0,           # nose (+z)
     "body_rear_z": -52.0,           # tail (-z)
@@ -138,8 +139,8 @@ def hull_polygon(p):
             (-p["body_half_width"], p["body_widest_z_front"])]
 
 
-def faceted_canopy(p):
-    """Closed polyhedron of planar triangles through the measured levels -> crisp low-poly dome."""
+def faceted_canopy(p, inward=0.0, open_bottom_y=None, roof_drop=0.0):
+    """Closed polyhedron through measured levels; inward builds an inset cavity for the hollow body."""
     import os, numpy as np
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "body_sections.json")
     data = json.load(open(path))
@@ -154,14 +155,22 @@ def faceted_canopy(p):
             b[i, 1] = (a[i, 1] + a[k, 1]) / 2.0
         return b
     secs = sorted((float(y), np.array(q)) for y, q in data["sections"].items())
-    lv = [(p["canopy_base_y"], pick(_resample(hull_polygon(p), n)))]
+    base_y = p["canopy_base_y"] if open_bottom_y is None else open_bottom_y
+    def inset_ring(a):
+        if inward <= 0:
+            return a
+        c = a.mean(axis=0)
+        radii = np.linalg.norm(a - c, axis=1)
+        return c + (a - c) * np.maximum(0.1, (radii - inward) / np.maximum(radii, 1e-6))[:, None]
+    base_pts = pick(_resample(hull_polygon(p), n))
+    lv = [(base_y, inset_ring(base_pts))]
     for j, (y, q) in enumerate(secs):
         a = widen_x(p, pick(q)); c = a.mean(axis=0)
-        a[1::2] = c + (a[1::2] - c) * p["facet_inset"]          # zig-zag -> creases between triangles
-        lv.append((y, a))
+        a[1::2] = c + (a[1::2] - c) * p["facet_inset"]
+        lv.append((y, inset_ring(a)))
     ytop, ptop = secs[-1]; a = widen_x(p, pick(ptop)); c = a.mean(axis=0)
-    top = c + (a - c) * p["canopy_top_scale"]
-    lv.append((p["canopy_top_y"], top))
+    top = inset_ring(c + (a - c) * p["canopy_top_scale"])
+    lv.append((p["canopy_top_y"] - roof_drop, top))
     P = [[cq.Vector(float(x), float(y), float(z)) for (x, z) in pts] for y, pts in lv]
     # lift the two middle (ridge) vertices of the top ring a little
     faces = []
@@ -206,40 +215,57 @@ def measured_canopy(p):
 
 
 def body(p):
-    pts = [(-p["body_front_half_width"], p["body_front_z"]),
-           (p["body_front_half_width"], p["body_front_z"]),
-           (p["body_half_width"], p["body_widest_z_front"]),
-           (p["body_half_width"], p["body_widest_z_rear"]),
-           (p["body_rear_half_width"], p["body_rear_z"]),
-           (-p["body_rear_half_width"], p["body_rear_z"]),
-           (-p["body_half_width"], p["body_widest_z_rear"]),
-           (-p["body_half_width"], p["body_widest_z_front"])]
-    # workplane XZ has its normal along -Y, so extrude negative to go +Y
-    hull = (cq.Workplane("XZ").polyline(pts).close().extrude(-p["body_height"]))
+    pts = hull_polygon(p)
+    # Preserve the approved exterior geometry.
+    hull = cq.Workplane("XZ").polyline(pts).close().extrude(-p["body_height"])
     if p.get("use_measured_canopy"):
         try:
-            if p.get("canopy_faceted"):
-                return hull.union(faceted_canopy(p))
-            return hull.union(measured_canopy(p))
-        except Exception as e:  # fall back to the simple tapered canopy below
-            print("measured canopy failed, using simple canopy:", e)
-    try:
-        hull = hull.edges("|Y").fillet(p["body_edge_fillet"])
-    except Exception:
-        pass
-    cpts = [(-p["canopy_half_width"] * 0.6, p["canopy_front_z"]),
-            (p["canopy_half_width"] * 0.6, p["canopy_front_z"]),
-            (p["canopy_half_width"], 0.0),
-            (p["canopy_half_width"] * 0.9, p["canopy_rear_z"]),
-            (-p["canopy_half_width"] * 0.9, p["canopy_rear_z"]),
-            (-p["canopy_half_width"], 0.0)]
-    canopy = (cq.Workplane("XZ").workplane(offset=-p["body_height"]).polyline(cpts).close()
-              .extrude(-p["canopy_height"], taper=p["canopy_taper_deg"]))
-    try:
-        canopy = canopy.faces(">Y").edges().fillet(p["canopy_fillet"])
-    except Exception:
-        pass
-    return hull.union(canopy)
+            canopy = faceted_canopy(p) if p.get("canopy_faceted") else measured_canopy(p)
+            outer = hull.union(canopy)
+        except Exception as e:
+            print("measured canopy failed, using the simple canopy fallback:", e)
+            outer = hull
+    else:
+        try:
+            hull = hull.edges("|Y").fillet(p["body_edge_fillet"])
+        except Exception:
+            pass
+        cpts = [(-p["canopy_half_width"] * 0.6, p["canopy_front_z"]),
+                (p["canopy_half_width"] * 0.6, p["canopy_front_z"]),
+                (p["canopy_half_width"], 0.0),
+                (p["canopy_half_width"] * 0.9, p["canopy_rear_z"]),
+                (-p["canopy_half_width"] * 0.9, p["canopy_rear_z"]),
+                (-p["canopy_half_width"], 0.0)]
+        canopy = (cq.Workplane("XZ").workplane(offset=-p["body_height"]).polyline(cpts).close()
+                  .extrude(-p["canopy_height"], taper=p["canopy_taper_deg"]))
+        try:
+            canopy = canopy.faces(">Y").edges().fillet(p["canopy_fillet"])
+        except Exception:
+            pass
+        outer = hull.union(canopy)
+
+    # Hollow the body from underneath, leaving side walls and a roof for electronics.
+    wall = float(p.get("body_shell_thickness", 2.0))
+    if wall <= 0 or wall >= min(p["body_half_width"], p["body_height"]):
+        raise ValueError("body_shell_thickness must be positive and smaller than the body")
+    cz = (p["body_front_z"] + p["body_rear_z"]) / 2.0
+    scale_x = max(0.1, 1.0 - wall / p["body_half_width"])
+    scale_z = max(0.1, 1.0 - wall / ((p["body_front_z"] - p["body_rear_z"]) / 2.0))
+    inner_pts = [(x * scale_x, cz + (z - cz) * scale_z) for x, z in pts]
+    # Workplane XZ extrudes along -Y; negative extrusion runs upward.
+    lower_void = cq.Workplane("XZ").polyline(inner_pts).close().extrude(-(p["body_height"] + 2.0))
+    lower_void = lower_void.translate((0, -1.0, 0))  # cutter starts below the bottom -> open underside
+    if p.get("use_measured_canopy") and p.get("canopy_faceted"):
+        roof_void = faceted_canopy(p, inward=wall, open_bottom_y=p["body_height"] - 1.0,
+                                   roof_drop=wall)
+        cavity = lower_void.union(roof_void)
+        hollow = outer.cut(cavity)
+    else:
+        # Keep the fallback canopy stable; at minimum the lower body is hollow.
+        hollow = outer.cut(lower_void)
+    if not hollow.val().isValid():
+        raise RuntimeError("Hollow body geometry is invalid")
+    return hollow
 
 
 def stations(p):
