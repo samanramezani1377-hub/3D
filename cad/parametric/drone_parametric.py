@@ -655,7 +655,7 @@ def build_modular(p=None):
                           .center(hx, hz).polygon(6, p["joint_nut_af"] / math.cos(math.radians(30.0)))
                           .extrude(-p["joint_nut_depth"]))
             body_part = body_part.cut(nut_cutter)
-            part_index = (arm_index - 1) * len(p["joint_bolt_radii"]) + bolt_index
+            part_index = (arm_index - 1) * len(p["joint_bolt_positions"]) + bolt_index
             screw_parts.append((f"screw_{part_index}", screw_part(p, hx, hz)))
             nut_parts.append((f"nut_{part_index}", nut_part(p, hx, hz)))
         if p["include_props"]:
@@ -824,7 +824,7 @@ def write_validation_report(parts, scale, out_dir, params):
             "type": "integral floor-mounted tongue with vertical fasteners",
             "model_scale": scale,
             "fastener_count": 8,
-            "fasteners_per_arm": len(p["joint_bolt_radii"]),
+            "fasteners_per_arm": len(p["joint_bolt_positions"]),
             "bolt_positions_radial_tangent_model_units": p["joint_bolt_positions"],
             "bolt_clearance_hole_diameter_mm": round(2 * p["joint_bolt_hole_radius"] * scale, 3),
             "tab_thickness_mm": round(p["joint_tab_thickness"] * scale, 3),
