@@ -66,18 +66,18 @@ PARAMS = {
     "led_pocket_length": 12.0,       # pocket behind the slit (x)
     "led_pocket_height": 4.0,        # (y)
     "led_pocket_depth": 6.0,         # how far the pocket goes inward (z)
-    # fixed front camera, tilted down --------------------------------------------
+    # front camera: small module hidden INSIDE the nose, only a small lens barrel shows outside.
+    # Sizes are in FINAL (scaled) mm. The lens axis points forward, tilted down by camera_tilt_down_deg.
     "camera_enabled": True,
-    "camera_width": 22.0,
-    "camera_height": 13.0,
-    "camera_depth": 14.0,
-    "camera_y": 7.0,
-    "camera_z": 65.0,
-    "camera_tilt_down_deg": 20.0,
-    "camera_barrel_radius": 6.2,
-    "camera_barrel_length": 5.0,
-    "camera_lens_radius": 4.2,
-    "camera_lens_protrusion": 1.2,
+    "camera_tilt_down_deg": 35.0,
+    "camera_y": 4.6,                 # height of the lens exit on the nose face
+    "camera_barrel_radius": 4.0,     # outer radius of the visible lens barrel
+    "camera_barrel_protrusion": 1.8, # how far the barrel sticks out of the nose face
+    "camera_lens_hole_radius": 2.8,  # opening of the lens
+    "camera_wall": 1.5,              # shell thickness between the outside and the camera pocket
+    "camera_cavity_w": 10.0,         # internal pocket for the camera module (width / height / depth)
+    "camera_cavity_h": 7.0,
+    "camera_cavity_d": 8.0,
     # propellers (simple 2-blade, one per motor) --------------------------------
     "include_props": True,
     "prop_radius": 25.5,            # must stay < guard inner radius (guard_outer_radius - guard_wall)
@@ -311,15 +311,23 @@ def led_slot(p, solid, fs=1.0):
     return slit.union(pocket)
 
 
-def camera(p):
-    w, h, dpt = p["camera_width"], p["camera_height"], p["camera_depth"]
-    box = cq.Workplane("XY").box(w, h, dpt)
-    box = box.edges("|Z").fillet(2.0)
-    barrel = (cq.Workplane("XY").workplane(offset=dpt / 2).circle(p["camera_barrel_radius"]).extrude(p["camera_barrel_length"]))
-    lens = (cq.Workplane("XY").workplane(offset=dpt / 2 + p["camera_barrel_length"]).circle(p["camera_lens_radius"]).extrude(p["camera_lens_protrusion"]))
-    cam = box.union(barrel).union(lens)
-    cam = cam.rotate((0, 0, 0), (1, 0, 0), p["camera_tilt_down_deg"])
-    return cam.translate((0, p["camera_y"], p["camera_z"]))
+def camera_parts(p, fs=1.0):
+    """(barrel, cutter): lens barrel to add outside, and lens hole + internal pocket to cut. fs = scale factor."""
+    ro, rh = p["camera_barrel_radius"] / fs, p["camera_lens_hole_radius"] / fs
+    prot, wall = p["camera_barrel_protrusion"] / fs, p["camera_wall"] / fs
+    w, h, d = p["camera_cavity_w"] / fs, p["camera_cavity_h"] / fs, p["camera_cavity_d"] / fs
+    # local frame: origin = lens exit on the nose face, axis +Z = looking forward
+    barrel = cq.Workplane("XY").workplane(offset=-1.0).circle(ro).extrude(prot + 1.0)
+    import math
+    t = math.radians(p["camera_tilt_down_deg"])
+    # the pocket's upper-front corner swings forward when tilted: push the pocket back so it keeps `wall`
+    c = ((h / 2) * math.sin(t) + wall) / math.cos(t)
+    hole = cq.Workplane("XY").workplane(offset=-c - 0.2).circle(rh).extrude(c + 0.2 + prot + 1.0)
+    cavity = cq.Workplane("XY").box(w, h, d).translate((0, 0, -c - d / 2))
+    cutter = hole.union(cavity)
+    place = lambda wp: (wp.rotate((0, 0, 0), (1, 0, 0), p["camera_tilt_down_deg"])
+                        .translate((0, p["camera_y"] / fs, p["body_front_z"])))
+    return place(barrel), place(cutter)
 
 
 def prop(p, x, z):
@@ -340,12 +348,13 @@ def build(p=None):
         model = model.union(arm(p, x, z)).union(guard(p, x, z)).union(motor(p, x, z))
         if p["include_props"]:
             model = model.union(prop(p, x, z))
-    if p["camera_enabled"]:
-        model = model.union(camera(p))
     f = 1.0
     if p.get("target_overall_mm"):
         bb = model.val().BoundingBox()
         f = p["target_overall_mm"] / max(bb.xlen, bb.zlen)
+    if p["camera_enabled"]:
+        barrel, cutter = camera_parts(p, f)
+        model = model.union(barrel).cut(cutter)
     if p["led_enabled"]:
         model = model.cut(led_slot(p, model.val(), f))
     if f != 1.0:
