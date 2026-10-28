@@ -523,8 +523,5 @@ if __name__ == "__main__":
     with open(out + "/drone_parametric.params.json", "w", encoding="utf-8") as f:
         json.dump({**PARAMS, **params}, f, indent=2, ensure_ascii=False)
 
-# Harmless commit to trigger the demo-branch regeneration workflow; no model changes.
-
-# Workflow trigger: rerun smooth2 parametric CAD exports after cache configuration fix.
-
-# Trigger regeneration after making the CAD export push resilient to concurrent branch updates.
+# Modular export: body with female sockets, four removable arm/guard/motor modules,
+# and separate propellers. Regeneration is restricted to the demo branch.
