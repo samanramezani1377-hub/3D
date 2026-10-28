@@ -53,7 +53,7 @@ jobs:
           out = "output/قالب گیری شده/smooth2-parametric"
           expected = ["drone_parametric.step", "drone_parametric.stl",
                       "drone_parametric.params.json", "assembly-manifest.json", "validation-report.json"]
-          for prefix in ("body", "arm_1", "arm_2", "arm_3", "arm_4",
+          for prefix in ("body_lower", "body_crown", "arm_1", "arm_2", "arm_3", "arm_4",
                          "prop_1", "prop_2", "prop_3", "prop_4"):
               expected.extend([prefix + ".step", prefix + ".stl"])
           for name in expected:
@@ -63,8 +63,11 @@ jobs:
               print(f"{name}: {os.path.getsize(path)} bytes")
           with open(os.path.join(out, "assembly-manifest.json"), encoding="utf-8") as f:
               manifest = json.load(f)
-          if len(manifest.get("parts", [])) != 9:
-              raise SystemExit("Assembly manifest should list body, four arm modules and four props")
+          if len(manifest.get("parts", [])) != 10:
+              raise SystemExit("Assembly manifest should list lower body, crown, four arm modules and four props")
+          names = {p.get("name") for p in manifest.get("parts", [])}
+          if not {"body_lower", "body_crown"}.issubset(names):
+              raise SystemExit("Assembly manifest must contain separate body_lower and body_crown components")
           orientation = manifest.get("export_orientation", {})
           if orientation.get("vertical_axis") != "+Z" or orientation.get("camera_front_direction") != "-Y" or orientation.get("flat_underside_direction") != "-Z":
               raise SystemExit("Export orientation metadata does not match the approved Z-up convention")
@@ -90,7 +93,7 @@ jobs:
             "drone_parametric.params.json"
             "assembly-manifest.json"
             "validation-report.json"
-            "body.step" "body.stl"
+            "body_lower.step" "body_lower.stl"\n            "body_crown.step" "body_crown.stl"
             "arm_1.step" "arm_1.stl"
             "arm_2.step" "arm_2.stl"
             "arm_3.step" "arm_3.stl"
