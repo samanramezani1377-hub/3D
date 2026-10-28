@@ -99,7 +99,7 @@ PARAMS = {
     # target_overall_mm: if set (and model_scale is None) the scale is derived so the largest extent equals it.
     # Floor-mounted arm attachment: integral tongue + two vertical M3 fasteners per arm.
     # Dimensions below are pre-scale model units; model_scale converts them to final millimetres.
-    "joint_clearance": 1.0,
+    "joint_clearance": 0.25,
     "joint_tip_width": 10.0,
     "joint_lead_in_length": 6.0,
     "joint_tab_start_radius": 20.5,
