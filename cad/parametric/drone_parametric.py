@@ -141,6 +141,24 @@ def hull_polygon(p):
             (-p["body_half_width"], p["body_widest_z_front"])]
 
 
+def canopy_base_points(p):
+    """Shared 14-vertex footprint used by both the lower hull and canopy rim."""
+    import os, numpy as np
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "body_sections.json")
+    data = json.load(open(path))
+    n = data["points_per_level"]
+    K = p["facet_vertices"]
+    idx = [int(round(i * n / K)) % n for i in range(K)]
+    a = _resample(hull_polygon(p), n)[idx]
+    # Keep the exact same mirrored point treatment as the faceted canopy rings.
+    b = a.copy()
+    for i in range(K):
+        k = (K - i) % K
+        b[i, 0] = (a[i, 0] - a[k, 0]) / 2.0
+        b[i, 1] = (a[i, 1] + a[k, 1]) / 2.0
+    return [tuple(map(float, q)) for q in b]
+
+
 def faceted_canopy(p, inward=0.0, open_bottom_y=None, roof_drop=0.0):
     """Closed polyhedron through measured levels; inward builds an inset cavity for the hollow body."""
     import os, numpy as np
@@ -164,7 +182,7 @@ def faceted_canopy(p, inward=0.0, open_bottom_y=None, roof_drop=0.0):
         c = a.mean(axis=0)
         radii = np.linalg.norm(a - c, axis=1)
         return c + (a - c) * np.maximum(0.1, (radii - inward) / np.maximum(radii, 1e-6))[:, None]
-    base_pts = pick(_resample(hull_polygon(p), n))
+    base_pts = np.asarray(canopy_base_points(p), float)
     lv = [(base_y, inset_ring(base_pts))]
     for j, (y, q) in enumerate(secs):
         a = widen_x(p, pick(q)); c = a.mean(axis=0)
@@ -217,7 +235,8 @@ def measured_canopy(p):
 
 
 def body(p):
-    pts = hull_polygon(p)
+    # Match the lower hull's top rim to the exact canopy base polygon.
+    pts = canopy_base_points(p)
     # Preserve the approved exterior geometry.
     hull = cq.Workplane("XZ").polyline(pts).close().extrude(-p["body_height"])
     if p.get("use_measured_canopy"):
@@ -437,7 +456,8 @@ def body_shell_parts(p):
             (0, split_y + 50.0, 0))
         return full.intersect(lower_box), full.intersect(crown_box)
 
-    pts = hull_polygon(p)
+    # Use the same rim vertices as the canopy so no crown edge falls inside the hull.
+    pts = canopy_base_points(p)
     hull = cq.Workplane("XZ").polyline(pts).close().extrude(-p["body_height"])
     crown = faceted_canopy(p)
 
