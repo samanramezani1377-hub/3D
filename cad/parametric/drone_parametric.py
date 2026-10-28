@@ -742,22 +742,35 @@ def export_modular(parts, out_dir):
         },
         "parts": [
             {"name": name, "step": f"{name}.step", "stl": f"{name}.stl",
-             "role": ("lower body shell: flat floor and side walls, with four female sockets" if name == "body_lower"
-                      else "separate upper crown/canopy; no joining features designed yet" if name == "body_crown"
-                      else "removable arm + propeller guard + motor" if name.startswith("arm_")
-                      else "separate propeller")}
+             "role": ("lower body shell with reinforced floor rails, side entry openings and hex-nut traps" if name == "body_lower"
+                      else "separate removable upper crown/canopy" if name == "body_crown"
+                      else "removable arm module with an integral floor-mounting tongue, guard and motor" if name.startswith("arm_")
+                      else "separate propeller" if name.startswith("prop_")
+                      else "simplified vertical socket-head screw placeholder; use real M3 hardware" if name.startswith("screw_")
+                      else "simplified hex-nut placeholder; replace with a real metal M3 nut" if name.startswith("nut_")
+                      else "component")}
             for name in parts
         ],
         "joint": {
-            "type": "radial slide-in rounded tapered key tongue and matching socket",
-            "clearance_per_side_model_units": PARAMS["joint_clearance"],
-            "arm_start_radius_model_units": PARAMS["joint_arm_start_radius"],
-            "tip_width_model_units": PARAMS["joint_tip_width"],
-            "lead_in_length_model_units": PARAMS["joint_lead_in_length"],
-            "socket_start_radius_model_units": PARAMS["joint_socket_start_radius"],
-            "socket_end_radius_model_units": PARAMS["joint_socket_end_radius"],
-            "mechanical_locking_fastener_included": False,
-            "note": "Dimensions are uniformly scaled with the CAD model. The rounded taper guides insertion; a physical fit test and a separate mechanical retention review are still required."
+            "type": "integral arm tongue seated on reinforced inner-floor rails",
+            "fastener": "two vertical M3 screws per arm, accessed from above after removing the crown",
+            "fastener_count": 8,
+            "fastener_axis_design_coordinates": "Y (vertical); screws installed top-down",
+            "fastener_axis_export_coordinates": "Z (vertical)",
+            "nut_retention": "hexagonal nut traps in reinforced floor rails; metal nuts are required",
+            "side_wall_fasteners": False,
+            "floor_plate_cut_through": False,
+            "arm_entry_openings": 4,
+            "integral_tab": True,
+            "bolt_radii_model_units": PARAMS["joint_bolt_radii"],
+            "tab_width_model_units": PARAMS["joint_tab_width"],
+            "tab_thickness_model_units": PARAMS["joint_tab_thickness"],
+            "floor_rail_height_model_units": PARAMS["joint_floor_pad_height"],
+            "approx_tab_thickness_mm": round(PARAMS["joint_tab_thickness"] * PARAMS["model_scale"], 3),
+            "approx_m3_clearance_hole_diameter_mm": round(2 * PARAMS["joint_bolt_hole_radius"] * PARAMS["model_scale"], 3),
+            "hardware_geometry_is_simplified": True,
+            "physical_fit_tested": False,
+            "note": "The CAD includes simplified screw and nut envelopes for assembly visualization. Use real M3 screws and metal nuts; print-fit, tool access, and flight-load testing are still required."
         }
     }
     with open(os.path.join(out_dir, "assembly-manifest.json"), "w", encoding="utf-8") as f:
@@ -789,18 +802,22 @@ def write_validation_report(parts, scale, out_dir, params):
         },
         "components": components,
         "joint": {
-            "type": "radial slide-in rounded tapered key tongue/socket",
-            "clearance_per_side_model_units": p["joint_clearance"],
+            "type": "integral floor-mounted tongue with vertical fasteners",
             "model_scale": scale,
-            "approx_clearance_per_side_mm": round(p["joint_clearance"] * scale, 5),
-            "arm_start_radius_model_units": p["joint_arm_start_radius"],
-            "tip_width_model_units": p["joint_tip_width"],
-            "lead_in_length_model_units": p["joint_lead_in_length"],
-            "socket_start_radius_model_units": p["joint_socket_start_radius"],
-            "socket_end_radius_model_units": p["joint_socket_end_radius"],
-            "rounded_tip": True,
-            "matching_tapered_body_socket": True,
-            "mechanical_locking_fastener_included": False,
+            "fastener_count": 8,
+            "fasteners_per_arm": len(p["joint_bolt_radii"]),
+            "bolt_centres_model_units": p["joint_bolt_radii"],
+            "bolt_clearance_hole_diameter_mm": round(2 * p["joint_bolt_hole_radius"] * scale, 3),
+            "tab_thickness_mm": round(p["joint_tab_thickness"] * scale, 3),
+            "floor_rail_height_mm": round(p["joint_floor_pad_height"] * scale, 3),
+            "nut_trap_depth_mm": round(p["joint_nut_depth"] * scale, 3),
+            "screws_vertical_and_top_accessible": True,
+            "nut_traps_in_floor_rails": True,
+            "side_wall_fasteners": False,
+            "floor_plate_cut_through": False,
+            "hole_centres_aligned_by_shared_coordinates": True,
+            "arm_tab_is_integral": True,
+            "hardware_geometry_is_simplified": True,
             "physical_fit_tested": False
         },
         "stl_watertight": "not_checked",
@@ -809,8 +826,8 @@ def write_validation_report(parts, scale, out_dir, params):
             "CAD validity checks apply to in-memory CadQuery shapes before export.",
             "The workflow checks that exported STEP/STL files exist and are non-empty; STEP round-trip import is not yet checked.",
             "STL watertightness is not reported by this validation step.",
-            "The rounded/tapered key helps guide insertion but has no locking fastener; pull-out resistance and flight loads are not validated.",
-            "Physical insertion force and printer-dependent fit have not been tested; print a small joint coupon before printing the complete parts."
+            "Screw and nut solids are simplified envelopes without threads; use real metal M3 hardware.",
+            "The mounting-hole coordinates are shared by the tabs and nut traps, but physical print-fit, screwdriver access in the printed body, and flight-load strength still require testing."
         ]
     }
     if not report["assembly"]["shape_valid"]:
