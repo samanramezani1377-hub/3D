@@ -522,7 +522,8 @@ def build_modular(p=None):
         barrel, cutter = camera_parts(p, scale)
         body_part = body_part.union(barrel).cut(cutter)
     if p["led_enabled"]:
-        body_part = body_part.cut(led_slot(p, body_part.val(), scale))
+        # The LED slit sits above the hull/crown split, so keep it on the crown piece.
+        crown_part = crown_part.cut(led_slot(p, crown_part.val(), scale))
     parts = {"body_lower": body_part, "body_crown": crown_part}
     for i, part in enumerate(arm_parts, 1):
         parts[f"arm_{i}"] = part
