@@ -109,12 +109,12 @@ PARAMS = {
     "joint_tab_y": 4.0,
     "joint_floor_pad_height": 2.0,
     "joint_floor_pad_width": 16.5,
-    "joint_floor_pad_end_radius": 36.5,
-    "joint_arm_start_radius": 37.0,
-    "joint_entry_start_radius": 36.5,
+    "joint_floor_pad_end_radius": 34.5,
+    "joint_arm_start_radius": 35.0,
+    "joint_entry_start_radius": 34.5,
     "joint_entry_end_radius": 50.0,
 
-    "joint_bolt_radii": [25.5, 32.5],
+    "joint_bolt_positions": [[28.5, -4.5], [28.5, 4.5]],
     "joint_bolt_hole_radius": 1.3,
     "joint_nut_af": 4.6,
     "joint_nut_depth": 2.0,
@@ -392,14 +392,16 @@ def radial_part(profile, x, z, angle_deg, y_base):
 def mounting_tab(p, x, z):
     """Integral flat arm tongue with two vertical clearance holes."""
     import math
-    angle = math.degrees(math.atan2(z, x))
+    angle_rad = math.atan2(z, x)
+    angle = math.degrees(angle_rad)
     start, end = p["joint_tab_start_radius"], p["joint_tab_end_radius"]
     tab = radial_joint_profile(end - start, p["joint_tab_width"],
                                p["joint_tip_width"], p["joint_lead_in_length"]).extrude(p["joint_tab_thickness"])
     tab = radial_part(tab, start * math.cos(math.radians(angle)),
                       start * math.sin(math.radians(angle)), angle, p["joint_tab_y"])
-    for radius in p["joint_bolt_radii"]:
-        hx, hz = radius * math.cos(math.radians(angle)), radius * math.sin(math.radians(angle))
+    for radial_offset, tangent_offset in p["joint_bolt_positions"]:
+        hx = radial_offset * math.cos(angle_rad) + tangent_offset * math.sin(angle_rad)
+        hz = radial_offset * math.sin(angle_rad) - tangent_offset * math.cos(angle_rad)
         hole = (cq.Workplane("XZ").workplane(offset=-(p["joint_tab_y"] - 0.05))
                 .center(hx, hz).circle(p["joint_bolt_hole_radius"])
                 .extrude(-(p["joint_tab_thickness"] + 0.1)))
@@ -630,8 +632,8 @@ def build_modular(p=None):
     start_r = p["joint_arm_start_radius"]
     if start_r >= p["joint_entry_end_radius"]:
         raise ValueError("arm root must meet the side-wall entry opening")
-    if len(p["joint_bolt_radii"]) != 2 or p["joint_bolt_radii"][0] >= p["joint_bolt_radii"][1]:
-        raise ValueError("each arm requires two ordered floor-fastener stations")
+    if len(p["joint_bolt_positions"]) != 2:
+        raise ValueError("each arm requires exactly two floor-fastener stations")
     stations_list = stations(p)
     body_part, crown_part = body_shell_parts(p)
     # Add low floor rails, open the side walls (not the floor), then cut the matching nut traps.
@@ -646,8 +648,9 @@ def build_modular(p=None):
         module = module.union(mounting_tab(p, x, z))
         module = module.union(guard(p, x, z)).union(motor(p, x, z))
         arm_parts.append(module)
-        for bolt_index, radius in enumerate(p["joint_bolt_radii"], 1):
-            hx, hz = radius * math.cos(angle), radius * math.sin(angle)
+        for bolt_index, (radial_offset, tangent_offset) in enumerate(p["joint_bolt_positions"], 1):
+            hx = radial_offset * math.cos(angle) + tangent_offset * math.sin(angle)
+            hz = radial_offset * math.sin(angle) - tangent_offset * math.cos(angle)
             nut_cutter = (cq.Workplane("XZ").workplane(offset=-(p["joint_tab_y"] - p["joint_nut_depth"]))
                           .center(hx, hz).polygon(6, p["joint_nut_af"] / math.cos(math.radians(30.0)))
                           .extrude(-p["joint_nut_depth"]))
@@ -778,7 +781,7 @@ def export_modular(parts, out_dir):
             "floor_plate_cut_through": False,
             "arm_entry_openings": 4,
             "integral_tab": True,
-            "bolt_radii_model_units": PARAMS["joint_bolt_radii"],
+            "bolt_positions_radial_tangent_model_units": PARAMS["joint_bolt_positions"],
             "tab_width_model_units": PARAMS["joint_tab_width"],
             "tab_thickness_model_units": PARAMS["joint_tab_thickness"],
             "floor_rail_height_model_units": PARAMS["joint_floor_pad_height"],
@@ -822,7 +825,7 @@ def write_validation_report(parts, scale, out_dir, params):
             "model_scale": scale,
             "fastener_count": 8,
             "fasteners_per_arm": len(p["joint_bolt_radii"]),
-            "bolt_centres_model_units": p["joint_bolt_radii"],
+            "bolt_positions_radial_tangent_model_units": p["joint_bolt_positions"],
             "bolt_clearance_hole_diameter_mm": round(2 * p["joint_bolt_hole_radius"] * scale, 3),
             "tab_thickness_mm": round(p["joint_tab_thickness"] * scale, 3),
             "floor_rail_height_mm": round(p["joint_floor_pad_height"] * scale, 3),
