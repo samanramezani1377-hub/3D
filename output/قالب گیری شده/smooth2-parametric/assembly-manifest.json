@@ -1,0 +1,68 @@
+{
+  "assembly": "drone_parametric.step",
+  "branch_scope": "demo",
+  "parts": [
+    {
+      "name": "body",
+      "step": "body.step",
+      "stl": "body.stl",
+      "role": "central body with four female sockets"
+    },
+    {
+      "name": "arm_1",
+      "step": "arm_1.step",
+      "stl": "arm_1.stl",
+      "role": "removable arm + propeller guard + motor"
+    },
+    {
+      "name": "arm_2",
+      "step": "arm_2.step",
+      "stl": "arm_2.stl",
+      "role": "removable arm + propeller guard + motor"
+    },
+    {
+      "name": "arm_3",
+      "step": "arm_3.step",
+      "stl": "arm_3.stl",
+      "role": "removable arm + propeller guard + motor"
+    },
+    {
+      "name": "arm_4",
+      "step": "arm_4.step",
+      "stl": "arm_4.stl",
+      "role": "removable arm + propeller guard + motor"
+    },
+    {
+      "name": "prop_1",
+      "step": "prop_1.step",
+      "stl": "prop_1.stl",
+      "role": "separate propeller"
+    },
+    {
+      "name": "prop_2",
+      "step": "prop_2.step",
+      "stl": "prop_2.stl",
+      "role": "separate propeller"
+    },
+    {
+      "name": "prop_3",
+      "step": "prop_3.step",
+      "stl": "prop_3.stl",
+      "role": "separate propeller"
+    },
+    {
+      "name": "prop_4",
+      "step": "prop_4.step",
+      "stl": "prop_4.stl",
+      "role": "separate propeller"
+    }
+  ],
+  "joint": {
+    "type": "radial slide-in rectangular tongue and socket",
+    "clearance_per_side_model_units": 0.25,
+    "arm_start_radius_model_units": 23.0,
+    "socket_start_radius_model_units": 22.5,
+    "socket_end_radius_model_units": 44.0,
+    "note": "Dimensions are uniformly scaled with the CAD model. Verify print-fit with a small test coupon before printing all parts."
+  }
+}
