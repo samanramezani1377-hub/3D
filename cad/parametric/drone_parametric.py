@@ -104,7 +104,7 @@ PARAMS = {
     "joint_lead_in_length": 6.0,
     "joint_branch_long_length": 16.0,   # long branch follows the fuselage length axis
     "joint_branch_short_length": 10.0,  # short branch follows the fuselage width axis
-    "joint_branch_width": 7.0,
+    "joint_branch_width": 7.0,\n    "joint_branch_axis_bias_deg": 20.0,
     "joint_tab_start_radius": 20.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
@@ -219,7 +219,17 @@ def faceted_canopy(p, inward=0.0, open_bottom_y=None, roof_drop=0.0):
     top = inset_ring(c + (a - c) * p["canopy_top_scale"])
     lv.append((p["canopy_top_y"] - roof_drop, top))
     P = [[cq.Vector(float(x), float(y), float(z)) for (x, z) in pts] for y, pts in lv]
-    # lift the two middle (ridge) vertices of the top ring a little
+    # Lift the two top-ring vertices closest to the longitudinal centreline,
+    # giving the crown ridge the configured extra height instead of leaving this
+    # parameter as an unused setting.
+    ridge_lift = float(p.get("facet_ridge_lift", 0.0))
+    if ridge_lift:
+        top_ring = P[-1]
+        ridge_indices = sorted(range(len(top_ring)),
+                               key=lambda i: (abs(top_ring[i].x), -abs(top_ring[i].z)))[:2]
+        for i in ridge_indices:
+            v = top_ring[i]
+            top_ring[i] = cq.Vector(v.x, v.y + ridge_lift, v.z)
     faces = []
     def tri(a, b, c):
         faces.append(cq.Face.makeFromWires(cq.Wire.makePolygon([a, b, c], close=True)))
@@ -418,7 +428,7 @@ def joint_bolt_points(p, x, z):
 
 
 def _branch_shapes(p, x, z, y_base, height):
-    """Forked V-like attachment: long branch follows body length; short branch follows body width."""
+    """Two unequal, diagonal branches forming a real V in plan view."""
     import math
     angle = math.atan2(z, x)
     radius = float(p["joint_bolt_positions"][0][0])
@@ -426,14 +436,26 @@ def _branch_shapes(p, x, z, y_base, height):
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
     width = float(p.get("joint_branch_width", 7.0))
-    # The two branches start at a common junction and extend in perpendicular body axes.
-    # Keep the longer longitudinal branch and shorter transverse branch distinct, with
-    # the radial tongue joining their inner ends into a compact forked/V-like footprint.
-    long_bar = cq.Workplane("XY").box(width, height, long_len).translate(
-        (cx, y_base + height / 2.0, cz + math.copysign(long_len / 2.0, z)))
-    short_bar = cq.Workplane("XY").box(short_len, height, width).translate(
-        (cx + math.copysign(short_len / 2.0, x), y_base + height / 2.0, cz))
-    return long_bar, short_bar
+    # Both branches diverge from the same inner junction. The long leg is biased
+    # toward the fuselage-length (Z) axis; the shorter leg is biased toward the
+    # fuselage-width (X) axis. A 20-degree bias makes a true V rather than a T/L.
+    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
+    sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
+    directions = (
+        (long_len, sx * math.sin(bias), sz * math.cos(bias)),
+        (short_len, sx * math.cos(bias), sz * math.sin(bias)),
+    )
+    branches = []
+    for length, dx, dz in directions:
+        # Build each branch along local +Z, then rotate it into its plan-view direction.
+        theta = math.degrees(math.atan2(dx, dz))
+        bar = cq.Workplane("XY").box(width, height, length)
+        bar = bar.rotate((0, 0, 0), (0, 1, 0), theta)
+        bar = bar.translate((cx + dx * length / 2.0,
+                             y_base + height / 2.0,
+                             cz + dz * length / 2.0))
+        branches.append(bar)
+    return tuple(branches)
 
 
 def mounting_tab(p, x, z):
@@ -463,12 +485,14 @@ def floor_mounting_rail(p, x, z):
     start, end = p["joint_tab_start_radius"], p["joint_floor_pad_end_radius"]
     rail = radial_joint_profile(end - start, p["joint_floor_pad_width"],
                                 p["joint_tip_width"], p["joint_lead_in_length"]).extrude(
-                                    p["joint_floor_pad_height"] + 0.02)
+                                    p["joint_floor_pad_height"])
+    # Rails begin exactly on the top face of the 2 mm floor plate; they do not
+    # overlap into or subtract from the floor's nominal thickness.
     rail = radial_part(rail, start * math.cos(math.radians(angle)),
                        start * math.sin(math.radians(angle)), angle,
-                       p["body_shell_thickness"] - 0.02)
-    for branch in _branch_shapes(p, x, z, p["body_shell_thickness"] - 0.02,
-                                 p["joint_floor_pad_height"] + 0.02):
+                       p["body_shell_thickness"])
+    for branch in _branch_shapes(p, x, z, p["body_shell_thickness"],
+                                 p["joint_floor_pad_height"]):
         rail = rail.union(branch)
     return rail
 
@@ -702,10 +726,10 @@ def build_modular(p=None):
         beam_clearance = arm(p, x, z, start_r=start_r,
                              y_offset=p["body_shell_thickness"])
         body_part = body_part.cut(beam_clearance)
-    # The tab and its two cross-branches extend inward beyond the arm-beam slot.
-    # Cut their exact mating envelope from the lower shell as well, so the removable
-    # tab seats into a matching pocket instead of intersecting the side wall.
-    # The tab starts above the floor plate, which remains continuous underneath.
+    # The tab and its two V branches extend inward beyond the arm-beam slot.
+    # Cut their exact mating envelope from the lower shell so the removable tab seats
+    # in a matching pocket. The tab starts above the floor plate; only the deliberate
+    # fastener bores and underside nut traps interrupt the floor at their own stations.
     for x, z in stations_list:
         body_part = body_part.cut(mounting_tab(p, x, z))
     arm_parts, prop_parts, screw_parts, nut_parts = [], [], [], []
