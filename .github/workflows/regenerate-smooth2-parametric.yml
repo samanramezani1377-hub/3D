@@ -68,8 +68,14 @@ jobs:
           if len(manifest.get("parts", [])) != 26:
               raise SystemExit("Assembly manifest should list body/crown, four arms, four props, eight screws and eight nuts")
           joint = manifest.get("joint", {})
-          if joint.get("fastener_count") != 8 or joint.get("side_wall_fasteners") is not False or joint.get("floor_plate_cut_through") is not False:
-              raise SystemExit("Arm joint metadata does not describe eight top-down floor fasteners with an intact floor plate")
+          if joint.get("fastener_count") != 8 or joint.get("side_wall_fasteners") is not False or joint.get("floor_plate_cut_through") is not True:
+              raise SystemExit("Arm joint metadata must describe eight vertical fasteners through the floor, not side-wall fasteners")
+          if joint.get("nut_recesses_open_on_exterior_underside") is not True or joint.get("nut_seated_inside_floor_recess") is not True:
+              raise SystemExit("Nut geometry metadata must confirm underside-open pockets with nuts seated inside them")
+          if joint.get("nut_pocket_depth_mm", 0) < joint.get("nut_thickness_mm", 999999):
+              raise SystemExit("Nut pocket is shallower than the nut envelope")
+          if joint.get("nut_pocket_clearance_per_side_mm", 0) <= 0:
+              raise SystemExit("Nut pocket has no positive side clearance")
           names = {p.get("name") for p in manifest.get("parts", [])}
           if not {"body_lower", "body_crown"}.issubset(names):
               raise SystemExit("Assembly manifest must contain separate body_lower and body_crown components")
