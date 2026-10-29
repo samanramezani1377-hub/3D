@@ -351,9 +351,17 @@ def guard(p, x, z):
 
 # The arm and body socket share this rounded, tapered plan-view profile.
 def radial_joint_profile(length, width, tip_width, lead_length):
-    """Plan-view outline with a rounded nose; equal tip_width/width keeps a full-width root."""
+    """Plan-view outline; preserve full width when the root is not tapered."""
     if length <= 0 or width <= 0 or tip_width <= 0 or tip_width > width:
         raise ValueError("invalid radial joint profile dimensions")
+    if tip_width >= width - 1e-6:
+        # A full-width root has no taper lead-in; avoid a zero-length edge at the arc tangent.
+        return (cq.Workplane("XY")
+                .moveTo(0, -width / 2)
+                .lineTo(length, -width / 2)
+                .lineTo(length, width / 2)
+                .lineTo(0, width / 2)
+                .close())
     lead = min(max(lead_length, tip_width / 2), length)
     r = tip_width / 2
     return (cq.Workplane("XY")
