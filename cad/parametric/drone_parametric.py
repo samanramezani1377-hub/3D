@@ -104,7 +104,8 @@ PARAMS = {
     "joint_lead_in_length": 6.0,
     "joint_branch_long_length": 16.0,   # long branch follows the fuselage length axis
     "joint_branch_short_length": 10.0,  # short branch follows the fuselage width axis
-    "joint_branch_width": 7.0,\n    "joint_branch_axis_bias_deg": 20.0,
+    "joint_branch_width": 7.0,
+    "joint_branch_axis_bias_deg": 20.0,
     "joint_tab_start_radius": 20.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
