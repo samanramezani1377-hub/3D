@@ -426,46 +426,39 @@ def radial_part(profile, x, z, angle_deg, y_base):
 
 
 def joint_bolt_points(p, x, z):
-    """Bolt centres at the midpoints of the long and short legs of the V mount."""
+    """Bolt centres at the midpoints of the longitudinal and crosswise tick legs."""
     import math
     angle = math.atan2(z, x)
     radius = float(p["joint_bolt_positions"][0][0])
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
-    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
     sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
+    # The long leg points toward the fuselage centre along its longitudinal axis:
+    # rear arms (+Z), front arms (-Z). The short leg points crosswise toward x=0.
     return [
-        (cx + sx * math.sin(bias) * long_len / 2.0,
-         cz + sz * math.cos(bias) * long_len / 2.0),
-        (cx + sx * math.cos(bias) * short_len / 2.0,
-         cz + sz * math.sin(bias) * short_len / 2.0),
+        (cx, cz - sz * long_len / 2.0),
+        (cx - sx * short_len / 2.0, cz),
     ]
 
 
 def _branch_shapes(p, x, z, y_base, height):
-    """Two unequal, diagonal branches forming a real V in plan view."""
+    """Full-height unequal branches forming the required directional tick in plan view."""
     import math
     angle = math.atan2(z, x)
     radius = float(p["joint_bolt_positions"][0][0])
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
-    # Branches are intentionally narrower than the main arm: each is exactly 60%
-    # of arm_width. This changes branch width only; it does not neck down the arm beam.
+    # Only the branch widths are narrower: the main arm keeps its full width and height.
     width = float(p["arm_width"]) * float(p.get("joint_branch_width_ratio", 0.60))
-    # Both branches diverge from the same inner junction. The long leg is biased
-    # toward the fuselage-length (Z) axis; the shorter leg is biased toward the
-    # fuselage-width (X) axis. A 20-degree bias makes a true V rather than a T/L.
-    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
     sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
     directions = (
-        (long_len, sx * math.sin(bias), sz * math.cos(bias)),
-        (short_len, sx * math.cos(bias), sz * math.sin(bias)),
+        (long_len, 0.0, -sz),   # longitudinal: inward, toward the fuselage centre
+        (short_len, -sx, 0.0),  # crosswise: inward toward the longitudinal centreline
     )
     branches = []
     for length, dx, dz in directions:
-        # Build each branch along local +Z, then rotate it into its plan-view direction.
         theta = math.degrees(math.atan2(dx, dz))
         bar = cq.Workplane("XY").box(width, height, length)
         bar = bar.rotate((0, 0, 0), (0, 1, 0), theta)
@@ -474,6 +467,14 @@ def _branch_shapes(p, x, z, y_base, height):
                              cz + dz * length / 2.0))
         branches.append(bar)
     return tuple(branches)
+
+
+def arm_with_tick_root(p, x, z, start_r=0.0, y_offset=0.0):
+    """Full-section arm plus its integral, full-height tick-shaped root reinforcement."""
+    module = arm(p, x, z, start_r=start_r, y_offset=y_offset)
+    for branch in _branch_shapes(p, x, z, y_offset, p["arm_height"]):
+        module = module.union(branch)
+    return module
 
 
 def mounting_tab(p, x, z):
@@ -740,21 +741,19 @@ def build_modular(p=None):
     # cutter may extend below that plane. The separate nut pockets are the only local
     # underside recesses and remain confined to their fastener locations.
     for x, z in stations_list:
-        beam_clearance = arm(p, x, z, start_r=start_r,
-                             y_offset=p["body_shell_thickness"])
-        body_part = body_part.cut(beam_clearance)
-        # The beam is 12 units tall and starts at the 2-unit floor top (Y=2),
-        # so its upper 1 unit crosses the crown's base plane at Y=13.
-        # Cut the same exact beam envelope from the removable crown to create
-        # a matching side-entry notch instead of allowing an arm/crown collision.
-        crown_part = crown_part.cut(beam_clearance)
-    # The thin mounting tongue and its V branches are removed. The full-height arm beam
-    # extends inward to the screw stations, so no shallow pocket is cut for a separate tab.
+        root_clearance = arm_with_tick_root(p, x, z, start_r=start_r,
+                                            y_offset=p["body_shell_thickness"])
+        body_part = body_part.cut(root_clearance)
+        # Remove the same full-height tick-root envelope from the crown where it crosses
+        # the hull/crown split, preserving clearance for the removable arm module.
+        crown_part = crown_part.cut(root_clearance)
+    # The tick branches are integral with the arm, full arm-height, and 60% of arm width.
     arm_parts, prop_parts, screw_parts, nut_parts = [], [], [], []
     for arm_index, (x, z) in enumerate(stations_list, 1):
         angle = math.atan2(z, x)
-        module = arm(p, x, z, start_r=start_r, y_offset=p["body_shell_thickness"])
-        # Put both fastener bores directly through the full-height beam, not a thin tongue.
+        module = arm_with_tick_root(p, x, z, start_r=start_r,
+                                    y_offset=p["body_shell_thickness"])
+        # Put the vertical fastener bores through the full-height tick branches.
         for hx, hz in joint_bolt_points(p, x, z):
             beam_hole = (cq.Workplane("XZ").workplane(offset=-p["body_shell_thickness"])
                          .center(hx, hz).circle(p["joint_bolt_hole_radius"])
