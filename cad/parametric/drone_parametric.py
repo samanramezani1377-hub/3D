@@ -740,15 +740,16 @@ def export_modular(parts, out_dir):
     # Keep the assembled STL for visualization, but note that STL stores no
     # assembly/explode instructions. Also write a physically exploded STL so
     # slicers that open one STL cannot mistake the parts for a single assembled model.
-    # In the assembled STL only, lift a copy of the removable crown by 0.6 mm.
-    # The CAD source surfaces share the same nominal seam; this tiny export-only clearance
-    # prevents slicers from treating the crown and lower hull as one touching region.
-    # Do not alter the source parts, STEP assembly, arm geometry, or exploded STL layout.
+    # In the assembled STL only, add 0.01 mm export-only clearances at touching interfaces.
+    # The crown is lifted off the lower hull; each arm module is lifted off the floor rails.
+    # Do not alter source geometry, the STEP assembly, or the exploded STL layout.
     assembled_shapes = []
     for name, part in parts.items():
         shape = part.val()
         if name == "body_crown":
             shape = shape.translate((0, 0, 0.01))  # exported coordinates are Z-up
+        elif name.startswith("arm_"):
+            shape = shape.translate((0, 0, 0.01))  # lift tongue off rails; Z-up export
         assembled_shapes.append(shape)
     compound = cq.Compound.makeCompound(assembled_shapes)
     # Preserve the assembled pose under an explicit filename. The default STL name below
