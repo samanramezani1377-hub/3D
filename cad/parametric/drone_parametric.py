@@ -102,12 +102,12 @@ PARAMS = {
     "joint_clearance": 0.25,
     "joint_tip_width": 16.5,          # keep the tongue full-width at its inner end; no sudden neck-down
     "joint_lead_in_length": 6.0,
-    "joint_branch_long_length": 22.0,   # enlarged longitudinal tick branch
-    "joint_branch_short_length": 14.0,  # enlarged crosswise tick branch
+    "joint_branch_long_length": 18.0,   # shortened inner reach; root stays near the side opening
+    "joint_branch_short_length": 10.0,  # shorter outward leg keeps the root close to the side wall
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
-    "joint_branch_axis_bias_deg": 20.0,
-    "joint_tick_junction_radius": 20.5,
-    "joint_tab_start_radius": 20.5,
+    "joint_branch_axis_bias_deg": 20.0, # spread the two root legs to a 110-degree included angle
+    "joint_tick_junction_radius": 31.5,
+    "joint_tab_start_radius": 30.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
     "joint_tab_thickness": 2.5,  # legacy values retained for parameter-file compatibility; no low-profile tab is generated
@@ -115,7 +115,7 @@ PARAMS = {
     "joint_floor_pad_height": 2.0,
     "joint_floor_pad_width": 16.5,
     "joint_floor_pad_end_radius": 34.5,
-    "joint_arm_start_radius": 20.5,
+    "joint_arm_start_radius": 30.5,
     "joint_entry_start_radius": 34.5,
     "joint_entry_end_radius": 50.0,
 
@@ -427,36 +427,40 @@ def radial_part(profile, x, z, angle_deg, y_base):
 
 
 def joint_bolt_points(p, x, z):
-    """Bolt centres at the midpoints of the longitudinal and crosswise tick legs."""
+    """Bolt centres at the midpoints of the longitudinal and outward-swept tick legs."""
     import math
     angle = math.atan2(z, x)
     radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_len = float(p.get("joint_branch_long_length", 16.0))
+    long_len = float(p.get("joint_branch_long_length", 18.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
+    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
     sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
-    # The long leg points toward the fuselage centre along its longitudinal axis:
-    # rear arms (+Z), front arms (-Z). The short leg points crosswise toward x=0.
+    # Long leg points inward along the longitudinal axis. The shorter leg sweeps
+    # outward toward the side wall and outward along the same front/rear quadrant,
+    # opening the included tick angle to 90 + bias degrees.
     return [
         (cx, cz - sz * long_len / 2.0),
-        (cx - sx * short_len / 2.0, cz),
+        (cx + sx * math.cos(bias) * short_len / 2.0,
+         cz + sz * math.sin(bias) * short_len / 2.0),
     ]
 
 
 def _branch_shapes(p, x, z, y_base, height):
-    """Full-height unequal branches forming the required directional tick in plan view."""
+    """Full-height unequal tick branches, spread toward the side wall."""
     import math
     angle = math.atan2(z, x)
     radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_len = float(p.get("joint_branch_long_length", 16.0))
+    long_len = float(p.get("joint_branch_long_length", 18.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
-    # Only the branch widths are narrower: the main arm keeps its full width and height.
+    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
+    # Only branch width is reduced; the main beam remains full width and height.
     width = float(p["arm_width"]) * float(p.get("joint_branch_width_ratio", 0.60))
     sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
     directions = (
-        (long_len, 0.0, -sz),   # longitudinal: inward, toward the fuselage centre
-        (short_len, -sx, 0.0),  # crosswise: inward toward the longitudinal centreline
+        (long_len, 0.0, -sz),  # longitudinal leg toward the fuselage centre
+        (short_len, sx * math.cos(bias), sz * math.sin(bias)),  # outward-swept side leg
     )
     branches = []
     for length, dx, dz in directions:
