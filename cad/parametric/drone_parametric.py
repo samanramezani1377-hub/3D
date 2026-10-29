@@ -1200,6 +1200,12 @@ def write_validation_report(parts, scale, out_dir, params):
         # Nuts must occupy the underside pockets without penetrating the remaining body material.
         intersection = body_lower_shape.intersect(parts[nut_name].val())
         nut_body_intersections[nut_name] = round(max(0.0, intersection.Volume()), 6)
+    guard_inner_min = (
+        min(p["guard_profile_inner"]) + float(p.get("guard_grow", 0.0))
+        if p.get("guard_use_profile")
+        else float(p["guard_outer_radius"]) - float(p["guard_wall"])
+    )
+    prop_radius_local = float(p["prop_radius"])
     report = {
         "report_version": 3,
         "generated_from": "cad/parametric/drone_parametric.py",
@@ -1221,16 +1227,8 @@ def write_validation_report(parts, scale, out_dir, params):
             "airfoil_thickness_ratio": float(p.get("prop_airfoil_thickness_ratio", 0.10)),
             "radial_stations": len(p.get("prop_blade_stations", [])),
             "radial_guard_clearance_mm": round(
-                ((min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0))
-                 if p.get("guard_use_profile") else
-                 (p["guard_outer_radius"] - p["guard_wall"])
-                 - float(p["prop_radius"])) * float(scale), 3),
-            "guard_clearance_positive": (
-                ((min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0))
-                 if p.get("guard_use_profile") else
-                 (p["guard_outer_radius"] - p["guard_wall"]))
-                > float(p["prop_radius"])
-            ),
+                (guard_inner_min - prop_radius_local) * float(scale), 3),
+            "guard_clearance_positive": guard_inner_min > prop_radius_local,
             "motor_matched": False,
             "thrust_efficiency_bench_tested": False,
             "physical_print_fit_tested": False
