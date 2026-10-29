@@ -103,7 +103,7 @@
   "prop_hub_radius": 4.0,
   "prop_hub_height": 4.0,
   "joint_clearance": 0.25,
-  "joint_tip_width": 10.0,
+  "joint_tip_width": 16.5,
   "joint_lead_in_length": 6.0,
   "joint_branch_long_length": 16.0,
   "joint_branch_short_length": 10.0,
