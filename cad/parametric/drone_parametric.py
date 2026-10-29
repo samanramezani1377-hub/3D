@@ -88,7 +88,7 @@ PARAMS = {
     "camera_cavity_d": 7.0,
     # propellers (parametric, twisted cambered two-blade rotor) -----------------
     "include_props": True,
-    "prop_radius": 24.7,            # 31.75 mm radius after scale -> 63.5 mm / 2.5 in diameter
+    "prop_radius": 26.45,           # 34.0 mm final radius -> 68.0 mm / 2.68 in diameter; preserves ~4.18 mm radial guard clearance
     "prop_chord": 7.0,              # legacy parameter retained for old parameter files
     "prop_thickness": 1.2,          # legacy parameter; airfoil thickness is set by prop_airfoil_thickness_ratio
     "prop_y": 25.5,                 # lifted above motor and arm envelope; validated for 3D clearance
@@ -101,10 +101,10 @@ PARAMS = {
     "prop_airfoil_samples": 24,     # cosine-spaced points per upper/lower surface
     "prop_tip_sweep": 1.2,          # mild sweep at the tip, in pre-scale model units
     # [radius fraction, local chord] stations from root to tip; taper avoids a rectangular slab.
-    "prop_blade_stations": [
-        [0.05, 6.5], [0.14, 7.8], [0.23, 8.6], [0.33, 8.8],
-        [0.44, 8.2], [0.56, 7.3], [0.68, 6.4], [0.80, 5.6],
-        [0.90, 4.8], [0.96, 4.4], [1.00, 4.0]
+    "prop_blade_stations": [  # chord increased ~7% with diameter to preserve blade proportions
+        [0.05, 6.96], [0.14, 8.36], [0.23, 9.21], [0.33, 9.43],
+        [0.44, 8.79], [0.56, 7.82], [0.68, 6.86], [0.80, 6.00],
+        [0.90, 5.14], [0.96, 4.71], [1.00, 4.28]
     ],
     # overall size -------------------------------------------------------------
     # model_scale: fixed uniform scale to final mm. It keeps the body at its approved size (it was the scale that
