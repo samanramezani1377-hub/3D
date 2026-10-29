@@ -7,8 +7,8 @@
     "shape_valid": true,
     "solid_count": 26,
     "bbox_mm": [
-      247.078126,
-      247.029105,
+      247.104248,
+      247.058857,
       39.978888
     ]
   },
@@ -42,9 +42,9 @@
       "solid_count": 1,
       "bbox_mm": [
         11.1349,
-        -123.5146,
-        -0.0844,
-        123.5484,
+        -123.5294,
+        -0.0874,
+        123.5596,
         -11.1349,
         25.7133
       ]
@@ -55,9 +55,9 @@
       "bbox_mm": [
         11.1349,
         11.1349,
-        -0.0844,
-        123.5484,
-        123.5146,
+        -0.0874,
+        123.5596,
+        123.5294,
         25.7133
       ]
     },
@@ -65,9 +65,9 @@
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5297,
-        -123.5146,
-        -0.0844,
+        -123.5446,
+        -123.5294,
+        -0.0874,
         -11.1349,
         -11.1349,
         25.7133
@@ -77,11 +77,11 @@
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5297,
+        -123.5446,
         11.1349,
-        -0.0844,
+        -0.0874,
         -11.1349,
-        123.5146,
+        123.5294,
         25.7133
       ]
     },
@@ -325,6 +325,53 @@
         2.4429
       ]
     }
+  },
+  "arm_geometry": {
+    "all_four_arms_checked": true,
+    "constant_width_and_height_by_generator": true,
+    "arms": {
+      "arm_1": {
+        "main_beam_width_mm": 20.5677,
+        "main_beam_height_mm": 15.4258,
+        "root_beam_width_mm": 20.5677,
+        "root_beam_height_mm": 15.4258,
+        "tick_branch_width_mm": 12.3406,
+        "cross_section_constant_by_generator": true
+      },
+      "arm_2": {
+        "main_beam_width_mm": 20.5677,
+        "main_beam_height_mm": 15.4258,
+        "root_beam_width_mm": 20.5677,
+        "root_beam_height_mm": 15.4258,
+        "tick_branch_width_mm": 12.3406,
+        "cross_section_constant_by_generator": true
+      },
+      "arm_3": {
+        "main_beam_width_mm": 20.5677,
+        "main_beam_height_mm": 15.4258,
+        "root_beam_width_mm": 20.5677,
+        "root_beam_height_mm": 15.4258,
+        "tick_branch_width_mm": 12.3406,
+        "cross_section_constant_by_generator": true
+      },
+      "arm_4": {
+        "main_beam_width_mm": 20.5677,
+        "main_beam_height_mm": 15.4258,
+        "root_beam_width_mm": 20.5677,
+        "root_beam_height_mm": 15.4258,
+        "tick_branch_width_mm": 12.3406,
+        "cross_section_constant_by_generator": true
+      }
+    },
+    "verification_note": "Width and height are fixed by the arm generator; final CAD solids are checked for validity and single-solid connectivity. Visual section-by-section inspection is not automated."
+  },
+  "floor_plate": {
+    "nominal_thickness_mm": 2.571,
+    "sample_grid": "5x5 central-body points, clear of nut pockets and floor rails",
+    "sample_points_checked": 25,
+    "sample_points_retaining_nominal_thickness": 25,
+    "central_floor_thickness_samples_passed": true,
+    "nut_pockets_excluded_from_uniform_thickness_rule": true
   },
   "joint": {
     "type": "integral arm tongue with long longitudinal and short transverse branches; exterior underside fasteners",
