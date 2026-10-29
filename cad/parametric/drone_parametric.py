@@ -104,7 +104,7 @@ PARAMS = {
     "joint_lead_in_length": 6.0,
     "joint_branch_long_length": 16.0,   # long branch follows the fuselage length axis
     "joint_branch_short_length": 10.0,  # short branch follows the fuselage width axis
-    "joint_branch_width": 7.0,
+    "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
     "joint_branch_axis_bias_deg": 20.0,
     "joint_tab_start_radius": 20.5,
     "joint_tab_end_radius": 43.0,
@@ -451,7 +451,9 @@ def _branch_shapes(p, x, z, y_base, height):
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
-    width = float(p.get("joint_branch_width", 7.0))
+    # Branches are intentionally narrower than the main arm: each is exactly 60%
+    # of arm_width. This changes branch width only; it does not neck down the arm beam.
+    width = float(p["arm_width"]) * float(p.get("joint_branch_width_ratio", 0.60))
     # Both branches diverge from the same inner junction. The long leg is biased
     # toward the fuselage-length (Z) axis; the shorter leg is biased toward the
     # fuselage-width (X) axis. A 20-degree bias makes a true V rather than a T/L.
