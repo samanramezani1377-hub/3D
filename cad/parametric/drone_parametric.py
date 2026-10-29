@@ -744,6 +744,11 @@ def build_modular(p=None):
         beam_clearance = arm(p, x, z, start_r=start_r,
                              y_offset=p["body_shell_thickness"])
         body_part = body_part.cut(beam_clearance)
+        # The beam is 12 units tall and starts at the 2-unit floor top (Y=2),
+        # so its upper 1 unit crosses the crown's base plane at Y=13.
+        # Cut the same exact beam envelope from the removable crown to create
+        # a matching side-entry notch instead of allowing an arm/crown collision.
+        crown_part = crown_part.cut(beam_clearance)
     # The tab and its two V branches extend inward beyond the arm-beam slot.
     # Cut their exact mating envelope from the lower shell so the removable tab seats
     # in a matching pocket. The tab starts above the floor plate; only the deliberate
