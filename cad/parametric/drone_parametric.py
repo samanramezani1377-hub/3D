@@ -109,12 +109,12 @@ PARAMS = {
     "joint_tab_start_radius": 20.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
-    "joint_tab_thickness": 2.5,
+    "joint_tab_thickness": 2.5,  # legacy values retained for parameter-file compatibility; no low-profile tab is generated
     "joint_tab_y": 4.0,
     "joint_floor_pad_height": 2.0,
     "joint_floor_pad_width": 16.5,
     "joint_floor_pad_end_radius": 34.5,
-    "joint_arm_start_radius": 35.0,
+    "joint_arm_start_radius": 20.5,
     "joint_entry_start_radius": 34.5,
     "joint_entry_end_radius": 50.0,
 
@@ -549,7 +549,7 @@ def screw_part(p, x, z):
     import math
     shaft_r, head_r = p["joint_screw_shaft_radius"], p["joint_screw_head_radius"]
     head_h = p["joint_screw_head_height"]
-    tab_top = p["joint_tab_y"] + p["joint_tab_thickness"]
+    tab_top = p["body_shell_thickness"] + p["arm_height"]
     shaft_bottom = tab_top - p["joint_screw_length"]
     shaft = (cq.Workplane("XZ").workplane(offset=-shaft_bottom).center(x, z)
              .circle(shaft_r).extrude(-p["joint_screw_length"]))
@@ -731,9 +731,8 @@ def build_modular(p=None):
         raise ValueError("each arm requires exactly two floor-fastener stations")
     stations_list = stations(p)
     body_part, crown_part = body_shell_parts(p)
-    # Add low floor rails, open the side walls (not the floor), then cut the matching nut traps.
-    for x, z in stations_list:
-        body_part = body_part.union(floor_mounting_rail(p, x, z))
+    # Open the side walls and keep the underside nut traps; the full-height arm beam now reaches the screw stations.
+    # No low floor rails or thin mounting tongue are generated.
     for x, z in stations_list:
         body_part = body_part.cut(arm_entry_slot(p, x, z))
     # Preserve the full nominal bottom plate thickness. The arm-entry opening and beam
@@ -749,17 +748,18 @@ def build_modular(p=None):
         # Cut the same exact beam envelope from the removable crown to create
         # a matching side-entry notch instead of allowing an arm/crown collision.
         crown_part = crown_part.cut(beam_clearance)
-    # The tab and its two V branches extend inward beyond the arm-beam slot.
-    # Cut their exact mating envelope from the lower shell so the removable tab seats
-    # in a matching pocket. The tab starts above the floor plate; only the deliberate
-    # fastener bores and underside nut traps interrupt the floor at their own stations.
-    for x, z in stations_list:
-        body_part = body_part.cut(mounting_tab(p, x, z))
+    # The thin mounting tongue and its V branches are removed. The full-height arm beam
+    # extends inward to the screw stations, so no shallow pocket is cut for a separate tab.
     arm_parts, prop_parts, screw_parts, nut_parts = [], [], [], []
     for arm_index, (x, z) in enumerate(stations_list, 1):
         angle = math.atan2(z, x)
         module = arm(p, x, z, start_r=start_r, y_offset=p["body_shell_thickness"])
-        module = module.union(mounting_tab(p, x, z))
+        # Put both fastener bores directly through the full-height beam, not a thin tongue.
+        for hx, hz in joint_bolt_points(p, x, z):
+            beam_hole = (cq.Workplane("XZ").workplane(offset=-p["body_shell_thickness"])
+                         .center(hx, hz).circle(p["joint_bolt_hole_radius"])
+                         .extrude(-p["arm_height"]))
+            module = module.cut(beam_hole)
         module = module.union(guard(p, x, z)).union(motor(p, x, z))
         arm_parts.append(module)
         for bolt_index, (hx, hz) in enumerate(joint_bolt_points(p, x, z), 1):
@@ -962,7 +962,7 @@ def export_modular(parts, out_dir):
             for name in parts
         ],
         "joint": {
-            "type": "integral arm tongue seated on reinforced inner-floor rails",
+            "type": "full-height arm beam reaches the screw stations; screws pass through the beam and floor into underside nut recesses",
             "fastener": "two vertical M3 screws per arm, passing through the floor into exterior underside nut recesses",
             "fastener_count": 8,
             "fastener_axis_design_coordinates": "Y (vertical); screws installed from the arm-tab side into exterior underside nuts",
@@ -976,12 +976,11 @@ def export_modular(parts, out_dir):
             "side_wall_fasteners": False,
             "floor_plate_cut_through": True,
             "arm_entry_openings": 4,
-            "integral_tab": True,
+            "integral_tab": False,
             "bolt_positions_radial_tangent_model_units": PARAMS["joint_bolt_positions"],
-            "tab_width_model_units": PARAMS["joint_tab_width"],
-            "tab_thickness_model_units": PARAMS["joint_tab_thickness"],
-            "floor_rail_height_model_units": PARAMS["joint_floor_pad_height"],
-            "approx_tab_thickness_mm": round(PARAMS["joint_tab_thickness"] * PARAMS["model_scale"], 3),
+            "tab_removed": True,
+            "arm_start_radius_model_units": PARAMS["joint_arm_start_radius"],
+            "main_beam_height_mm": round(PARAMS["arm_height"] * PARAMS["model_scale"], 3),
             "approx_m3_clearance_hole_diameter_mm": round(2 * PARAMS["joint_bolt_hole_radius"] * PARAMS["model_scale"], 3),
             "hardware_geometry_is_simplified": True,
             "physical_fit_tested": False,
@@ -1076,14 +1075,15 @@ def write_validation_report(parts, scale, out_dir, params):
             "nut_pockets_excluded_from_uniform_thickness_rule": True
         },
         "joint": {
-            "type": "integral arm tongue with long longitudinal and short transverse branches; exterior underside fasteners",
+            "type": "full-height arm beam with direct vertical fastener bores; exterior underside fasteners",
             "model_scale": scale,
             "fastener_count": 8,
             "fasteners_per_arm": len(p["joint_bolt_positions"]),
             "bolt_positions_radial_tangent_model_units": p["joint_bolt_positions"],
             "bolt_clearance_hole_diameter_mm": round(2 * p["joint_bolt_hole_radius"] * scale, 3),
-            "tab_thickness_mm": round(p["joint_tab_thickness"] * scale, 3),
-            "floor_rail_height_mm": round(p["joint_floor_pad_height"] * scale, 3),
+            "thin_tab_removed": True,
+            "arm_start_radius_model_units": p["joint_arm_start_radius"],
+            "main_beam_height_mm": round(p["arm_height"] * scale, 3),
             "nut_trap_depth_mm": round(p["joint_nut_depth"] * scale, 3),
             "nut_thickness_mm": round(p["joint_nut_thickness"] * scale, 3),
             "screws_vertical_and_top_accessible": True,
@@ -1096,7 +1096,7 @@ def write_validation_report(parts, scale, out_dir, params):
             "side_wall_fasteners": False,
             "floor_plate_cut_through": True,
             "hole_centres_aligned_by_shared_coordinates": True,
-            "arm_tab_is_integral": True,
+            "arm_tab_is_integral": False,
             "hardware_geometry_is_simplified": True,
             "physical_fit_tested": False
         },
@@ -1107,7 +1107,7 @@ def write_validation_report(parts, scale, out_dir, params):
             "The workflow checks that exported STEP/STL files exist and are non-empty; STEP round-trip import is not yet checked.",
             "STL watertightness is not reported by this validation step.",
             "Screw and nut solids are simplified envelopes without threads; use real metal M3 hardware.",
-            "The mounting-hole coordinates are shared by the tabs and nut traps, but physical print-fit, screwdriver access in the printed body, and flight-load strength still require testing."
+            "The mounting-hole coordinates align directly with the full-height arm beam and underside nut traps; physical print-fit, screwdriver access in the printed body, and flight-load strength still require testing."
         ]
     }
     if not report["assembly"]["shape_valid"]:
