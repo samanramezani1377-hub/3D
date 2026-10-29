@@ -745,26 +745,49 @@ def export_modular(parts, out_dir):
                         os.path.join(out_dir, "drone_parametric.stl"),
                         tolerance=0.05, angularTolerance=0.1)
 
-    # Exploded layout: crown lifts vertically; arm modules move radially outward;
-    # propellers lift above their corresponding motors; screws lift and nuts drop.
+    # Exploded layout uses deliberate, visible clearances rather than small illustrative offsets.
+    # body_lower remains fixed; the crown lifts clear of the hull, and each complete arm module
+    # (including its integral tongue) moves radially far enough to leave the side opening entirely.
     exploded_shapes = []
+    exploded_bboxes = {}
+    import math
     for name, part in parts.items():
         shape = part.val()
         bb = shape.BoundingBox()
         if name == "body_crown":
-            shape = shape.translate((0, 0, 32.0))
+            shape = shape.translate((0, 0, 48.0))
         elif name.startswith("arm_"):
-            cx, cy = (bb.xmin + bb.xmax) / 2.0, (bb.ymin + bb.ymax) / 2.0
-            import math
-            length = math.hypot(cx, cy) or 1.0
-            shape = shape.translate((cx / length * 32.0, cy / length * 32.0, 0))
+            cx = (bb.xmin + bb.xmax) / 2.0
+            cy = (bb.ymin + bb.ymax) / 2.0
+            radius = math.hypot(cx, cy)
+            if radius < 1e-6:
+                raise RuntimeError(f"Cannot determine radial explode direction for {name}")
+            # A 62 mm radial translation pulls the tongue fully out of the body,
+            # rather than merely shifting the motor/guard away while leaving the joint engaged.
+            distance = 62.0
+            shape = shape.translate((cx / radius * distance, cy / radius * distance, 0))
         elif name.startswith("prop_"):
-            shape = shape.translate((0, 0, 24.0))
+            shape = shape.translate((0, 0, 28.0))
         elif name.startswith("screw_"):
             shape = shape.translate((0, 0, 12.0))
         elif name.startswith("nut_"):
             shape = shape.translate((0, 0, -8.0))
+        eb = shape.BoundingBox()
+        exploded_bboxes[name] = [round(eb.xmin, 3), round(eb.ymin, 3), round(eb.zmin, 3),
+                                 round(eb.xmax, 3), round(eb.ymax, 3), round(eb.zmax, 3)]
         exploded_shapes.append(shape)
+    # Guard against accidentally reverting to an assembled/near-assembled export.
+    if len(exploded_shapes) != 26 or "body_lower" not in exploded_bboxes:
+        raise RuntimeError("Exploded STL must contain all 26 assembly components with body_lower fixed")
+    for name in ("arm_1", "arm_2", "arm_3", "arm_4"):
+        original = parts[name].val().BoundingBox()
+        moved = exploded_bboxes[name]
+        if math.dist([(original.xmin + original.xmax) / 2.0, (original.ymin + original.ymax) / 2.0],
+                     [(moved[0] + moved[3]) / 2.0, (moved[1] + moved[4]) / 2.0]) < 60.0:
+            raise RuntimeError(f"{name} did not receive the required radial explode translation")
+    print("Exploded STL component bounds (xmin,ymin,zmin,xmax,ymax,zmax):")
+    for name, bounds in exploded_bboxes.items():
+        print(f"  {name}: {bounds}")
     exploded_compound = cq.Compound.makeCompound(exploded_shapes)
     cq.exporters.export(cq.Workplane("XY").newObject([exploded_compound]),
                         os.path.join(out_dir, "drone_parametric_exploded.stl"),
