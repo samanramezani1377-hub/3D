@@ -9,117 +9,325 @@
     "bbox_mm": [
       247.082193,
       247.035002,
-      32.992664
+      37.92212
     ]
   },
   "components": {
     "body_lower": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -48.8482,
+        -90.7202,
+        -0.0,
+        48.8482,
+        66.845,
+        16.7112
+      ]
     },
     "body_crown": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -52.9764,
+        -84.8417,
+        16.7112,
+        52.9764,
+        66.845,
+        32.9083
+      ]
     },
     "arm_1": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        16.5887,
+        -123.5175,
+        -0.0844,
+        123.5495,
+        -16.5887,
+        25.7133
+      ]
     },
     "arm_2": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        16.5887,
+        16.5887,
+        -0.0844,
+        123.5495,
+        123.5175,
+        25.7133
+      ]
     },
     "arm_3": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -123.5327,
+        -123.5175,
+        -0.0844,
+        -16.5887,
+        -16.5887,
+        25.7133
+      ]
     },
     "arm_4": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -123.5327,
+        16.5887,
+        -0.0844,
+        -16.5887,
+        123.5175,
+        25.7133
+      ]
     },
     "prop_1": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        41.7777,
+        -79.6998,
+        11.5689,
+        107.338,
+        -69.4159,
+        17.4841
+      ]
     },
     "prop_2": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        41.7777,
+        69.4159,
+        11.5689,
+        107.338,
+        79.6998,
+        17.4841
+      ]
     },
     "prop_3": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -107.338,
+        -79.6998,
+        11.5689,
+        -41.7777,
+        -69.4159,
+        17.4841
+      ]
     },
     "prop_4": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -107.338,
+        69.4159,
+        11.5689,
+        -41.7777,
+        79.6998,
+        17.4841
+      ]
     },
     "screw_1": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        23.1411,
+        -38.9533,
+        -5.0138,
+        28.6703,
+        -33.4257,
+        11.3131
+      ]
     },
     "screw_2": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        29.5685,
+        -28.6695,
+        -5.0138,
+        35.0977,
+        -23.1419,
+        11.3131
+      ]
     },
     "screw_3": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        23.1411,
+        33.4257,
+        -5.0138,
+        28.6703,
+        38.9533,
+        11.3131
+      ]
     },
     "screw_4": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        29.5685,
+        23.1419,
+        -5.0138,
+        35.0977,
+        28.6695,
+        11.3131
+      ]
     },
     "screw_5": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -28.6703,
+        -38.9533,
+        -5.0138,
+        -23.1411,
+        -33.4257,
+        11.3131
+      ]
     },
     "screw_6": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -35.0977,
+        -28.6695,
+        -5.0138,
+        -29.5685,
+        -23.1419,
+        11.3131
+      ]
     },
     "screw_7": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -28.6703,
+        33.4257,
+        -5.0138,
+        -23.1411,
+        38.9533,
+        11.3131
+      ]
     },
     "screw_8": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -35.0977,
+        23.1419,
+        -5.0138,
+        -29.5685,
+        28.6695,
+        11.3131
+      ]
     },
     "nut_1": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        22.7144,
+        -38.9533,
+        -0.0005,
+        29.097,
+        -33.4257,
+        2.4429
+      ]
     },
     "nut_2": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        29.1418,
+        -28.6695,
+        -0.0005,
+        35.5244,
+        -23.1419,
+        2.4429
+      ]
     },
     "nut_3": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        22.7144,
+        33.4257,
+        -0.0005,
+        29.097,
+        38.9533,
+        2.4429
+      ]
     },
     "nut_4": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        29.1418,
+        23.1419,
+        -0.0005,
+        35.5244,
+        28.6695,
+        2.4429
+      ]
     },
     "nut_5": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -29.097,
+        -38.9533,
+        -0.0005,
+        -22.7144,
+        -33.4257,
+        2.4429
+      ]
     },
     "nut_6": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -35.5244,
+        -28.6695,
+        -0.0005,
+        -29.1418,
+        -23.1419,
+        2.4429
+      ]
     },
     "nut_7": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -29.097,
+        33.4257,
+        -0.0005,
+        -22.7144,
+        38.9533,
+        2.4429
+      ]
     },
     "nut_8": {
       "shape_valid": true,
-      "solid_count": 1
+      "solid_count": 1,
+      "bbox_mm": [
+        -35.5244,
+        23.1419,
+        -0.0005,
+        -29.1418,
+        28.6695,
+        2.4429
+      ]
     }
   },
   "joint": {
-    "type": "integral floor-mounted tongue with vertical fasteners",
+    "type": "integral arm tongue with long longitudinal and short transverse branches; exterior underside fasteners",
     "model_scale": 1.28548,
     "fastener_count": 8,
     "fasteners_per_arm": 2,
@@ -137,10 +345,25 @@
     "tab_thickness_mm": 3.214,
     "floor_rail_height_mm": 2.571,
     "nut_trap_depth_mm": 2.571,
+    "nut_thickness_mm": 2.442,
     "screws_vertical_and_top_accessible": true,
-    "nut_traps_in_floor_rails": true,
+    "nut_traps_in_floor_rails": false,
+    "nut_recesses_open_on_exterior_underside": true,
+    "nut_seated_inside_floor_recess": true,
+    "nut_pocket_clearance_per_side_mm": 0.193,
+    "nut_body_intersection_volume_mm3": {
+      "nut_1": 0.0,
+      "nut_2": 0.0,
+      "nut_3": 0.0,
+      "nut_4": 0.0,
+      "nut_5": 0.0,
+      "nut_6": 0.0,
+      "nut_7": 0.0,
+      "nut_8": 0.0
+    },
+    "max_nut_body_intersection_volume_mm3": 0.0,
     "side_wall_fasteners": false,
-    "floor_plate_cut_through": false,
+    "floor_plate_cut_through": true,
     "hole_centres_aligned_by_shared_coordinates": true,
     "arm_tab_is_integral": true,
     "hardware_geometry_is_simplified": true,

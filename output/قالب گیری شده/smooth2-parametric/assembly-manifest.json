@@ -168,14 +168,18 @@
   ],
   "joint": {
     "type": "integral arm tongue seated on reinforced inner-floor rails",
-    "fastener": "two vertical M3 screws per arm, accessed from above after removing the crown",
+    "fastener": "two vertical M3 screws per arm, passing through the floor into exterior underside nut recesses",
     "fastener_count": 8,
-    "fastener_axis_design_coordinates": "Y (vertical); screws installed top-down",
+    "fastener_axis_design_coordinates": "Y (vertical); screws installed from the arm-tab side into exterior underside nuts",
     "fastener_axis_export_coordinates": "Z (vertical)",
-    "nut_retention": "hexagonal nut traps in reinforced floor rails; metal nuts are required",
+    "nut_retention": "hexagonal pockets open on the exterior underside; nut solids sit inside the pocket depth, with real metal nuts required for assembly",
+    "nut_recesses_open_on_exterior_underside": true,
+    "nut_pocket_depth_mm": 2.571,
+    "nut_thickness_mm": 2.442,
+    "nut_seated_inside_floor_recess": true,
     "nut_pocket_clearance_per_side_mm": 0.193,
     "side_wall_fasteners": false,
-    "floor_plate_cut_through": false,
+    "floor_plate_cut_through": true,
     "arm_entry_openings": 4,
     "integral_tab": true,
     "bolt_positions_radial_tangent_model_units": [
@@ -195,6 +199,6 @@
     "approx_m3_clearance_hole_diameter_mm": 3.342,
     "hardware_geometry_is_simplified": true,
     "physical_fit_tested": false,
-    "note": "The CAD includes simplified screw and nut envelopes for assembly visualization. Use real M3 screws and metal nuts; print-fit, tool access, and flight-load testing are still required."
+    "note": "The CAD includes simplified screw and nut envelopes for assembly visualization. Nut solids are positioned within the underside-open hex pockets and the screw clearance bores pass through the floor. Use real M3 screws and metal nuts; print-fit, tool access, and flight-load testing are still required."
   }
 }
