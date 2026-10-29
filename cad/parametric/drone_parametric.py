@@ -740,7 +740,17 @@ def export_modular(parts, out_dir):
     # Keep the assembled STL for visualization, but note that STL stores no
     # assembly/explode instructions. Also write a physically exploded STL so
     # slicers that open one STL cannot mistake the parts for a single assembled model.
-    compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
+    # In the assembled STL only, lift a copy of the removable crown by 0.6 mm.
+    # The CAD source surfaces share the same nominal seam; this tiny export-only clearance
+    # prevents slicers from treating the crown and lower hull as one touching region.
+    # Do not alter the source parts, STEP assembly, arm geometry, or exploded STL layout.
+    assembled_shapes = []
+    for name, part in parts.items():
+        shape = part.val()
+        if name == "body_crown":
+            shape = shape.translate((0, 0, 0.6))  # exported coordinates are Z-up
+        assembled_shapes.append(shape)
+    compound = cq.Compound.makeCompound(assembled_shapes)
     # Preserve the assembled pose under an explicit filename. The default STL name below
     # is intentionally reserved for the exploded layout so opening drone_parametric.stl
     # in a mesh viewer shows the separated parts instead of the closed assembly.
