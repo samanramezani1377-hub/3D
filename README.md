@@ -35,6 +35,7 @@ The arm root where each arm enters the fuselage must look like a **tick/check ma
 - The root has two unequal branches that meet at the arm's inner junction: one long branch and one short branch.
 - The **long branch must run along the aircraft's longitudinal direction**. It points **forward on the rear arms** and **backward on the front arms**.
 - The short branch is the crosswise leg, creating the angled tick/check-mark appearance.
+- **Each of the two tick branches must be 60% of the main arm width** (currently 16 mm arm width → 9.6 mm branch width before model scaling). This narrower branch width is intentional and does not mean the main arm beam itself should neck down.
 - Mirror/rotate the geometry correctly for all four arm positions so the long branch direction follows the front/rear rule, rather than giving all roots the same orientation.
 - Preserve the main arm's width through the body entry; do not neck down the arm at the point where it enters the body.
 - **The arm's width and height must remain constant along its entire length.** Neither dimension may taper, shrink, or be locally reduced at the body-entry/root region or anywhere else along the arm.
