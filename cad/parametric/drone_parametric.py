@@ -102,6 +102,9 @@ PARAMS = {
     "joint_clearance": 0.25,
     "joint_tip_width": 10.0,
     "joint_lead_in_length": 6.0,
+    "joint_branch_long_length": 16.0,   # long branch follows the fuselage length axis
+    "joint_branch_short_length": 10.0,  # short branch follows the fuselage width axis
+    "joint_branch_width": 7.0,
     "joint_tab_start_radius": 20.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
@@ -121,7 +124,7 @@ PARAMS = {
     "joint_nut_depth": 2.0,
     "joint_nut_hole_radius": 1.2,
     "joint_screw_shaft_radius": 1.15,
-    "joint_screw_length": 3.9,
+    "joint_screw_length": 10.4,
     "joint_screw_head_radius": 2.15,
     "joint_screw_head_height": 2.3,
     "joint_screw_socket_af": 1.95,
@@ -348,8 +351,8 @@ def guard(p, x, z):
 
 # The arm and body socket share this rounded, tapered plan-view profile.
 def radial_joint_profile(length, width, tip_width, lead_length):
-    """Plan-view outline with a rounded inner nose and tapered lead-in; extrude along local Z."""
-    if length <= 0 or width <= 0 or tip_width <= 0 or tip_width >= width:
+    """Plan-view outline with a rounded nose; equal tip_width/width keeps a full-width root."""
+    if length <= 0 or width <= 0 or tip_width <= 0 or tip_width > width:
         raise ValueError("invalid radial joint profile dimensions")
     lead = min(max(lead_length, tip_width / 2), length)
     r = tip_width / 2
@@ -370,7 +373,8 @@ def arm(p, x, z, start_r=0.0, y_offset=0.0):
     ang = math.degrees(math.atan2(z, x))
     if start_r < 0 or start_r >= L:
         raise ValueError("arm start radius must be within the motor station")
-    tip_width = p.get("joint_tip_width", 10.0)
+    # The portion entering the body keeps the full beam width right to its rounded end.
+    tip_width = p["arm_width"]
     lead_length = p.get("joint_lead_in_length", 6.0)
     bar_height = p["arm_height"] if y_offset == 0.0 else p["arm_height"] - y_offset - 1.0
     if bar_height <= 0:
@@ -390,8 +394,36 @@ def radial_part(profile, x, z, angle_deg, y_base):
             .translate((x, y_base, z)))
 
 
+def joint_bolt_points(p, x, z):
+    """Bolt centres at the ends of a long body-length branch and a shorter body-width branch."""
+    import math
+    angle = math.atan2(z, x)
+    radius = sum(p["joint_bolt_positions"][0]) / 2.0
+    cx, cz = radius * math.cos(angle), radius * math.sin(angle)
+    long_offset = float(p.get("joint_branch_long_length", 16.0)) / 2.0
+    short_offset = float(p.get("joint_branch_short_length", 10.0)) / 2.0
+    return [(cx, cz + math.copysign(long_offset, z)),
+            (cx + math.copysign(short_offset, x), cz)]
+
+
+def _branch_shapes(p, x, z, y_base, height):
+    """Two connected rectangular branches: long along fuselage length, short across its width."""
+    import math
+    angle = math.atan2(z, x)
+    radius = sum(p["joint_bolt_positions"][0]) / 2.0
+    cx, cz = radius * math.cos(angle), radius * math.sin(angle)
+    long_len = float(p.get("joint_branch_long_length", 16.0))
+    short_len = float(p.get("joint_branch_short_length", 10.0))
+    width = float(p.get("joint_branch_width", 7.0))
+    long_bar = cq.Workplane("XY").box(width, height, long_len).translate(
+        (cx, y_base + height / 2.0, cz + math.copysign(long_len / 2.0, z)))
+    short_bar = cq.Workplane("XY").box(short_len, height, width).translate(
+        (cx + math.copysign(short_len / 2.0, x), y_base + height / 2.0, cz))
+    return long_bar, short_bar
+
+
 def mounting_tab(p, x, z):
-    """Integral flat arm tongue with two vertical clearance holes."""
+    """Integral arm tongue with a long longitudinal branch and a shorter transverse branch."""
     import math
     angle_rad = math.atan2(z, x)
     angle = math.degrees(angle_rad)
@@ -400,9 +432,9 @@ def mounting_tab(p, x, z):
                                p["joint_tip_width"], p["joint_lead_in_length"]).extrude(p["joint_tab_thickness"])
     tab = radial_part(tab, start * math.cos(math.radians(angle)),
                       start * math.sin(math.radians(angle)), angle, p["joint_tab_y"])
-    for radial_offset, tangent_offset in p["joint_bolt_positions"]:
-        hx = radial_offset * math.cos(angle_rad) + tangent_offset * math.sin(angle_rad)
-        hz = radial_offset * math.sin(angle_rad) - tangent_offset * math.cos(angle_rad)
+    for branch in _branch_shapes(p, x, z, p["joint_tab_y"], p["joint_tab_thickness"]):
+        tab = tab.union(branch)
+    for hx, hz in joint_bolt_points(p, x, z):
         hole = (cq.Workplane("XZ").workplane(offset=-(p["joint_tab_y"] - 0.05))
                 .center(hx, hz).circle(p["joint_bolt_hole_radius"])
                 .extrude(-(p["joint_tab_thickness"] + 0.1)))
@@ -411,16 +443,20 @@ def mounting_tab(p, x, z):
 
 
 def floor_mounting_rail(p, x, z):
-    """Raised floor rib under the tongue; the body later receives matching hex-nut pockets."""
+    """Raised floor supports beneath both branches and the radial tongue."""
     import math
     angle = math.degrees(math.atan2(z, x))
     start, end = p["joint_tab_start_radius"], p["joint_floor_pad_end_radius"]
     rail = radial_joint_profile(end - start, p["joint_floor_pad_width"],
                                 p["joint_tip_width"], p["joint_lead_in_length"]).extrude(
                                     p["joint_floor_pad_height"] + 0.02)
-    return radial_part(rail, start * math.cos(math.radians(angle)),
+    rail = radial_part(rail, start * math.cos(math.radians(angle)),
                        start * math.sin(math.radians(angle)), angle,
                        p["body_shell_thickness"] - 0.02)
+    for branch in _branch_shapes(p, x, z, p["body_shell_thickness"] - 0.02,
+                                 p["joint_floor_pad_height"] + 0.02):
+        rail = rail.union(branch)
+    return rail
 
 
 def arm_entry_slot(p, x, z):
@@ -438,11 +474,11 @@ def arm_entry_slot(p, x, z):
 
 
 def nut_part(p, x, z):
-    """Simplified nut envelope for assembly visualization; use real metal M3 nuts in the printed frame."""
+    """Simplified nut envelope seated in a recess on the exterior underside."""
     import math
     circ_dia = p["joint_nut_af"] / math.cos(math.radians(30.0))
     thickness = p["joint_nut_thickness"]
-    bottom = p["joint_tab_y"] - p["joint_nut_depth"] + (p["joint_nut_depth"] - thickness) / 2
+    bottom = -thickness
     nut = (cq.Workplane("XZ").workplane(offset=-bottom).center(x, z)
            .polygon(6, circ_dia).extrude(-thickness))
     bore = (cq.Workplane("XZ").workplane(offset=-(bottom - 0.01)).center(x, z)
@@ -649,14 +685,17 @@ def build_modular(p=None):
         module = module.union(mounting_tab(p, x, z))
         module = module.union(guard(p, x, z)).union(motor(p, x, z))
         arm_parts.append(module)
-        for bolt_index, (radial_offset, tangent_offset) in enumerate(p["joint_bolt_positions"], 1):
-            hx = radial_offset * math.cos(angle) + tangent_offset * math.sin(angle)
-            hz = radial_offset * math.sin(angle) - tangent_offset * math.cos(angle)
-            nut_cutter = (cq.Workplane("XZ").workplane(offset=-(p["joint_tab_y"] - p["joint_nut_depth"]))
+        for bolt_index, (hx, hz) in enumerate(joint_bolt_points(p, x, z), 1):
+            # Hex nut recesses open on the exterior underside; the circular clearance bore
+            # continues through the complete floor and raised support.
+            nut_cutter = (cq.Workplane("XZ").workplane(offset=0)
                           .center(hx, hz).polygon(6, p["joint_nut_pocket_af"] / math.cos(math.radians(30.0)))
                           .extrude(-p["joint_nut_depth"]))
-            body_part = body_part.cut(nut_cutter)
-            part_index = (arm_index - 1) * len(p["joint_bolt_positions"]) + bolt_index
+            bore = (cq.Workplane("XZ").workplane(offset=0).center(hx, hz)
+                    .circle(p["joint_bolt_hole_radius"]).extrude(
+                        -(p["body_shell_thickness"] + p["joint_floor_pad_height"] + 0.1)))
+            body_part = body_part.cut(nut_cutter).cut(bore)
+            part_index = (arm_index - 1) * 2 + bolt_index
             screw_parts.append((f"screw_{part_index}", screw_part(p, hx, hz)))
             nut_parts.append((f"nut_{part_index}", nut_part(p, hx, hz)))
         if p["include_props"]:
@@ -847,14 +886,14 @@ def export_modular(parts, out_dir):
         ],
         "joint": {
             "type": "integral arm tongue seated on reinforced inner-floor rails",
-            "fastener": "two vertical M3 screws per arm, accessed from above after removing the crown",
+            "fastener": "two vertical M3 screws per arm, passing through the floor into exterior underside nut recesses",
             "fastener_count": 8,
-            "fastener_axis_design_coordinates": "Y (vertical); screws installed top-down",
+            "fastener_axis_design_coordinates": "Y (vertical); screws installed from the arm-tab side into exterior underside nuts",
             "fastener_axis_export_coordinates": "Z (vertical)",
-            "nut_retention": "hexagonal nut traps in reinforced floor rails; metal nuts are required",
+            "nut_retention": "hexagonal nut recesses opening on the exterior underside of the floor; metal nuts are required",
             "nut_pocket_clearance_per_side_mm": round((PARAMS["joint_nut_pocket_af"] - PARAMS["joint_nut_af"]) * PARAMS["model_scale"] / 2, 3),
             "side_wall_fasteners": False,
-            "floor_plate_cut_through": False,
+            "floor_plate_cut_through": True,
             "arm_entry_openings": 4,
             "integral_tab": True,
             "bolt_positions_radial_tangent_model_units": PARAMS["joint_bolt_positions"],
@@ -897,7 +936,7 @@ def write_validation_report(parts, scale, out_dir, params):
         },
         "components": components,
         "joint": {
-            "type": "integral floor-mounted tongue with vertical fasteners",
+            "type": "integral arm tongue with long longitudinal and short transverse branches; exterior underside fasteners",
             "model_scale": scale,
             "fastener_count": 8,
             "fasteners_per_arm": len(p["joint_bolt_positions"]),
@@ -907,9 +946,10 @@ def write_validation_report(parts, scale, out_dir, params):
             "floor_rail_height_mm": round(p["joint_floor_pad_height"] * scale, 3),
             "nut_trap_depth_mm": round(p["joint_nut_depth"] * scale, 3),
             "screws_vertical_and_top_accessible": True,
-            "nut_traps_in_floor_rails": True,
+            "nut_traps_in_floor_rails": False,
+            "nut_recesses_open_on_exterior_underside": True,
             "side_wall_fasteners": False,
-            "floor_plate_cut_through": False,
+            "floor_plate_cut_through": True,
             "hole_centres_aligned_by_shared_coordinates": True,
             "arm_tab_is_integral": True,
             "hardware_geometry_is_simplified": True,
