@@ -37,6 +37,9 @@ The arm root where each arm enters the fuselage must look like a **tick/check ma
 - The short branch is the crosswise leg, creating the angled tick/check-mark appearance.
 - Mirror/rotate the geometry correctly for all four arm positions so the long branch direction follows the front/rear rule, rather than giving all roots the same orientation.
 - Preserve the main arm's width through the body entry; do not neck down the arm at the point where it enters the body.
+- **The arm's width and height must remain constant along its entire length.** Neither dimension may taper, shrink, or be locally reduced at the body-entry/root region or anywhere else along the arm.
+- The tick-shaped root must not create a thinner floor/underside section or otherwise reduce the arm's original cross-section. Keep the full specified arm width and height through the transition into the body.
+- Apply these constant-width and constant-height requirements to all four arms, including their mirrored/rotated roots.
 - **Keep the arm's width and height constant along its full length.** Neither dimension may shrink or taper at the body entry, through the root, or anywhere else along the arm.
 - The tick/check-mark root geometry must not reduce the arm's original cross-section: preserve both the original width and original height where the arm joins the body and throughout the transition.
 - Apply these constant-width and constant-height requirements to all four arms, including their correctly mirrored/rotated roots.
