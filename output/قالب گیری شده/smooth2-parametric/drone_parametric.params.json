@@ -109,6 +109,7 @@
   "joint_branch_short_length": 14.0,
   "joint_branch_width_ratio": 0.6,
   "joint_branch_axis_bias_deg": 65.0,
+  "joint_branch_long_axis_deg": 45.0,
   "joint_tick_junction_radius": 40.5,
   "joint_tab_start_radius": 40.5,
   "joint_tab_end_radius": 43.0,
