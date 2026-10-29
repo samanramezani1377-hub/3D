@@ -144,6 +144,8 @@
   "joint_screw_socket_af": 1.95,
   "joint_screw_socket_depth": 0.9,
   "joint_nut_thickness": 1.9,
+  "joint_boss_diameter_mm": 10.0,
+  "joint_boss_total_thickness_mm": 8.0,
   "model_scale": 1.28548,
   "target_overall_mm": null
 }
