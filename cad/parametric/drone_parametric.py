@@ -398,7 +398,7 @@ def joint_bolt_points(p, x, z):
     """Bolt centres at the ends of a long body-length branch and a shorter body-width branch."""
     import math
     angle = math.atan2(z, x)
-    radius = sum(p["joint_bolt_positions"][0]) / 2.0
+    radius = float(p["joint_bolt_positions"][0][0])
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
     long_offset = float(p.get("joint_branch_long_length", 16.0)) / 2.0
     short_offset = float(p.get("joint_branch_short_length", 10.0)) / 2.0
@@ -410,7 +410,7 @@ def _branch_shapes(p, x, z, y_base, height):
     """Two connected rectangular branches: long along fuselage length, short across its width."""
     import math
     angle = math.atan2(z, x)
-    radius = sum(p["joint_bolt_positions"][0]) / 2.0
+    radius = float(p["joint_bolt_positions"][0][0])
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
