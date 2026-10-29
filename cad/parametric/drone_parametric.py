@@ -102,8 +102,8 @@ PARAMS = {
     "joint_clearance": 0.25,
     "joint_tip_width": 16.5,          # keep the tongue full-width at its inner end; no sudden neck-down
     "joint_lead_in_length": 6.0,
-    "joint_branch_long_length": 12.0,   # short inward reach from the body entry point
-    "joint_branch_short_length": 10.0,  # short side leg, positioned at the body entry point
+    "joint_branch_long_length": 22.0,   # longitudinal branch length toward the body centre
+    "joint_branch_short_length": 14.0,  # transverse branch length at the body entry point
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
     "joint_branch_axis_bias_deg": 40.0, # gives a 130-degree included angle between the two root legs
     "joint_tick_junction_radius": 40.5,
@@ -432,8 +432,8 @@ def joint_bolt_points(p, x, z):
     angle = math.atan2(z, x)
     radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_len = float(p.get("joint_branch_long_length", 12.0))
-    short_len = float(p.get("joint_branch_short_length", 10.0))
+    long_len = float(p.get("joint_branch_long_length", 22.0))
+    short_len = float(p.get("joint_branch_short_length", 14.0))
     bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 40.0)))
     sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
     # Long leg points inward along the longitudinal axis. The shorter leg sweeps
@@ -452,8 +452,8 @@ def _branch_shapes(p, x, z, y_base, height):
     angle = math.atan2(z, x)
     radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_len = float(p.get("joint_branch_long_length", 18.0))
-    short_len = float(p.get("joint_branch_short_length", 10.0))
+    long_len = float(p.get("joint_branch_long_length", 22.0))
+    short_len = float(p.get("joint_branch_short_length", 14.0))
     bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
     # Only branch width is reduced; the main beam remains full width and height.
     width = float(p["arm_width"]) * float(p.get("joint_branch_width_ratio", 0.60))
