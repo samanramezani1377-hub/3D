@@ -748,7 +748,7 @@ def export_modular(parts, out_dir):
     for name, part in parts.items():
         shape = part.val()
         if name == "body_crown":
-            shape = shape.translate((0, 0, 0.6))  # exported coordinates are Z-up
+            shape = shape.translate((0, 0, 0.01))  # exported coordinates are Z-up
         assembled_shapes.append(shape)
     compound = cq.Compound.makeCompound(assembled_shapes)
     # Preserve the assembled pose under an explicit filename. The default STL name below
