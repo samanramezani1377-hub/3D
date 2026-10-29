@@ -46,7 +46,7 @@ The arm root where each arm enters the fuselage must look like a **tick/check ma
 - Apply these constant-width and constant-height requirements to all four arms, including their correctly mirrored/rotated roots.
 - The intended mounting remains through the floor with vertical fasteners and underside nut recesses; do not change it to side-wall fastening.
 
-**Implementation status: NOT IMPLEMENTED / NOT RUN.** This section records the required design intent only. The generator has not yet been updated and run to implement this tick-shaped, directionally oriented root. Existing CAD exports and validation reports therefore must not be described as containing or verifying this requested geometry. After implementation, regenerate the model on `demo`, inspect all four roots, and validate the newly generated STEP/STL before claiming completion.
+**Implementation status: SOURCE UPDATED; REGENERATION/VALIDATION PENDING.** The generator now adds two integral, full-height branches to each arm root: a 16-unit longitudinal leg directed toward the fuselage centre (rear arms point forward; front arms point backward) and a 10-unit crosswise leg directed toward the centreline. Each branch is 60% of the main arm width. The main arm beam retains its full width and height. Body/crown clearance and the two vertical fastener bores are generated from the same tick-root geometry. The new source commit is `e03e45446ae8e5efc5e3d67a04af2544c20bfcf6`. Existing CAD exports/reports remain from an earlier generation until the triggered workflow completes; do not claim the new geometry is validated before then.
 
 ## Current status and known limits
 
@@ -65,4 +65,4 @@ The arm root where each arm enters the fuselage must look like a **tick/check ma
 3. Preserve existing files and make focused corrections; do not rebuild the model from scratch or replace existing geometry without a clear need.
 4. Keep generated artifacts and reports consistent with the exact source/code revision that produced them.
 5. Validate the current output files, not just old reports or successful file-existence checks.
-6. Until the tick-shaped arm-root geometry is implemented and regenerated, describe it as a requirement only, not as completed work.
+6. Describe the tick-root geometry as source-implemented but not validated until the workflow has regenerated and checked the exact new STEP/STL exports.
