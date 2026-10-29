@@ -737,14 +737,41 @@ def export_modular(parts, out_dir):
         assembly.add(part.val(), name=name, color=matte_black)
     assembly.save(os.path.join(out_dir, "drone_parametric.step"), exportType="STEP")
 
-    # Keep the assembled STL for visualization, but note that STL stores no
-    # assembly/explode instructions. Also write a physically exploded STL so
-    # slicers that open one STL cannot mistake the parts for a single assembled model.
-    compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
+    # Build a genuinely connected structural mesh for the assembled STL.
+    # STL does not preserve assembly constraints: exporting a Compound here would leave
+    # body_lower, crown and all four arms as disconnected shells. The modular STEP and
+    # individual part exports remain unchanged; this small seating overlap is applied
+    # only to copies used for the assembled STL.
+    import math
+    structural_names = {"body_lower", "body_crown", "arm_1", "arm_2", "arm_3", "arm_4"}
+    structural = []
+    for name in ("body_lower", "body_crown", "arm_1", "arm_2", "arm_3", "arm_4"):
+        shape = parts[name].val()
+        if name == "body_crown":
+            # Let the crown skirt overlap the lower shell by 0.25 mm at the seam.
+            shape = shape.translate((0, 0, -0.25))
+        elif name.startswith("arm_"):
+            # Seat each tongue 0.25 mm into its floor rail so the STL boolean can fuse it.
+            shape = shape.translate((0, 0, -0.25))
+        structural.append(shape)
+    unified_structure = structural[0]
+    for shape in structural[1:]:
+        unified_structure = unified_structure.fuse(shape)
+    unified_structure = unified_structure.clean()
+    structural_solid_count = len(unified_structure.Solids())
+    print(f"assembled STL structural solid count: {structural_solid_count}")
+    if structural_solid_count != 1:
+        raise RuntimeError(
+            "Assembled STL structural core is not connected: "
+            f"expected 1 solid (body, crown and 4 arms), got {structural_solid_count}"
+        )
+
+    # Keep propellers and fasteners separate; they are independent hardware/components.
+    non_structural = [part.val() for name, part in parts.items() if name not in structural_names]
+    assembled_compound = cq.Compound.makeCompound([unified_structure] + non_structural)
     # Preserve the assembled pose under an explicit filename. The default STL name below
-    # is intentionally reserved for the exploded layout so opening drone_parametric.stl
-    # in a mesh viewer shows the separated parts instead of the closed assembly.
-    cq.exporters.export(cq.Workplane("XY").newObject([compound]),
+    # remains reserved for the exploded layout.
+    cq.exporters.export(cq.Workplane("XY").newObject([assembled_compound]),
                         os.path.join(out_dir, "drone_parametric_assembled.stl"),
                         tolerance=0.05, angularTolerance=0.1)
 
