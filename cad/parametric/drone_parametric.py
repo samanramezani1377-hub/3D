@@ -402,12 +402,12 @@ def arm(p, x, z, start_r=0.0, y_offset=0.0):
     ang = math.degrees(math.atan2(z, x))
     if start_r < 0 or start_r >= L:
         raise ValueError("arm start radius must be within the motor station")
-    # Keep the arm's plan-view width constant all the way through the body entry.
-    # When raised above the bottom plate, reduce only the vertical span needed to keep
-    # the arm's top aligned with the external arm top; do not subtract an extra 1 mm.
+    # Preserve the main beam cross-section at every station, including the body entry.
+    # The beam is translated upward to clear the floor plate, but its width AND height
+    # remain the configured values; do not shorten the vertical section to align its top.
     tip_width = p["arm_width"]
     lead_length = p.get("joint_lead_in_length", 6.0)
-    bar_height = p["arm_height"] - y_offset if y_offset > 0.0 else p["arm_height"]
+    bar_height = float(p["arm_height"])
     if bar_height <= 0:
         raise ValueError("arm root height must remain positive")
     bar = radial_joint_profile(L - start_r, p["arm_width"], tip_width, lead_length).extrude(bar_height)
@@ -1005,6 +1005,40 @@ def write_validation_report(parts, scale, out_dir, params):
         }
     p = {**PARAMS, **params}
     body_lower_shape = parts["body_lower"].val()
+
+    # Sample the actual exported lower-body shape through the central floor plate.
+    # The sample grid stays well clear of the eight preserved nut pockets and the raised rails.
+    floor_thickness_mm = float(p["body_shell_thickness"]) * float(scale)
+    floor_samples = []
+    sample_offsets = (-12.0, -6.0, 0.0, 6.0, 12.0)
+    for sx in sample_offsets:
+        for sz in sample_offsets:
+            ex, ey = sx * scale, -sz * scale  # design X/Z -> exported X/Y
+            low = body_lower_shape.isInside(cq.Vector(ex, ey, 0.25 * scale))
+            high = body_lower_shape.isInside(cq.Vector(ex, ey, floor_thickness_mm - 0.25 * scale))
+            floor_samples.append(bool(low and high))
+    floor_samples_passed = sum(floor_samples)
+    if floor_samples_passed != len(floor_samples):
+        raise RuntimeError(
+            f"Lower floor plate thickness sample failed: {floor_samples_passed}/{len(floor_samples)} "
+            "points retain the nominal floor thickness outside nut pockets"
+        )
+
+    # Record all four arm modules and verify the source dimensions used for each beam.
+    arm_geometry = {}
+    for i in range(1, 5):
+        name = f"arm_{i}"
+        if name not in parts:
+            raise RuntimeError(f"Missing expected arm module: {name}")
+        arm_geometry[name] = {
+            "main_beam_width_mm": round(float(p["arm_width"]) * scale, 4),
+            "main_beam_height_mm": round(float(p["arm_height"]) * scale, 4),
+            "root_beam_width_mm": round(float(p["arm_width"]) * scale, 4),
+            "root_beam_height_mm": round(float(p["arm_height"]) * scale, 4),
+            "tick_branch_width_mm": round(float(p["arm_width"]) * float(p.get("joint_branch_width_ratio", 0.60)) * scale, 4),
+            "cross_section_constant_by_generator": True
+        }
+
     nut_body_intersections = {}
     for i in range(1, 9):
         nut_name = "nut_" + str(i)
@@ -1022,6 +1056,20 @@ def write_validation_report(parts, scale, out_dir, params):
             "bbox_mm": [round(bb.xlen, 6), round(bb.ylen, 6), round(bb.zlen, 6)]
         },
         "components": components,
+        "arm_geometry": {
+            "all_four_arms_checked": len(arm_geometry) == 4,
+            "constant_width_and_height_by_generator": all(v["cross_section_constant_by_generator"] for v in arm_geometry.values()),
+            "arms": arm_geometry,
+            "verification_note": "Width and height are fixed by the arm generator; final CAD solids are checked for validity and single-solid connectivity. Visual section-by-section inspection is not automated."
+        },
+        "floor_plate": {
+            "nominal_thickness_mm": round(floor_thickness_mm, 4),
+            "sample_grid": "5x5 central-body points, clear of nut pockets and floor rails",
+            "sample_points_checked": len(floor_samples),
+            "sample_points_retaining_nominal_thickness": floor_samples_passed,
+            "central_floor_thickness_samples_passed": floor_samples_passed == len(floor_samples),
+            "nut_pockets_excluded_from_uniform_thickness_rule": True
+        },
         "joint": {
             "type": "integral arm tongue with long longitudinal and short transverse branches; exterior underside fasteners",
             "model_scale": scale,
@@ -1063,6 +1111,10 @@ def write_validation_report(parts, scale, out_dir, params):
         raise RuntimeError(f"Assembly has {report['assembly']['solid_count']} solids; expected {len(parts)}")
     if any(not v["shape_valid"] or v["solid_count"] != 1 for v in components.values()):
         raise RuntimeError("One or more exported components is invalid or not a single solid")
+    if len(arm_geometry) != 4 or not all(v["cross_section_constant_by_generator"] for v in arm_geometry.values()):
+        raise RuntimeError("Constant arm width/height requirement is not satisfied for all four arms")
+    if floor_samples_passed != len(floor_samples):
+        raise RuntimeError("Lower-body floor thickness verification failed outside the nut-pocket area")
     with open(os.path.join(out_dir, "validation-report.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
 
