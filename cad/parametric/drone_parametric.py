@@ -106,6 +106,7 @@ PARAMS = {
     "joint_branch_short_length": 10.0,  # short branch follows the fuselage width axis
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
     "joint_branch_axis_bias_deg": 20.0,
+    "joint_tick_junction_radius": 20.5,
     "joint_tab_start_radius": 20.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
@@ -429,7 +430,7 @@ def joint_bolt_points(p, x, z):
     """Bolt centres at the midpoints of the longitudinal and crosswise tick legs."""
     import math
     angle = math.atan2(z, x)
-    radius = float(p["joint_bolt_positions"][0][0])
+    radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
@@ -446,7 +447,7 @@ def _branch_shapes(p, x, z, y_base, height):
     """Full-height unequal branches forming the required directional tick in plan view."""
     import math
     angle = math.atan2(z, x)
-    radius = float(p["joint_bolt_positions"][0][0])
+    radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
