@@ -125,7 +125,7 @@ PARAMS = {
     "joint_nut_depth": 2.0,
     "joint_nut_hole_radius": 1.2,
     "joint_screw_shaft_radius": 1.15,
-    "joint_screw_length": 10.4,
+    "joint_screw_length": 16.0,  # reaches from the top of the full-height beam through the floor into the nut recess
     "joint_screw_head_radius": 2.15,
     "joint_screw_head_height": 2.3,
     "joint_screw_socket_af": 1.95,
