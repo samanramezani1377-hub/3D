@@ -940,7 +940,7 @@ def export_modular(parts, out_dir):
 
 
 def write_validation_report(parts, scale, out_dir, params):
-    """Write a report from the freshly generated in-memory CAD shapes."""
+    """Report fresh CAD geometry, including actual nut-to-body intersection volumes."""
     import os, json
     compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
     bb = compound.BoundingBox()
