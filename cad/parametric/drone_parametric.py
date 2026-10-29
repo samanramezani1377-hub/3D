@@ -105,9 +105,9 @@ PARAMS = {
     "joint_branch_long_length": 22.0,   # longitudinal branch length toward the body centre
     "joint_branch_short_length": 14.0,  # transverse branch length at the body entry point
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
-    "joint_branch_axis_bias_deg": 65.0, # fixed short-branch direction; preserved while changing the included angle
-    "joint_branch_long_axis_deg": 45.0,  # long branch moves to give a 110-degree included angle
-    "joint_tick_junction_radius": 40.5,
+    "joint_branch_axis_bias_deg": 55.0, # short branch rotates +10 degrees toward the long-branch side
+    "joint_branch_long_axis_deg": 55.0,  # both branches rotate together +10 degrees; included angle remains 110 degrees
+    "joint_tick_junction_radius": 1.604,  # 50 mm inward from 40.5 model units, converted using model_scale
     "joint_tab_start_radius": 40.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
@@ -116,7 +116,7 @@ PARAMS = {
     "joint_floor_pad_height": 2.0,
     "joint_floor_pad_width": 16.5,
     "joint_floor_pad_end_radius": 34.5,
-    "joint_arm_start_radius": 40.5,
+    "joint_arm_start_radius": 1.604,  # shifts branch junction and bolt stations 50 final mm inward
     "joint_entry_start_radius": 34.5,
     "joint_entry_end_radius": 50.0,
 
@@ -433,11 +433,11 @@ def _tick_branch_vectors(p, x, z):
     angle = math.atan2(z, x)
     long_len = float(p.get("joint_branch_long_length", 22.0))
     short_len = float(p.get("joint_branch_short_length", 14.0))
-    # Preserve the short branch's current direction (65 degrees). Rotate
-    # only the long branch to 45 degrees from the inward arm axis, producing
-    # a 110-degree included angle without moving the short branch.
-    short_angle = math.radians(float(p.get("joint_branch_axis_bias_deg", 65.0)))
-    long_angle = math.radians(float(p.get("joint_branch_long_axis_deg", 45.0)))
+    # Rotate both branches by +10 degrees in the same direction, toward the
+    # long-branch side. Their included angle remains 110 degrees: long +55,
+    # short -55 degrees relative to the inward arm axis.
+    short_angle = math.radians(float(p.get("joint_branch_axis_bias_deg", 55.0)))
+    long_angle = math.radians(float(p.get("joint_branch_long_axis_deg", 55.0)))
     inward_x, inward_z = -math.cos(angle), -math.sin(angle)
     side_x, side_z = -inward_z, inward_x
     lc, ls = math.cos(long_angle), math.sin(long_angle)
