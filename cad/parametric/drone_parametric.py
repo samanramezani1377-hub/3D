@@ -102,12 +102,12 @@ PARAMS = {
     "joint_clearance": 0.25,
     "joint_tip_width": 16.5,          # keep the tongue full-width at its inner end; no sudden neck-down
     "joint_lead_in_length": 6.0,
-    "joint_branch_long_length": 18.0,   # shortened inner reach; root stays near the side opening
-    "joint_branch_short_length": 10.0,  # shorter outward leg keeps the root close to the side wall
+    "joint_branch_long_length": 12.0,   # short inward reach from the body entry point
+    "joint_branch_short_length": 10.0,  # short side leg, positioned at the body entry point
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
-    "joint_branch_axis_bias_deg": 20.0, # spread the two root legs to a 110-degree included angle
-    "joint_tick_junction_radius": 31.5,
-    "joint_tab_start_radius": 30.5,
+    "joint_branch_axis_bias_deg": 40.0, # gives a 130-degree included angle between the two root legs
+    "joint_tick_junction_radius": 34.5,
+    "joint_tab_start_radius": 34.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
     "joint_tab_thickness": 2.5,  # legacy values retained for parameter-file compatibility; no low-profile tab is generated
@@ -115,7 +115,7 @@ PARAMS = {
     "joint_floor_pad_height": 2.0,
     "joint_floor_pad_width": 16.5,
     "joint_floor_pad_end_radius": 34.5,
-    "joint_arm_start_radius": 30.5,
+    "joint_arm_start_radius": 34.5,
     "joint_entry_start_radius": 34.5,
     "joint_entry_end_radius": 50.0,
 
@@ -432,9 +432,9 @@ def joint_bolt_points(p, x, z):
     angle = math.atan2(z, x)
     radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_len = float(p.get("joint_branch_long_length", 18.0))
+    long_len = float(p.get("joint_branch_long_length", 12.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
-    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
+    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 40.0)))
     sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
     # Long leg points inward along the longitudinal axis. The shorter leg sweeps
     # outward toward the side wall and outward along the same front/rear quadrant,
