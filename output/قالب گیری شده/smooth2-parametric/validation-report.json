@@ -7,9 +7,9 @@
     "shape_valid": true,
     "solid_count": 26,
     "bbox_mm": [
-      247.169447,
-      247.153303,
-      45.395938
+      271.890075,
+      271.856267,
+      49.937687
     ]
   },
   "components": {
@@ -17,325 +17,325 @@
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -48.8482,
-        -90.7202,
-        -5.4306,
-        48.8482,
-        66.845,
-        16.7112
+        -53.7331,
+        -99.7923,
+        -5.9737,
+        53.7331,
+        73.5295,
+        18.3824
       ]
     },
     "body_crown": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -52.9764,
-        -84.8417,
-        16.7112,
-        52.9764,
-        66.845,
-        34.9651
+        -58.2741,
+        -93.3258,
+        18.3824,
+        58.2741,
+        73.5295,
+        38.4616
       ]
     },
     "arm_1": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        14.4827,
-        -123.5767,
-        -0.006,
-        123.5857,
-        -4.3551,
-        39.9653
+        15.9309,
+        -135.9276,
+        -0.0066,
+        135.9464,
+        -4.7906,
+        43.964
       ]
     },
     "arm_2": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        14.4827,
-        4.3551,
-        -0.006,
-        123.5857,
-        123.5767,
-        39.9653
+        15.9309,
+        4.7906,
+        -0.0066,
+        135.946,
+        135.9272,
+        43.9636
       ]
     },
     "arm_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5838,
-        -123.5709,
-        -0.006,
-        -14.4827,
-        -4.3551,
-        39.9653
+        -135.9431,
+        -135.9289,
+        -0.0066,
+        -15.9309,
+        -4.7906,
+        43.9628
       ]
     },
     "arm_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5838,
-        4.3551,
-        -0.006,
-        -14.4827,
-        123.5685,
-        39.9653
+        -135.9437,
+        4.7906,
+        -0.0066,
+        -15.9309,
+        135.9274,
+        43.9638
       ]
     },
     "prop_1": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        40.4973,
-        -79.7948,
-        29.5299,
-        108.6183,
-        -69.3208,
-        38.696
+        44.5471,
+        -87.7743,
+        32.4828,
+        119.4802,
+        -76.2529,
+        42.5656
       ]
     },
     "prop_2": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        40.4973,
-        69.3208,
-        29.5299,
-        108.6183,
-        79.7948,
-        38.696
+        44.5471,
+        76.2529,
+        32.4828,
+        119.4802,
+        87.7743,
+        42.5656
       ]
     },
     "prop_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -108.6183,
-        -79.7948,
-        29.5299,
-        -40.4973,
-        -69.3208,
-        38.696
+        -119.4802,
+        -87.7743,
+        32.4828,
+        -44.5471,
+        -76.2529,
+        42.5656
       ]
     },
     "prop_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -108.6183,
-        69.3208,
-        29.5299,
-        -40.4973,
-        79.7948,
-        38.696
+        -119.4802,
+        76.2529,
+        32.4828,
+        -44.5471,
+        87.7743,
+        42.5656
       ]
     },
     "screw_1": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        32.9682,
-        -22.1158,
-        -5.4295,
-        38.4975,
-        -16.5882,
-        20.9542
+        36.5415,
+        -24.051,
+        -5.9724,
+        42.0708,
+        -18.5234,
+        22.7539
       ]
     },
     "screw_2": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        21.6512,
-        -37.6038,
-        -5.4295,
-        27.1804,
-        -32.0762,
-        20.9542
+        24.0927,
+        -41.0878,
+        -5.9724,
+        29.622,
+        -35.5602,
+        22.7539
       ]
     },
     "screw_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        32.9682,
-        16.5882,
-        -5.4295,
-        38.4975,
-        22.1158,
-        20.9542
+        36.5415,
+        18.5234,
+        -5.9724,
+        42.0708,
+        24.051,
+        22.7539
       ]
     },
     "screw_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        21.6512,
-        32.0762,
-        -5.4295,
-        27.1804,
-        37.6038,
-        20.9542
+        24.0927,
+        35.5602,
+        -5.9724,
+        29.622,
+        41.0878,
+        22.7539
       ]
     },
     "screw_5": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -38.4975,
-        -22.1158,
-        -5.4295,
-        -32.9682,
-        -16.5882,
-        20.9542
+        -42.0708,
+        -24.051,
+        -5.9724,
+        -36.5415,
+        -18.5234,
+        22.7539
       ]
     },
     "screw_6": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -27.1804,
-        -37.6038,
-        -5.4295,
-        -21.6512,
-        -32.0762,
-        20.9542
+        -29.622,
+        -41.0878,
+        -5.9724,
+        -24.0927,
+        -35.5602,
+        22.7539
       ]
     },
     "screw_7": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -38.4975,
-        16.5882,
-        -5.4295,
-        -32.9682,
-        22.1158,
-        20.9542
+        -42.0708,
+        18.5234,
+        -5.9724,
+        -36.5415,
+        24.051,
+        22.7539
       ]
     },
     "screw_8": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -27.1804,
-        32.0762,
-        -5.4295,
-        -21.6512,
-        37.6038,
-        20.9542
+        -29.622,
+        35.5602,
+        -5.9724,
+        -24.0927,
+        41.0878,
+        22.7539
       ]
     },
     "nut_1": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        32.5415,
-        -22.1158,
-        -5.4295,
-        38.9242,
-        -16.5882,
-        -2.9861
+        36.1148,
+        -24.051,
+        -5.9724,
+        42.4975,
+        -18.5234,
+        -3.5291
       ]
     },
     "nut_2": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        21.2245,
-        -37.6038,
-        -5.4295,
-        27.6071,
-        -32.0762,
-        -2.9861
+        23.666,
+        -41.0878,
+        -5.9724,
+        30.0487,
+        -35.5602,
+        -3.5291
       ]
     },
     "nut_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        32.5415,
-        16.5882,
-        -5.4295,
-        38.9242,
-        22.1158,
-        -2.9861
+        36.1148,
+        18.5234,
+        -5.9724,
+        42.4975,
+        24.051,
+        -3.5291
       ]
     },
     "nut_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        21.2245,
-        32.0762,
-        -5.4295,
-        27.6071,
-        37.6038,
-        -2.9861
+        23.666,
+        35.5602,
+        -5.9724,
+        30.0487,
+        41.0878,
+        -3.5291
       ]
     },
     "nut_5": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -38.9242,
-        -22.1158,
-        -5.4295,
-        -32.5415,
-        -16.5882,
-        -2.9861
+        -42.4975,
+        -24.051,
+        -5.9724,
+        -36.1148,
+        -18.5234,
+        -3.5291
       ]
     },
     "nut_6": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -27.6071,
-        -37.6038,
-        -5.4295,
-        -21.2245,
-        -32.0762,
-        -2.9861
+        -30.0487,
+        -41.0878,
+        -5.9724,
+        -23.666,
+        -35.5602,
+        -3.5291
       ]
     },
     "nut_7": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -38.9242,
-        16.5882,
-        -5.4295,
-        -32.5415,
-        22.1158,
-        -2.9861
+        -42.4975,
+        18.5234,
+        -5.9724,
+        -36.1148,
+        24.051,
+        -3.5291
       ]
     },
     "nut_8": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -27.6071,
-        32.0762,
-        -5.4295,
-        -21.2245,
-        37.6038,
-        -2.9861
+        -30.0487,
+        35.5602,
+        -5.9724,
+        -23.666,
+        41.0878,
+        -3.5291
       ]
     }
   },
   "propeller": {
     "design": "two-blade cambered NACA 4410 concept with radial chord taper, geometric twist and mild tip sweep",
     "blade_count": 2,
-    "diameter_mm": 68.002,
-    "nominal_geometric_pitch_mm": 48.26,
-    "nominal_geometric_pitch_in": 1.9,
+    "diameter_mm": 74.802,
+    "nominal_geometric_pitch_mm": 53.086,
+    "nominal_geometric_pitch_in": 2.09,
     "airfoil_camber_ratio": 0.04,
     "airfoil_thickness_ratio": 0.1,
     "radial_stations": 11,
-    "radial_guard_clearance_mm": 4.178,
+    "radial_guard_clearance_mm": 4.596,
     "guard_clearance_positive": true,
     "motor_matched": false,
     "thrust_efficiency_bench_tested": false,
@@ -350,9 +350,9 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 3.834,
-        "guard_bottom_coverage_margin_mm": 16.689,
-        "guard_top_coverage_margin_mm": 1.157,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.217,
+        "guard_bottom_coverage_margin_mm": 18.357,
+        "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
         "guard_clearance_pass": true,
@@ -363,9 +363,9 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 3.834,
-        "guard_bottom_coverage_margin_mm": 16.689,
-        "guard_top_coverage_margin_mm": 1.157,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.217,
+        "guard_bottom_coverage_margin_mm": 18.357,
+        "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
         "guard_clearance_pass": true,
@@ -376,9 +376,9 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 3.834,
-        "guard_bottom_coverage_margin_mm": 16.689,
-        "guard_top_coverage_margin_mm": 1.157,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.217,
+        "guard_bottom_coverage_margin_mm": 18.357,
+        "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
         "guard_clearance_pass": true,
@@ -389,16 +389,16 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 3.834,
-        "guard_bottom_coverage_margin_mm": 16.689,
-        "guard_top_coverage_margin_mm": 1.157,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.217,
+        "guard_bottom_coverage_margin_mm": 18.357,
+        "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
         "guard_clearance_pass": true,
         "guard_vertical_coverage_pass": true
       }
     ],
-    "guard_vertical_offset_mm": 12.855,
+    "guard_vertical_offset_mm": 14.14,
     "shaft_connection_modelled": false,
     "note": "Zero intersection volume verifies geometric non-overlap only. The motor shaft diameter and prop hub mounting bore are still unspecified and must be matched to the selected motor."
   },
@@ -407,42 +407,42 @@
     "constant_width_and_height_by_generator": true,
     "arms": {
       "arm_1": {
-        "main_beam_width_mm": 20.5677,
-        "main_beam_height_mm": 15.4258,
-        "root_beam_width_mm": 20.5677,
-        "root_beam_height_mm": 15.4258,
-        "tick_branch_width_mm": 12.3406,
+        "main_beam_width_mm": 22.6244,
+        "main_beam_height_mm": 16.9683,
+        "root_beam_width_mm": 22.6244,
+        "root_beam_height_mm": 16.9683,
+        "tick_branch_width_mm": 13.5747,
         "cross_section_constant_by_generator": true
       },
       "arm_2": {
-        "main_beam_width_mm": 20.5677,
-        "main_beam_height_mm": 15.4258,
-        "root_beam_width_mm": 20.5677,
-        "root_beam_height_mm": 15.4258,
-        "tick_branch_width_mm": 12.3406,
+        "main_beam_width_mm": 22.6244,
+        "main_beam_height_mm": 16.9683,
+        "root_beam_width_mm": 22.6244,
+        "root_beam_height_mm": 16.9683,
+        "tick_branch_width_mm": 13.5747,
         "cross_section_constant_by_generator": true
       },
       "arm_3": {
-        "main_beam_width_mm": 20.5677,
-        "main_beam_height_mm": 15.4258,
-        "root_beam_width_mm": 20.5677,
-        "root_beam_height_mm": 15.4258,
-        "tick_branch_width_mm": 12.3406,
+        "main_beam_width_mm": 22.6244,
+        "main_beam_height_mm": 16.9683,
+        "root_beam_width_mm": 22.6244,
+        "root_beam_height_mm": 16.9683,
+        "tick_branch_width_mm": 13.5747,
         "cross_section_constant_by_generator": true
       },
       "arm_4": {
-        "main_beam_width_mm": 20.5677,
-        "main_beam_height_mm": 15.4258,
-        "root_beam_width_mm": 20.5677,
-        "root_beam_height_mm": 15.4258,
-        "tick_branch_width_mm": 12.3406,
+        "main_beam_width_mm": 22.6244,
+        "main_beam_height_mm": 16.9683,
+        "root_beam_width_mm": 22.6244,
+        "root_beam_height_mm": 16.9683,
+        "tick_branch_width_mm": 13.5747,
         "cross_section_constant_by_generator": true
       }
     },
     "verification_note": "Width and height are fixed by the arm generator; final CAD solids are checked for validity and single-solid connectivity. Visual section-by-section inspection is not automated."
   },
   "floor_plate": {
-    "nominal_thickness_mm": 2.571,
+    "nominal_thickness_mm": 2.8281,
     "sample_grid": "5x5 central-body points, clear of nut pockets and floor rails",
     "sample_points_checked": 25,
     "sample_points_retaining_nominal_thickness": 25,
@@ -451,7 +451,7 @@
   },
   "joint": {
     "type": "full-height arm beam with direct vertical fastener bores; exterior underside fasteners",
-    "model_scale": 1.28548,
+    "model_scale": 1.414028,
     "fastener_count": 8,
     "fasteners_per_arm": 2,
     "bolt_positions_radial_tangent_model_units": [
@@ -467,15 +467,15 @@
     "bolt_clearance_hole_diameter_mm": 3.342,
     "thin_tab_removed": true,
     "arm_start_radius_model_units": 36.61,
-    "main_beam_height_mm": 15.426,
+    "main_beam_height_mm": 16.968,
     "nut_trap_depth_mm": 2.571,
     "nut_thickness_mm": 2.442,
     "screws_vertical_and_top_accessible": true,
     "nut_traps_in_floor_rails": false,
     "nut_recesses_open_on_exterior_underside": true,
     "underside_boss_count": 8,
-    "underside_boss_diameter_mm": 10.0,
-    "underside_boss_total_local_thickness_mm": 8.0,
+    "underside_boss_diameter_mm": 11.0,
+    "underside_boss_total_local_thickness_mm": 8.8,
     "underside_bosses_integral_and_fused": true,
     "nut_seated_inside_floor_recess": true,
     "nut_pocket_clearance_per_side_mm": 0.193,
