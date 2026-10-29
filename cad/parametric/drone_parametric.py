@@ -686,6 +686,14 @@ def build_modular(p=None):
         body_part = body_part.union(floor_mounting_rail(p, x, z))
     for x, z in stations_list:
         body_part = body_part.cut(arm_entry_slot(p, x, z))
+    # The raised underside rails also cross the arm beam near the socket branches.
+    # Remove only the beam envelope from the rail volume; the cutter starts at the
+    # top of the floor plate, so the closed bottom skin remains intact. This avoids
+    # an actual solid-solid overlap while retaining the rails beneath the mounting tab.
+    for x, z in stations_list:
+        beam_clearance = arm(p, x, z, start_r=start_r,
+                             y_offset=p["body_shell_thickness"])
+        body_part = body_part.cut(beam_clearance)
     arm_parts, prop_parts, screw_parts, nut_parts = [], [], [], []
     for arm_index, (x, z) in enumerate(stations_list, 1):
         angle = math.atan2(z, x)
