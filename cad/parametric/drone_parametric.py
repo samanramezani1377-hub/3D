@@ -85,14 +85,26 @@ PARAMS = {
     "camera_cavity_w": 9.5,          # internal pocket for the camera module (width / height / depth)
     "camera_cavity_h": 6.0,
     "camera_cavity_d": 7.0,
-    # propellers (simple 2-blade, one per motor) --------------------------------
+    # propellers (parametric, twisted cambered two-blade rotor) -----------------
     "include_props": True,
-    "prop_radius": 25.5,            # must stay < guard inner radius (guard_outer_radius - guard_wall)
-    "prop_chord": 7.0,
-    "prop_thickness": 1.2,
-    "prop_y": 9.0,                 # blade plane height
+    "prop_radius": 24.7,            # 31.75 mm radius after scale -> 63.5 mm / 2.5 in diameter
+    "prop_chord": 7.0,              # legacy parameter retained for old parameter files
+    "prop_thickness": 1.2,          # legacy parameter; airfoil thickness is set by prop_airfoil_thickness_ratio
+    "prop_y": 9.0,                  # propeller plane base height in design coordinates
     "prop_hub_radius": 4.0,
     "prop_hub_height": 4.0,
+    "prop_pitch_mm": 48.26,         # nominal 1.9 in geometric pitch; not a motor/load guarantee
+    "prop_airfoil_camber": 0.04,    # NACA 4410 camber ratio
+    "prop_airfoil_camber_position": 0.40,
+    "prop_airfoil_thickness_ratio": 0.10,
+    "prop_airfoil_samples": 24,     # cosine-spaced points per upper/lower surface
+    "prop_tip_sweep": 1.2,          # mild sweep at the tip, in pre-scale model units
+    # [radius fraction, local chord] stations from root to tip; taper avoids a rectangular slab.
+    "prop_blade_stations": [
+        [0.05, 6.5], [0.14, 7.8], [0.23, 8.6], [0.33, 8.8],
+        [0.44, 8.2], [0.56, 7.3], [0.68, 6.4], [0.80, 5.6],
+        [0.90, 4.8], [0.96, 4.4], [1.00, 4.0]
+    ],
     # overall size -------------------------------------------------------------
     # model_scale: fixed uniform scale to final mm. It keeps the body at its approved size (it was the scale that
     # made the old layout exactly 240 mm). The bigger guards now make the footprint ~247 x 247 mm (limit lifted).
@@ -661,13 +673,107 @@ def camera_parts(p, fs=1.0):
     return place(barrel), place(cutter)
 
 
+def _prop_airfoil_wire(radius, chord, twist_deg, sweep, p, y_mid):
+    """Create one closed NACA 4-digit airfoil section in the rotor's X/Y/Z frame."""
+    import math
+    camber = float(p.get("prop_airfoil_camber", 0.04))
+    camber_pos = float(p.get("prop_airfoil_camber_position", 0.40))
+    thickness = float(p.get("prop_airfoil_thickness_ratio", 0.10))
+    samples = int(p.get("prop_airfoil_samples", 24))
+    if chord <= 0 or not (0.0 <= camber < 0.10) or not (0.05 <= camber_pos <= 0.95):
+        raise ValueError("Invalid propeller airfoil parameters")
+    if not (0.06 <= thickness <= 0.18) or samples < 12:
+        raise ValueError("Propeller airfoil thickness must be 0.06..0.18 and samples >= 12")
+
+    theta = math.radians(twist_deg)
+    cos_t, sin_t = math.cos(theta), math.sin(theta)
+    us = [0.5 * (1.0 - math.cos(math.pi * i / samples)) for i in range(samples + 1)]
+
+    def point(u, side):
+        # NACA 4-digit thickness distribution with a cambered mean line.
+        yt = 5.0 * thickness * (
+            0.2969 * math.sqrt(max(0.0, u)) - 0.1260 * u
+            - 0.3516 * u**2 + 0.2843 * u**3 - 0.1015 * u**4
+        ) * chord
+        if u < camber_pos:
+            yc = camber / camber_pos**2 * (2.0 * camber_pos * u - u**2)
+        else:
+            yc = camber / (1.0 - camber_pos)**2 * (
+                (1.0 - 2.0 * camber_pos) + 2.0 * camber_pos * u - u**2
+            )
+        y_local = yc * chord + side * yt
+        z_local = (u - 0.5) * chord
+        # Twist the section about the radial X axis. Sweep is added in the rotor plane
+        # after twist, so it does not accidentally change the section pitch.
+        y_rot = y_local * cos_t + z_local * sin_t
+        z_rot = -y_local * sin_t + z_local * cos_t + sweep
+        return cq.Vector(float(radius), float(y_mid + y_rot), float(z_rot))
+
+    # Traverse upper surface from trailing edge to leading edge, then lower surface
+    # back to the trailing edge; cosine spacing resolves the leading edge smoothly.
+    points = [point(u, +1.0) for u in reversed(us)]
+    points.extend(point(u, -1.0) for u in us[1:])
+    wire = cq.Wire.makePolygon(points, close=True)
+    if not wire.isValid():
+        raise RuntimeError("Generated propeller airfoil section is invalid")
+    return wire
+
+
 def prop(p, x, z):
-    blade = (cq.Workplane("XZ").workplane(offset=-p["prop_y"]).center(x, z)
-             .rect(2 * p["prop_radius"], p["prop_chord"]).extrude(-p["prop_thickness"]))
-    blade = blade.edges("|Y").fillet(min(p["prop_chord"], p["prop_thickness"] * 2) / 2.5)
-    hub = (cq.Workplane("XZ").workplane(offset=-p["prop_y"] - p["prop_thickness"] / 2 + p["prop_hub_height"] / 2 - p["prop_hub_height"] / 2)
-           .center(x, z).circle(p["prop_hub_radius"]).extrude(-p["prop_hub_height"]))
-    return blade.union(hub)
+    """Two-blade low-Re rotor concept: cambered airfoil, radial taper, twist and swept tips.
+
+    This is an aerodynamic-style CAD concept, not a validated thrust/efficiency optimum.
+    Motor KV, battery voltage, prop RPM, mass and bench-test data are not present in the repo.
+    """
+    import math
+    radius = float(p["prop_radius"])
+    scale = float(p.get("model_scale") or 1.0)
+    pitch_local = float(p.get("prop_pitch_mm", 48.26)) / scale
+    if radius <= 0 or pitch_local <= 0:
+        raise ValueError("Propeller radius and design pitch must be positive")
+    stations_data = p.get("prop_blade_stations") or [
+        [0.05, 6.5], [0.14, 7.8], [0.23, 8.6], [0.33, 8.8],
+        [0.44, 8.2], [0.56, 7.3], [0.68, 6.4], [0.80, 5.6],
+        [0.90, 4.8], [0.96, 4.4], [1.00, 4.0]
+    ]
+    if len(stations_data) < 5:
+        raise ValueError("At least five radial propeller stations are required")
+    fractions = [float(row[0]) for row in stations_data]
+    chords = [float(row[1]) for row in stations_data]
+    if (fractions[0] <= 0 or fractions[-1] != 1.0
+            or any(b <= a for a, b in zip(fractions, fractions[1:]))
+            or any(c <= 0 for c in chords)):
+        raise ValueError("Propeller stations must increase from a positive root fraction to 1.0")
+
+    y_mid = float(p["prop_y"]) + float(p.get("prop_thickness", 1.2)) / 2.0
+    sweep_max = float(p.get("prop_tip_sweep", 1.2))
+    wires = []
+    for fraction, chord in zip(fractions, chords):
+        r = fraction * radius
+        # Constant-pitch design law: beta = atan(P / (2*pi*r); cap the root angle
+        # because the innermost sections are mostly buried in the hub.
+        beta = math.degrees(math.atan(pitch_local / (2.0 * math.pi * max(r, 1e-6))))
+        beta = min(beta, 42.0)
+        sweep = sweep_max * fraction**3
+        wires.append(_prop_airfoil_wire(r, chord, beta, sweep, p, y_mid))
+
+    blade = cq.Solid.makeLoft(wires, ruled=False)
+    if not blade.isValid() or len(blade.Solids()) != 1:
+        raise RuntimeError("Positive-radius propeller blade loft is invalid")
+    opposite_blade = blade.rotate((0, 0, 0), (0, 1, 0), 180.0)
+
+    # Preserve the existing elevated hub interface; blades are fused into the hub.
+    hub = cq.Solid.makeCylinder(
+        float(p["prop_hub_radius"]), float(p["prop_hub_height"]),
+        cq.Vector(0.0, y_mid, 0.0), cq.Vector(0.0, 1.0, 0.0)
+    )
+    rotor = (cq.Workplane("XY").newObject([hub])
+             .union(cq.Workplane("XY").newObject([blade]))
+             .union(cq.Workplane("XY").newObject([opposite_blade])))
+    rotor = rotor.translate((x, 0.0, z))
+    if not rotor.val().isValid() or len(rotor.val().Solids()) != 1:
+        raise RuntimeError("Propeller blades and hub must form one valid connected solid")
+    return rotor
 
 
 def body_shell_parts(p):
@@ -1105,6 +1211,30 @@ def write_validation_report(parts, scale, out_dir, params):
             "bbox_mm": [round(bb.xlen, 6), round(bb.ylen, 6), round(bb.zlen, 6)]
         },
         "components": components,
+        "propeller": {
+            "design": "two-blade cambered NACA 4410 concept with radial chord taper, geometric twist and mild tip sweep",
+            "blade_count": 2,
+            "diameter_mm": round(2.0 * float(p["prop_radius"]) * float(scale), 3),
+            "nominal_geometric_pitch_mm": round(float(p.get("prop_pitch_mm", 48.26)), 3),
+            "nominal_geometric_pitch_in": round(float(p.get("prop_pitch_mm", 48.26)) / 25.4, 3),
+            "airfoil_camber_ratio": float(p.get("prop_airfoil_camber", 0.04)),
+            "airfoil_thickness_ratio": float(p.get("prop_airfoil_thickness_ratio", 0.10)),
+            "radial_stations": len(p.get("prop_blade_stations", [])),
+            "radial_guard_clearance_mm": round(
+                ((min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0))
+                 if p.get("guard_use_profile") else
+                 (p["guard_outer_radius"] - p["guard_wall"])
+                 - float(p["prop_radius"])) * float(scale), 3),
+            "guard_clearance_positive": (
+                ((min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0))
+                 if p.get("guard_use_profile") else
+                 (p["guard_outer_radius"] - p["guard_wall"]))
+                > float(p["prop_radius"])
+            ),
+            "motor_matched": False,
+            "thrust_efficiency_bench_tested": False,
+            "physical_print_fit_tested": False
+        },
         "arm_geometry": {
             "all_four_arms_checked": len(arm_geometry) == 4,
             "constant_width_and_height_by_generator": all(v["cross_section_constant_by_generator"] for v in arm_geometry.values()),
@@ -1167,6 +1297,13 @@ def write_validation_report(parts, scale, out_dir, params):
         raise RuntimeError("One or more exported components is invalid or not a single solid")
     if len(arm_geometry) != 4 or not all(v["cross_section_constant_by_generator"] for v in arm_geometry.values()):
         raise RuntimeError("Constant arm width/height requirement is not satisfied for all four arms")
+    prop_report = report["propeller"]
+    if prop_report["blade_count"] != 2 or prop_report["diameter_mm"] <= 0:
+        raise RuntimeError("Propeller geometry metadata is invalid")
+    if not prop_report["guard_clearance_positive"]:
+        raise RuntimeError("Propeller radius exceeds the available guard inner radius")
+    if len([name for name in parts if name.startswith("prop_")]) != 4:
+        raise RuntimeError("Expected four independently exported propeller solids")
     if floor_samples_passed != len(floor_samples):
         raise RuntimeError("Lower-body floor thickness verification failed outside the nut-pocket area")
     with open(os.path.join(out_dir, "validation-report.json"), "w", encoding="utf-8") as f:
