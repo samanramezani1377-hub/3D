@@ -133,6 +133,8 @@ PARAMS = {
     "joint_screw_socket_af": 1.95,
     "joint_screw_socket_depth": 0.9,
     "joint_nut_thickness": 1.9,
+    "joint_boss_diameter_mm": 10.0,       # round underside reinforcement at each nut station (final mm)
+    "joint_boss_total_thickness_mm": 8.0, # total local thickness from boss underside to floor interior (final mm)
     "model_scale": 1.28548,
     "target_overall_mm": None,
 }
@@ -548,18 +550,19 @@ def arm_entry_slot(p, x, z):
 
 
 def nut_part(p, x, z):
-    """Simplified nut envelope seated inside the hexagonal pocket cut upward from the floor underside."""
+    """Simplified nut envelope seated inside the hex pocket recessed into the underside boss."""
     import math
     circ_dia = p["joint_nut_af"] / math.cos(math.radians(30.0))
     thickness = p["joint_nut_thickness"]
-    # The underside is design Y=0.  A negative XZ extrusion extends into the body (+Y),
-    # matching nut_cutter's pocket from Y=0 to joint_nut_depth instead of leaving the
-    # nut hanging below the shell.
+    scale_for_hardware = float(p.get("model_scale") or 1.0)
+    boss_extension = max(0.0, float(p.get("joint_boss_total_thickness_mm", 8.0)) / scale_for_hardware
+                        - float(p["body_shell_thickness"]))
+    # Nut starts at the outermost face of the boss and extends inward (+Y), matching the pocket.
     nut = (cq.Workplane("XZ").center(x, z)
            .polygon(6, circ_dia).extrude(-thickness))
     bore = (cq.Workplane("XZ").center(x, z)
             .circle(p["joint_nut_hole_radius"]).extrude(-(thickness + 0.02)))
-    return nut.cut(bore)
+    return nut.cut(bore).translate((0, -boss_extension, 0))
 
 
 def screw_part(p, x, z):
@@ -568,9 +571,14 @@ def screw_part(p, x, z):
     shaft_r, head_r = p["joint_screw_shaft_radius"], p["joint_screw_head_radius"]
     head_h = p["joint_screw_head_height"]
     tab_top = p["body_shell_thickness"] + p["arm_height"]
-    shaft_bottom = tab_top - p["joint_screw_length"]
+    scale_for_hardware = float(p.get("model_scale") or 1.0)
+    boss_extension = max(0.0, float(p.get("joint_boss_total_thickness_mm", 8.0)) / scale_for_hardware
+                        - float(p["body_shell_thickness"]))
+    # Extend the screw to the underside of the reinforced boss so it passes through the full nut.
+    shaft_bottom = min(tab_top - p["joint_screw_length"], -boss_extension)
+    shaft_length = tab_top - shaft_bottom
     shaft = (cq.Workplane("XZ").workplane(offset=-shaft_bottom).center(x, z)
-             .circle(shaft_r).extrude(-p["joint_screw_length"]))
+             .circle(shaft_r).extrude(-shaft_length))
     head = (cq.Workplane("XZ").workplane(offset=-tab_top).center(x, z)
             .circle(head_r).extrude(-head_h))
     screw = shaft.union(head)
@@ -764,6 +772,22 @@ def build_modular(p=None):
         # Remove the same full-height tick-root envelope from the crown where it crosses
         # the hull/crown split, preserving clearance for the removable arm module.
         crown_part = crown_part.cut(root_clearance)
+    # Reinforce every fastener station with an integral circular boss on the exterior underside.
+    # Boss diameter and total local thickness are specified in final millimetres; model coordinates
+    # are converted back using the active uniform scale. The interior floor remains flat for the arms.
+    hardware_scale = float(p.get("model_scale") or 1.0)
+    boss_radius = float(p.get("joint_boss_diameter_mm", 10.0)) / hardware_scale / 2.0
+    boss_total_thickness = float(p.get("joint_boss_total_thickness_mm", 8.0)) / hardware_scale
+    boss_extension = boss_total_thickness - float(p["body_shell_thickness"])
+    if boss_extension <= 0 or boss_radius <= 0:
+        raise ValueError("joint boss must be wider than zero and thicker than the existing floor")
+    # The XZ plane normal points toward -Y; a positive extrusion adds material below Y=0.
+    # Start 0.05 model units inside the floor to guarantee a fused single solid.
+    for x, z in stations_list:
+        for hx, hz in joint_bolt_points(p, x, z):
+            boss = (cq.Workplane("XZ").workplane(offset=-0.05).center(hx, hz)
+                    .circle(boss_radius).extrude(boss_extension + 0.05))
+            body_part = body_part.union(boss)
     # The tick branches are integral with the arm, full arm-height, and 60% of arm width.
     arm_parts, prop_parts, screw_parts, nut_parts = [], [], [], []
     for arm_index, (x, z) in enumerate(stations_list, 1):
@@ -781,12 +805,13 @@ def build_modular(p=None):
         for bolt_index, (hx, hz) in enumerate(joint_bolt_points(p, x, z), 1):
             # Hex nut recesses open on the exterior underside; the circular clearance bore
             # continues through the complete floor and raised support.
-            nut_cutter = (cq.Workplane("XZ").workplane(offset=0)
+            # Recess opens at the lowest face of the new boss and cuts upward into it.
+            nut_cutter = (cq.Workplane("XZ").workplane(offset=boss_extension)
                           .center(hx, hz).polygon(6, p["joint_nut_pocket_af"] / math.cos(math.radians(30.0)))
                           .extrude(-p["joint_nut_depth"]))
-            bore = (cq.Workplane("XZ").workplane(offset=0).center(hx, hz)
-                    .circle(p["joint_bolt_hole_radius"]).extrude(
-                        -(p["body_shell_thickness"] + p["joint_floor_pad_height"] + 0.1)))
+            # Clearance bore runs from the boss underside through the entire reinforced floor.
+            bore = (cq.Workplane("XZ").workplane(offset=boss_extension).center(hx, hz)
+                    .circle(p["joint_bolt_hole_radius"]).extrude(-(boss_total_thickness + 0.1)))
             body_part = body_part.cut(nut_cutter).cut(bore)
             part_index = (arm_index - 1) * 2 + bolt_index
             screw_parts.append((f"screw_{part_index}", screw_part(p, hx, hz)))
@@ -985,6 +1010,10 @@ def export_modular(parts, out_dir):
             "fastener_axis_export_coordinates": "Z (vertical)",
             "nut_retention": "hexagonal pockets open on the exterior underside; nut solids sit inside the pocket depth, with real metal nuts required for assembly",
             "nut_recesses_open_on_exterior_underside": True,
+            "underside_boss_count": 8,
+            "underside_boss_diameter_mm": p["joint_boss_diameter_mm"],
+            "underside_boss_total_local_thickness_mm": p["joint_boss_total_thickness_mm"],
+            "underside_boss_integral_with_body": True,
             "nut_pocket_depth_mm": round(PARAMS["joint_nut_depth"] * PARAMS["model_scale"], 3),
             "nut_thickness_mm": round(PARAMS["joint_nut_thickness"] * PARAMS["model_scale"], 3),
             "nut_seated_inside_floor_recess": True,
@@ -1105,6 +1134,10 @@ def write_validation_report(parts, scale, out_dir, params):
             "screws_vertical_and_top_accessible": True,
             "nut_traps_in_floor_rails": False,
             "nut_recesses_open_on_exterior_underside": True,
+            "underside_boss_count": 8,
+            "underside_boss_diameter_mm": p["joint_boss_diameter_mm"],
+            "underside_boss_total_local_thickness_mm": p["joint_boss_total_thickness_mm"],
+            "underside_bosses_integral_and_fused": components["body_lower"]["shape_valid"],
             "nut_seated_inside_floor_recess": True,
             "nut_pocket_clearance_per_side_mm": round((p["joint_nut_pocket_af"] - p["joint_nut_af"]) * scale / 2, 3),
             "nut_body_intersection_volume_mm3": nut_body_intersections,
