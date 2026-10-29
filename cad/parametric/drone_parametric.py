@@ -741,8 +741,11 @@ def export_modular(parts, out_dir):
     # assembly/explode instructions. Also write a physically exploded STL so
     # slicers that open one STL cannot mistake the parts for a single assembled model.
     compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
+    # Preserve the assembled pose under an explicit filename. The default STL name below
+    # is intentionally reserved for the exploded layout so opening drone_parametric.stl
+    # in a mesh viewer shows the separated parts instead of the closed assembly.
     cq.exporters.export(cq.Workplane("XY").newObject([compound]),
-                        os.path.join(out_dir, "drone_parametric.stl"),
+                        os.path.join(out_dir, "drone_parametric_assembled.stl"),
                         tolerance=0.05, angularTolerance=0.1)
 
     # Exploded layout uses deliberate, visible clearances rather than small illustrative offsets.
@@ -792,14 +795,19 @@ def export_modular(parts, out_dir):
     cq.exporters.export(cq.Workplane("XY").newObject([exploded_compound]),
                         os.path.join(out_dir, "drone_parametric_exploded.stl"),
                         tolerance=0.05, angularTolerance=0.1)
+    # Make the conventional/default STL name the exploded layout too, preventing
+    # viewers such as OpenSCAD from opening the assembled compound by accident.
+    cq.exporters.export(cq.Workplane("XY").newObject([exploded_compound]),
+                        os.path.join(out_dir, "drone_parametric.stl"),
+                        tolerance=0.05, angularTolerance=0.1)
 
     try:
         import trimesh
-        mesh = trimesh.load(os.path.join(out_dir, "drone_parametric.stl"), force="mesh")
+        mesh = trimesh.load(os.path.join(out_dir, "drone_parametric_assembled.stl"), force="mesh")
         if not mesh.is_watertight:
             trimesh.repair.fill_holes(mesh)
             trimesh.repair.fix_normals(mesh)
-            mesh.export(os.path.join(out_dir, "drone_parametric.stl"))
+            mesh.export(os.path.join(out_dir, "drone_parametric_assembled.stl"))
     except Exception as e:
         print("Assembly STL repair skipped:", e)
 
