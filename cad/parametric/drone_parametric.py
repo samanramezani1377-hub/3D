@@ -105,7 +105,7 @@ PARAMS = {
     "joint_branch_long_length": 22.0,   # longitudinal branch length toward the body centre
     "joint_branch_short_length": 14.0,  # transverse branch length at the body entry point
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
-    "joint_branch_axis_bias_deg": 40.0, # gives a 130-degree included angle between the two root legs
+    "joint_branch_axis_bias_deg": 65.0, # each branch is 65 degrees from the inward arm axis; included angle = 130 degrees
     "joint_tick_junction_radius": 40.5,
     "joint_tab_start_radius": 40.5,
     "joint_tab_end_radius": 43.0,
@@ -426,44 +426,49 @@ def radial_part(profile, x, z, angle_deg, y_base):
             .translate((x, y_base, z)))
 
 
+def _tick_branch_vectors(p, x, z):
+    """Return unequal branch vectors fanning left/right from the arm entry point."""
+    import math
+    angle = math.atan2(z, x)
+    long_len = float(p.get("joint_branch_long_length", 22.0))
+    short_len = float(p.get("joint_branch_short_length", 14.0))
+    half_angle = math.radians(float(p.get("joint_branch_axis_bias_deg", 65.0)))
+    # The main arm points radially outward. Both root legs start at its entry
+    # point and point inward, one to each side of the arm axis; neither follows
+    # the global X/Z axes. Their included angle is 2 * half_angle (130 degrees).
+    inward_x, inward_z = -math.cos(angle), -math.sin(angle)
+    side_x, side_z = -inward_z, inward_x
+    c, sn = math.cos(half_angle), math.sin(half_angle)
+    return (
+        (long_len, inward_x * c + side_x * sn,
+         inward_z * c + side_z * sn),
+        (short_len, inward_x * c - side_x * sn,
+         inward_z * c - side_z * sn),
+    )
+
+
 def joint_bolt_points(p, x, z):
-    """Bolt centres at the midpoints of the longitudinal and outward-swept tick legs."""
+    """Bolt centres at the midpoints of the left and right tick branches."""
     import math
     angle = math.atan2(z, x)
     radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_len = float(p.get("joint_branch_long_length", 22.0))
-    short_len = float(p.get("joint_branch_short_length", 14.0))
-    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 40.0)))
-    sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
-    # Long leg points inward along the longitudinal axis. The shorter leg sweeps
-    # outward toward the side wall and outward along the same front/rear quadrant,
-    # opening the included tick angle to 90 + bias degrees.
     return [
-        (cx, cz - sz * long_len / 2.0),
-        (cx + sx * math.cos(bias) * short_len / 2.0,
-         cz + sz * math.sin(bias) * short_len / 2.0),
+        (cx + dx * length / 2.0, cz + dz * length / 2.0)
+        for length, dx, dz in _tick_branch_vectors(p, x, z)
     ]
 
 
 def _branch_shapes(p, x, z, y_base, height):
-    """Full-height unequal tick branches, spread toward the side wall."""
+    """Full-height unequal tick branches fanning left/right at the arm entry."""
     import math
     angle = math.atan2(z, x)
     radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_len = float(p.get("joint_branch_long_length", 22.0))
-    short_len = float(p.get("joint_branch_short_length", 14.0))
-    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
     # Only branch width is reduced; the main beam remains full width and height.
     width = float(p["arm_width"]) * float(p.get("joint_branch_width_ratio", 0.60))
-    sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
-    directions = (
-        (long_len, 0.0, -sz),  # longitudinal leg toward the fuselage centre
-        (short_len, sx * math.cos(bias), sz * math.sin(bias)),  # outward-swept side leg
-    )
     branches = []
-    for length, dx, dz in directions:
+    for length, dx, dz in _tick_branch_vectors(p, x, z):
         theta = math.degrees(math.atan2(dx, dz))
         bar = cq.Workplane("XY").box(width, height, length)
         bar = bar.rotate((0, 0, 0), (0, 1, 0), theta)
@@ -472,7 +477,6 @@ def _branch_shapes(p, x, z, y_base, height):
                              cz + dz * length / 2.0))
         branches.append(bar)
     return tuple(branches)
-
 
 def arm_with_tick_root(p, x, z, start_r=0.0, y_offset=0.0):
     """Full-section arm plus its integral, full-height tick-shaped root reinforcement."""
