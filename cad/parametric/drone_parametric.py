@@ -737,14 +737,42 @@ def export_modular(parts, out_dir):
         assembly.add(part.val(), name=name, color=matte_black)
     assembly.save(os.path.join(out_dir, "drone_parametric.step"), exportType="STEP")
 
-    # Keep the convenient whole-model STL as a compound mesh.
+    # Keep the assembled STL for visualization, but note that STL stores no
+    # assembly/explode instructions. Also write a physically exploded STL so
+    # slicers that open one STL cannot mistake the parts for a single assembled model.
     compound = cq.Compound.makeCompound([part.val() for part in parts.values()])
     cq.exporters.export(cq.Workplane("XY").newObject([compound]),
                         os.path.join(out_dir, "drone_parametric.stl"),
                         tolerance=0.05, angularTolerance=0.1)
+
+    # Exploded layout: crown lifts vertically; arm modules move radially outward;
+    # propellers lift above their corresponding motors; screws lift and nuts drop.
+    exploded_shapes = []
+    for name, part in parts.items():
+        shape = part.val()
+        bb = shape.BoundingBox()
+        if name == "body_crown":
+            shape = shape.translate((0, 0, 32.0))
+        elif name.startswith("arm_"):
+            cx, cy = (bb.xmin + bb.xmax) / 2.0, (bb.ymin + bb.ymax) / 2.0
+            import math
+            length = math.hypot(cx, cy) or 1.0
+            shape = shape.translate((cx / length * 32.0, cy / length * 32.0, 0))
+        elif name.startswith("prop_"):
+            shape = shape.translate((0, 0, 24.0))
+        elif name.startswith("screw_"):
+            shape = shape.translate((0, 0, 12.0))
+        elif name.startswith("nut_"):
+            shape = shape.translate((0, 0, -8.0))
+        exploded_shapes.append(shape)
+    exploded_compound = cq.Compound.makeCompound(exploded_shapes)
+    cq.exporters.export(cq.Workplane("XY").newObject([exploded_compound]),
+                        os.path.join(out_dir, "drone_parametric_exploded.stl"),
+                        tolerance=0.05, angularTolerance=0.1)
+
     try:
         import trimesh
-        mesh = trimesh.load(os.path.join(out_dir, "drone_parametric.stl"))
+        mesh = trimesh.load(os.path.join(out_dir, "drone_parametric.stl"), force="mesh")
         if not mesh.is_watertight:
             trimesh.repair.fill_holes(mesh)
             trimesh.repair.fix_normals(mesh)
