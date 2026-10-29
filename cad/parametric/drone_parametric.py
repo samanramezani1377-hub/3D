@@ -931,7 +931,7 @@ def export_modular(parts, out_dir):
             "approx_m3_clearance_hole_diameter_mm": round(2 * PARAMS["joint_bolt_hole_radius"] * PARAMS["model_scale"], 3),
             "hardware_geometry_is_simplified": True,
             "physical_fit_tested": False,
-            "note": "The CAD includes simplified screw and nut envelopes for assembly visualization. Use real M3 screws and metal nuts; print-fit, tool access, and flight-load testing are still required."
+            "note": "The CAD includes simplified screw and nut envelopes for assembly visualization. Nut solids are positioned within the underside-open hex pockets and the screw clearance bores pass through the floor. Use real M3 screws and metal nuts; print-fit, tool access, and flight-load testing are still required."
         }
     }
     with open(os.path.join(out_dir, "assembly-manifest.json"), "w", encoding="utf-8") as f:
@@ -946,9 +946,13 @@ def write_validation_report(parts, scale, out_dir, params):
     components = {}
     for name, part in parts.items():
         shape = part.val()
+        component_bb = shape.BoundingBox()
         components[name] = {
             "shape_valid": bool(shape.isValid()),
-            "solid_count": len(shape.Solids())
+            "solid_count": len(shape.Solids()),
+            "bbox_mm": [round(component_bb.xmin, 4), round(component_bb.ymin, 4),
+                        round(component_bb.zmin, 4), round(component_bb.xmax, 4),
+                        round(component_bb.ymax, 4), round(component_bb.zmax, 4)]
         }
     p = {**PARAMS, **params}
     report = {
