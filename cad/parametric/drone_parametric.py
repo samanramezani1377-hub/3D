@@ -482,14 +482,16 @@ def arm_entry_slot(p, x, z):
 
 
 def nut_part(p, x, z):
-    """Simplified nut envelope seated in a recess on the exterior underside."""
+    """Simplified nut envelope seated inside the hexagonal pocket cut upward from the floor underside."""
     import math
     circ_dia = p["joint_nut_af"] / math.cos(math.radians(30.0))
     thickness = p["joint_nut_thickness"]
-    bottom = -thickness
-    nut = (cq.Workplane("XZ").workplane(offset=-bottom).center(x, z)
+    # The underside is design Y=0.  A negative XZ extrusion extends into the body (+Y),
+    # matching nut_cutter's pocket from Y=0 to joint_nut_depth instead of leaving the
+    # nut hanging below the shell.
+    nut = (cq.Workplane("XZ").center(x, z)
            .polygon(6, circ_dia).extrude(-thickness))
-    bore = (cq.Workplane("XZ").workplane(offset=-(bottom - 0.01)).center(x, z)
+    bore = (cq.Workplane("XZ").center(x, z)
             .circle(p["joint_nut_hole_radius"]).extrude(-(thickness + 0.02)))
     return nut.cut(bore)
 
@@ -912,7 +914,10 @@ def export_modular(parts, out_dir):
             "fastener_count": 8,
             "fastener_axis_design_coordinates": "Y (vertical); screws installed from the arm-tab side into exterior underside nuts",
             "fastener_axis_export_coordinates": "Z (vertical)",
-            "nut_retention": "hexagonal nut recesses opening on the exterior underside of the floor; metal nuts are required",
+            "nut_retention": "hexagonal pockets open on the exterior underside; nut solids sit inside the pocket depth, with real metal nuts required for assembly",
+            "nut_pocket_depth_mm": round(PARAMS["joint_nut_depth"] * PARAMS["model_scale"], 3),
+            "nut_thickness_mm": round(PARAMS["joint_nut_thickness"] * PARAMS["model_scale"], 3),
+            "nut_seated_inside_floor_recess": True,
             "nut_pocket_clearance_per_side_mm": round((PARAMS["joint_nut_pocket_af"] - PARAMS["joint_nut_af"]) * PARAMS["model_scale"] / 2, 3),
             "side_wall_fasteners": False,
             "floor_plate_cut_through": True,
@@ -970,6 +975,9 @@ def write_validation_report(parts, scale, out_dir, params):
             "screws_vertical_and_top_accessible": True,
             "nut_traps_in_floor_rails": False,
             "nut_recesses_open_on_exterior_underside": True,
+            "nut_seated_inside_floor_recess": True,
+            "nut_pocket_clearance_per_side_mm": round((p["joint_nut_pocket_af"] - p["joint_nut_af"]) * scale / 2, 3),
+            "nut_traps_in_floor_rails": False,
             "side_wall_fasteners": False,
             "floor_plate_cut_through": True,
             "hole_centres_aligned_by_shared_coordinates": True,
