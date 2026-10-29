@@ -67,25 +67,25 @@ PARAMS = {
     # pocket behind it, so a real LED can be glued from inside later. Sizes are in FINAL (scaled) mm.
     "led_enabled": True,
     "led_y": 14.5,                   # height of the slit centre (model units, before scaling)
-    "led_slit_length": 10.0,         # slit width along x
-    "led_slit_height": 2.0,          # slit height
-    "led_wall": 1.5,                 # shell thickness the slit passes through
-    "led_pocket_length": 12.0,       # pocket behind the slit (x)
-    "led_pocket_height": 4.0,        # (y)
-    "led_pocket_depth": 6.0,         # how far the pocket goes inward (z)
+    "led_slit_length": 11.0,          # +10% with overall model scale
+    "led_slit_height": 2.2,           # +10% with overall model scale
+    "led_wall": 1.65,                # +10% with overall model scale
+    "led_pocket_length": 13.2,       # +10% with overall model scale
+    "led_pocket_height": 4.4,         # +10% with overall model scale
+    "led_pocket_depth": 6.6,         # +10% with overall model scale
     # front camera: small module hidden INSIDE the nose, only a small square housing (aligned with the lens axis) shows outside.
     # Sizes are in FINAL (scaled) mm. The lens axis points forward, tilted down by camera_tilt_down_deg.
     "camera_enabled": True,
     "camera_tilt_down_deg": 35.0,
-    "camera_y": 8.35,                # center the lens housing vertically on the scaled nose face (body_height * model_scale / 2)
-    "camera_block_size": 10.5,       # side of the square housing that sticks out (aligned with the lens axis)
-    "camera_block_protrusion": 3.5,  # how far the housing sticks out of the nose face
-    "camera_block_fillet": 0.8,      # rounding of the housing's corners
-    "camera_lens_hole_radius": 3.2,  # round lens opening inside the housing
-    "camera_wall": 1.5,              # shell thickness between the outside and the camera pocket
-    "camera_cavity_w": 9.5,          # internal pocket for the camera module (width / height / depth)
-    "camera_cavity_h": 6.0,
-    "camera_cavity_d": 7.0,
+    "camera_y": 9.185,               # +10% with the enlarged nose; keep housing centered on the scaled face
+    "camera_block_size": 11.55,      # +10% with overall model scale
+    "camera_block_protrusion": 3.85, # +10% with overall model scale
+    "camera_block_fillet": 0.88,     # +10% with overall model scale
+    "camera_lens_hole_radius": 3.52, # +10% with overall model scale
+    "camera_wall": 1.65,             # +10% with overall model scale
+    "camera_cavity_w": 10.45,        # +10% with overall model scale
+    "camera_cavity_h": 6.6,          # +10% with overall model scale
+    "camera_cavity_d": 7.7,          # +10% with overall model scale
     # propellers (parametric, twisted cambered two-blade rotor) -----------------
     "include_props": True,
     "prop_radius": 26.45,           # 34.0 mm final radius -> 68.0 mm / 2.68 in diameter; preserves ~4.18 mm radial guard clearance
@@ -94,7 +94,7 @@ PARAMS = {
     "prop_y": 25.5,                 # lifted above motor and arm envelope; validated for 3D clearance
     "prop_hub_radius": 4.0,
     "prop_hub_height": 4.0,
-    "prop_pitch_mm": 48.26,         # nominal 1.9 in geometric pitch; not a motor/load guarantee
+    "prop_pitch_mm": 53.086,        # +10% with the complete rotor geometry; not a motor/load guarantee
     "prop_airfoil_camber": 0.04,    # NACA 4410 camber ratio
     "prop_airfoil_camber_position": 0.40,
     "prop_airfoil_thickness_ratio": 0.10,
@@ -107,12 +107,12 @@ PARAMS = {
         [0.90, 5.14], [0.96, 4.71], [1.00, 4.28]
     ],
     # overall size -------------------------------------------------------------
-    # model_scale: fixed uniform scale to final mm. It keeps the body at its approved size (it was the scale that
-    # made the old layout exactly 240 mm). The bigger guards now make the footprint ~247 x 247 mm (limit lifted).
+    # model_scale: uniform final scale. Current assembly is enlarged by 10% from the previous approved layout.
+    # Real M3 fastener/nut interface dimensions are compensated locally and remain physically unchanged.
     # target_overall_mm: if set (and model_scale is None) the scale is derived so the largest extent equals it.
     # Floor-mounted arm attachment: integral tongue + two vertical M3 fasteners per arm.
     # Dimensions below are pre-scale model units; model_scale converts them to final millimetres.
-    "joint_clearance": 0.25,
+    "joint_clearance": 0.227273,      # reduced in local units so final physical fit clearance stays unchanged
     "joint_tip_width": 16.5,          # keep the tongue full-width at its inner end; no sudden neck-down
     "joint_lead_in_length": 6.0,
     "joint_branch_long_length": 22.0,   # longitudinal branch length toward the body centre
@@ -134,21 +134,21 @@ PARAMS = {
     "joint_entry_end_radius": 50.0,
 
     "joint_bolt_positions": [[28.5, -4.5], [28.5, 4.5]],
-    "joint_bolt_hole_radius": 1.3,
-    "joint_nut_af": 4.3,              # metal M3 nut across-flats, scaled to ~5.53 mm
-    "joint_nut_pocket_af": 4.6,
-    "joint_nut_depth": 2.0,
-    "joint_nut_hole_radius": 1.2,
-    "joint_screw_shaft_radius": 1.15,
-    "joint_screw_length": 16.0,  # reaches from the top of the full-height beam through the floor into the nut recess
-    "joint_screw_head_radius": 2.15,
-    "joint_screw_head_height": 2.3,
-    "joint_screw_socket_af": 1.95,
-    "joint_screw_socket_depth": 0.9,
-    "joint_nut_thickness": 1.9,
-    "joint_boss_diameter_mm": 10.0,       # round underside reinforcement at each nut station (final mm)
-    "joint_boss_total_thickness_mm": 8.0, # total local thickness from boss underside to floor interior (final mm)
-    "model_scale": 1.28548,
+    "joint_bolt_hole_radius": 1.181818, # preserve the existing real M3 clearance-hole diameter after scaling
+    "joint_nut_af": 3.909091,         # scaled locally so the real M3 nut remains ~5.53 mm across flats
+    "joint_nut_pocket_af": 4.181818,  # preserve real nut pocket size and side clearance
+    "joint_nut_depth": 1.818182,      # preserve physical pocket depth for M3 nut
+    "joint_nut_hole_radius": 1.090909, # preserve real nut bore size
+    "joint_screw_shaft_radius": 1.045455, # preserve M3 screw shaft diameter
+    "joint_screw_length": 14.545455, # local units adjusted to retain the existing physical screw length
+    "joint_screw_head_radius": 1.954545, # preserve physical screw-head diameter
+    "joint_screw_head_height": 2.090909, # preserve physical screw-head height
+    "joint_screw_socket_af": 1.772727, # preserve physical hex socket size
+    "joint_screw_socket_depth": 0.818182, # preserve physical socket depth
+    "joint_nut_thickness": 1.727273,   # preserve physical M3 nut thickness
+    "joint_boss_diameter_mm": 11.0,       # +10% underside reinforcement around each nut station (final mm)
+    "joint_boss_total_thickness_mm": 8.8, # +10% total thickness from boss underside to floor interior (final mm)
+    "model_scale": 1.414028,              # original scale x 1.10: entire CAD assembly enlarged uniformly by 10%
     "target_overall_mm": None,
 }
 
