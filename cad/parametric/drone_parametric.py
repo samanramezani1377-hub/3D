@@ -62,6 +62,7 @@ PARAMS = {
     # enlarge the guards in place (radii of the measured profile shifted outward, wall thickness kept) until they
     # almost touch the body (0.6 mm gap, not fused): +2.7 model units -> outer radius ~48.9 mm final
     "guard_grow": 2.7,
+    "guard_y_offset": 13.0,          # lift ring so it surrounds the raised propeller plane
     # front LED slit (no separate part): a small slit through the front shell that opens into a small
     # pocket behind it, so a real LED can be glued from inside later. Sizes are in FINAL (scaled) mm.
     "led_enabled": True,
@@ -90,7 +91,7 @@ PARAMS = {
     "prop_radius": 24.7,            # 31.75 mm radius after scale -> 63.5 mm / 2.5 in diameter
     "prop_chord": 7.0,              # legacy parameter retained for old parameter files
     "prop_thickness": 1.2,          # legacy parameter; airfoil thickness is set by prop_airfoil_thickness_ratio
-    "prop_y": 9.0,                  # propeller plane base height in design coordinates
+    "prop_y": 25.5,                 # lifted above motor and arm envelope; validated for 3D clearance
     "prop_hub_radius": 4.0,
     "prop_hub_height": 4.0,
     "prop_pitch_mm": 48.26,         # nominal 1.9 in geometric pitch; not a motor/load guarantee
@@ -369,7 +370,7 @@ def guard_profile(p, x, z):
     w = (cq.Workplane("XY").moveTo(*outer[0]).spline(outer[1:], includeCurrent=True)
          .lineTo(*inner[0]).spline(inner[1:], includeCurrent=True).close())
     ring = w.revolve(360, (0, 0, 0), (0, 1, 0))
-    return ring.translate((x, 0, z))
+    return ring.translate((x, float(p.get("guard_y_offset", 0.0)), z))
 
 
 def guard(p, x, z):
@@ -382,7 +383,7 @@ def guard(p, x, z):
         ring = ring.faces(">Y").edges().fillet(p["guard_edge_fillet"])
     except Exception:
         pass
-    return ring
+    return ring.translate((0, float(p.get("guard_y_offset", 0.0)), 0))
 
 
 # The arm and body socket share this rounded, tapered plan-view profile.
@@ -818,6 +819,37 @@ def body_shell_parts(p):
     return lower, crown
 
 
+def _prop_collision_report(p):
+    """Measure real 3D propeller intersections with each motor, arm beam and guard."""
+    import math
+    scale = float(p.get("model_scale") or 1.0)
+    start_r = float(p.get("joint_arm_start_radius", 0.0))
+    y_offset = float(p.get("body_shell_thickness", 0.0))
+    checks = []
+    for index, (x, z) in enumerate(stations(p), 1):
+        rotor = prop(p, x, z).val()
+        motor_shape = motor(p, x, z).val()
+        arm_shape = arm_with_tick_root(p, x, z, start_r=start_r, y_offset=y_offset).val()
+        guard_shape = guard(p, x, z).val()
+        motor_overlap = max(0.0, rotor.intersect(motor_shape).Volume())
+        arm_overlap = max(0.0, rotor.intersect(arm_shape).Volume())
+        guard_overlap = max(0.0, rotor.intersect(guard_shape).Volume())
+        motor_bb = motor_shape.BoundingBox()
+        rotor_bb = rotor.BoundingBox()
+        motor_vertical_gap = (rotor_bb.ymin - motor_bb.ymax) * scale
+        checks.append({
+            "propeller": f"prop_{index}",
+            "motor_intersection_volume_mm3": round(motor_overlap * scale**3, 6),
+            "arm_intersection_volume_mm3": round(arm_overlap * scale**3, 6),
+            "guard_intersection_volume_mm3": round(guard_overlap * scale**3, 6),
+            "minimum_prop_to_motor_vertical_bbox_gap_mm": round(motor_vertical_gap, 3),
+            "motor_clearance_pass": motor_overlap <= 1e-4 and motor_vertical_gap >= 2.0,
+            "arm_clearance_pass": arm_overlap <= 1e-4,
+            "guard_clearance_pass": guard_overlap <= 1e-4
+        })
+    return checks
+
+
 def build(p=None):
     p = {**PARAMS, **(p or {})}
     inner_min = (min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0)) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
@@ -924,6 +956,13 @@ def build_modular(p=None):
             nut_parts.append((f"nut_{part_index}", nut_part(p, hx, hz)))
         if p["include_props"]:
             prop_parts.append(prop(p, x, z))
+    # Fail generation if any rotating prop overlaps its motor, arm beam, or guard.
+    # This is checked on actual CadQuery solids before export/scaling, not inferred from bounding boxes.
+    collision_checks = _prop_collision_report(p) if p["include_props"] else []
+    for check in collision_checks:
+        if not (check["motor_clearance_pass"] and check["arm_clearance_pass"] and check["guard_clearance_pass"]):
+            raise RuntimeError(f"Propeller collision/clearance check failed: {check}")
+
     raw_shapes = [body_part.val()] + [s.val() for s in arm_parts] + [s.val() for s in prop_parts]
     raw_compound = cq.Compound.makeCompound(raw_shapes)
     bb = raw_compound.BoundingBox()
@@ -1233,6 +1272,14 @@ def write_validation_report(parts, scale, out_dir, params):
             "thrust_efficiency_bench_tested": False,
             "physical_print_fit_tested": False
         },
+        "propeller_clearance": {
+            "method": "exact CadQuery solid intersection volumes against each motor, arm root/beam, and guard",
+            "all_four_rotors_checked": len(_prop_collision_report(p)) == 4 if p["include_props"] else False,
+            "collision_checks": _prop_collision_report(p) if p["include_props"] else [],
+            "guard_vertical_offset_mm": round(float(p.get("guard_y_offset", 0.0)) * float(scale), 3),
+            "shaft_connection_modelled": False,
+            "note": "Zero intersection volume verifies geometric non-overlap only. The motor shaft diameter and prop hub mounting bore are still unspecified and must be matched to the selected motor."
+        },
         "arm_geometry": {
             "all_four_arms_checked": len(arm_geometry) == 4,
             "constant_width_and_height_by_generator": all(v["cross_section_constant_by_generator"] for v in arm_geometry.values()),
@@ -1302,6 +1349,13 @@ def write_validation_report(parts, scale, out_dir, params):
         raise RuntimeError("Propeller radius exceeds the available guard inner radius")
     if len([name for name in parts if name.startswith("prop_")]) != 4:
         raise RuntimeError("Expected four independently exported propeller solids")
+    if p["include_props"]:
+        collision_checks = _prop_collision_report(p)
+        if len(collision_checks) != 4 or any(
+            not (v["motor_clearance_pass"] and v["arm_clearance_pass"] and v["guard_clearance_pass"])
+            for v in collision_checks
+        ):
+            raise RuntimeError("Propeller-to-motor/arm/guard clearance validation failed")
     if floor_samples_passed != len(floor_samples):
         raise RuntimeError("Lower-body floor thickness verification failed outside the nut-pocket area")
     with open(os.path.join(out_dir, "validation-report.json"), "w", encoding="utf-8") as f:
