@@ -107,7 +107,7 @@ PARAMS = {
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
     "joint_branch_axis_bias_deg": 55.0, # short branch rotates +10 degrees toward the long-branch side
     "joint_branch_long_axis_deg": 55.0,  # both branches rotate together +10 degrees; included angle remains 110 degrees
-    "joint_tick_junction_radius": 40.5,  # keep tick root and fasteners at the body-entry region; beam alone extends inward
+    "joint_tick_junction_radius": 24.94,  # align tick junction with the arm's shortened inner tip (30 mm shorter)
     "joint_tab_start_radius": 40.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
@@ -116,7 +116,7 @@ PARAMS = {
     "joint_floor_pad_height": 2.0,
     "joint_floor_pad_width": 16.5,
     "joint_floor_pad_end_radius": 34.5,
-    "joint_arm_start_radius": 1.604,  # extend the main beam inward by 50 final mm while preserving the entry joint
+    "joint_arm_start_radius": 24.94,  # shorten the main arm by 30 final mm and put its inner tip at the tick junction
     "joint_entry_start_radius": 34.5,
     "joint_entry_end_radius": 50.0,
 
