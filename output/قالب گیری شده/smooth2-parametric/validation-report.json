@@ -7,9 +7,9 @@
     "shape_valid": true,
     "solid_count": 26,
     "bbox_mm": [
-      247.099615,
-      247.064423,
-      44.126635
+      247.169447,
+      247.153303,
+      45.395938
     ]
   },
   "components": {
@@ -42,11 +42,11 @@
       "solid_count": 1,
       "bbox_mm": [
         14.4827,
-        -123.5321,
+        -123.5767,
         -0.006,
-        123.5521,
+        123.5857,
         -4.3551,
-        38.6488
+        39.9653
       ]
     },
     "arm_2": {
@@ -56,33 +56,33 @@
         14.4827,
         4.3551,
         -0.006,
-        123.5521,
-        123.5321,
-        38.6488
+        123.5857,
+        123.5767,
+        39.9653
       ]
     },
     "arm_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5393,
-        -123.5264,
+        -123.5838,
+        -123.5709,
         -0.006,
         -14.4827,
         -4.3551,
-        38.6488
+        39.9653
       ]
     },
     "arm_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5475,
+        -123.5838,
         4.3551,
         -0.006,
         -14.4827,
-        123.5323,
-        38.6526
+        123.5685,
+        39.9653
       ]
     },
     "prop_1": {
@@ -351,9 +351,12 @@
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
         "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "guard_bottom_coverage_margin_mm": 16.958,
+        "guard_top_coverage_margin_mm": 1.157,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
-        "guard_clearance_pass": true
+        "guard_clearance_pass": true,
+        "guard_vertical_coverage_pass": true
       },
       {
         "propeller": "prop_2",
@@ -361,9 +364,12 @@
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
         "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "guard_bottom_coverage_margin_mm": 16.958,
+        "guard_top_coverage_margin_mm": 1.157,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
-        "guard_clearance_pass": true
+        "guard_clearance_pass": true,
+        "guard_vertical_coverage_pass": true
       },
       {
         "propeller": "prop_3",
@@ -371,9 +377,12 @@
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
         "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "guard_bottom_coverage_margin_mm": 16.958,
+        "guard_top_coverage_margin_mm": 1.157,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
-        "guard_clearance_pass": true
+        "guard_clearance_pass": true,
+        "guard_vertical_coverage_pass": true
       },
       {
         "propeller": "prop_4",
@@ -381,12 +390,15 @@
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
         "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "guard_bottom_coverage_margin_mm": 16.958,
+        "guard_top_coverage_margin_mm": 1.157,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
-        "guard_clearance_pass": true
+        "guard_clearance_pass": true,
+        "guard_vertical_coverage_pass": true
       }
     ],
-    "guard_vertical_offset_mm": 16.711,
+    "guard_vertical_offset_mm": 12.855,
     "shaft_connection_modelled": false,
     "note": "Zero intersection volume verifies geometric non-overlap only. The motor shaft diameter and prop hub mounting bore are still unspecified and must be matched to the selected motor."
   },

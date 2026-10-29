@@ -36,7 +36,7 @@
   "motor_hub_height": 6.0,
   "guard_outer_radius": 35.5,
   "guard_wall": 4.5,
-  "guard_height": 17.0,
+  "guard_height": 21.0,
   "guard_edge_fillet": 1.8,
   "guard_profile_y": [
     0.0,
@@ -48,7 +48,7 @@
     11.0,
     13.0,
     15.0,
-    17.0
+    21.0
   ],
   "guard_profile_outer": [
     29.0,
@@ -76,7 +76,7 @@
   ],
   "guard_use_profile": true,
   "guard_grow": 2.7,
-  "guard_y_offset": 13.0,
+  "guard_y_offset": 10.0,
   "led_enabled": true,
   "led_y": 14.5,
   "led_slit_length": 10.0,
