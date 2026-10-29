@@ -382,10 +382,12 @@ def arm(p, x, z, start_r=0.0, y_offset=0.0):
     ang = math.degrees(math.atan2(z, x))
     if start_r < 0 or start_r >= L:
         raise ValueError("arm start radius must be within the motor station")
-    # The portion entering the body keeps the full beam width right to its rounded end.
+    # Keep the arm's plan-view width constant all the way through the body entry.
+    # When raised above the bottom plate, reduce only the vertical span needed to keep
+    # the arm's top aligned with the external arm top; do not subtract an extra 1 mm.
     tip_width = p["arm_width"]
     lead_length = p.get("joint_lead_in_length", 6.0)
-    bar_height = p["arm_height"] if y_offset == 0.0 else p["arm_height"] - y_offset - 1.0
+    bar_height = p["arm_height"] - y_offset if y_offset > 0.0 else p["arm_height"]
     if bar_height <= 0:
         raise ValueError("arm root height must remain positive")
     bar = radial_joint_profile(L - start_r, p["arm_width"], tip_width, lead_length).extrude(bar_height)
