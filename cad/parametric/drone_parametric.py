@@ -915,6 +915,7 @@ def export_modular(parts, out_dir):
             "fastener_axis_design_coordinates": "Y (vertical); screws installed from the arm-tab side into exterior underside nuts",
             "fastener_axis_export_coordinates": "Z (vertical)",
             "nut_retention": "hexagonal pockets open on the exterior underside; nut solids sit inside the pocket depth, with real metal nuts required for assembly",
+            "nut_recesses_open_on_exterior_underside": True,
             "nut_pocket_depth_mm": round(PARAMS["joint_nut_depth"] * PARAMS["model_scale"], 3),
             "nut_thickness_mm": round(PARAMS["joint_nut_thickness"] * PARAMS["model_scale"], 3),
             "nut_seated_inside_floor_recess": True,
@@ -955,6 +956,13 @@ def write_validation_report(parts, scale, out_dir, params):
                         round(component_bb.ymax, 4), round(component_bb.zmax, 4)]
         }
     p = {**PARAMS, **params}
+    body_lower_shape = parts["body_lower"].val()
+    nut_body_intersections = {}
+    for i in range(1, 9):
+        nut_name = "nut_" + str(i)
+        # Nuts must occupy the underside pockets without penetrating the remaining body material.
+        intersection = body_lower_shape.intersect(parts[nut_name].val())
+        nut_body_intersections[nut_name] = round(max(0.0, intersection.Volume()), 6)
     report = {
         "report_version": 3,
         "generated_from": "cad/parametric/drone_parametric.py",
@@ -982,6 +990,8 @@ def write_validation_report(parts, scale, out_dir, params):
             "nut_recesses_open_on_exterior_underside": True,
             "nut_seated_inside_floor_recess": True,
             "nut_pocket_clearance_per_side_mm": round((p["joint_nut_pocket_af"] - p["joint_nut_af"]) * scale / 2, 3),
+            "nut_body_intersection_volume_mm3": nut_body_intersections,
+            "max_nut_body_intersection_volume_mm3": max(nut_body_intersections.values(), default=0.0),
             "side_wall_fasteners": False,
             "floor_plate_cut_through": True,
             "hole_centres_aligned_by_shared_coordinates": True,
