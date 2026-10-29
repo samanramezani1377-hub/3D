@@ -416,15 +416,21 @@ def radial_part(profile, x, z, angle_deg, y_base):
 
 
 def joint_bolt_points(p, x, z):
-    """Bolt centres at the ends of a long body-length branch and a shorter body-width branch."""
+    """Bolt centres at the midpoints of the long and short legs of the V mount."""
     import math
     angle = math.atan2(z, x)
     radius = float(p["joint_bolt_positions"][0][0])
     cx, cz = radius * math.cos(angle), radius * math.sin(angle)
-    long_offset = float(p.get("joint_branch_long_length", 16.0)) / 2.0
-    short_offset = float(p.get("joint_branch_short_length", 10.0)) / 2.0
-    return [(cx, cz + math.copysign(long_offset, z)),
-            (cx + math.copysign(short_offset, x), cz)]
+    long_len = float(p.get("joint_branch_long_length", 16.0))
+    short_len = float(p.get("joint_branch_short_length", 10.0))
+    bias = math.radians(float(p.get("joint_branch_axis_bias_deg", 20.0)))
+    sx, sz = math.copysign(1.0, x), math.copysign(1.0, z)
+    return [
+        (cx + sx * math.sin(bias) * long_len / 2.0,
+         cz + sz * math.cos(bias) * long_len / 2.0),
+        (cx + sx * math.cos(bias) * short_len / 2.0,
+         cz + sz * math.sin(bias) * short_len / 2.0),
+    ]
 
 
 def _branch_shapes(p, x, z, y_base, height):
