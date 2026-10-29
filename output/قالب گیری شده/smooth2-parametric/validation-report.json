@@ -89,48 +89,48 @@
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        41.7777,
-        -79.6998,
-        11.5689,
-        107.338,
-        -69.4159,
-        17.4841
+        42.7465,
+        -79.7029,
+        8.5848,
+        106.3692,
+        -69.4128,
+        17.4856
       ]
     },
     "prop_2": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        41.7777,
-        69.4159,
-        11.5689,
-        107.338,
-        79.6998,
-        17.4841
+        42.7465,
+        69.4128,
+        8.5848,
+        106.3692,
+        79.7029,
+        17.4856
       ]
     },
     "prop_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -107.338,
-        -79.6998,
-        11.5689,
-        -41.7777,
-        -69.4159,
-        17.4841
+        -106.3692,
+        -79.7029,
+        8.5848,
+        -42.7465,
+        -69.4128,
+        17.4856
       ]
     },
     "prop_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -107.338,
-        69.4159,
-        11.5689,
-        -41.7777,
-        79.6998,
-        17.4841
+        -106.3692,
+        69.4128,
+        8.5848,
+        -42.7465,
+        79.7029,
+        17.4856
       ]
     },
     "screw_1": {
@@ -325,6 +325,21 @@
         -2.9861
       ]
     }
+  },
+  "propeller": {
+    "design": "two-blade cambered NACA 4410 concept with radial chord taper, geometric twist and mild tip sweep",
+    "blade_count": 2,
+    "diameter_mm": 63.503,
+    "nominal_geometric_pitch_mm": 48.26,
+    "nominal_geometric_pitch_in": 1.9,
+    "airfoil_camber_ratio": 0.04,
+    "airfoil_thickness_ratio": 0.1,
+    "radial_stations": 11,
+    "radial_guard_clearance_mm": 38.179,
+    "guard_clearance_positive": true,
+    "motor_matched": false,
+    "thrust_efficiency_bench_tested": false,
+    "physical_print_fit_tested": false
   },
   "arm_geometry": {
     "all_four_arms_checked": true,
