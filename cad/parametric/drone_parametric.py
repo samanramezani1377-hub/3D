@@ -106,8 +106,8 @@ PARAMS = {
     "joint_branch_short_length": 10.0,  # short side leg, positioned at the body entry point
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
     "joint_branch_axis_bias_deg": 40.0, # gives a 130-degree included angle between the two root legs
-    "joint_tick_junction_radius": 34.5,
-    "joint_tab_start_radius": 34.5,
+    "joint_tick_junction_radius": 40.5,
+    "joint_tab_start_radius": 40.5,
     "joint_tab_end_radius": 43.0,
     "joint_tab_width": 16.5,
     "joint_tab_thickness": 2.5,  # legacy values retained for parameter-file compatibility; no low-profile tab is generated
@@ -115,7 +115,7 @@ PARAMS = {
     "joint_floor_pad_height": 2.0,
     "joint_floor_pad_width": 16.5,
     "joint_floor_pad_end_radius": 34.5,
-    "joint_arm_start_radius": 34.5,
+    "joint_arm_start_radius": 40.5,
     "joint_entry_start_radius": 34.5,
     "joint_entry_end_radius": 50.0,
 
