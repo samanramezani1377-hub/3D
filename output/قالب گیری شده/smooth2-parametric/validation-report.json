@@ -7,9 +7,9 @@
     "shape_valid": true,
     "solid_count": 26,
     "bbox_mm": [
-      247.104248,
-      247.058857,
-      40.39565
+      247.099615,
+      247.064423,
+      44.126635
     ]
   },
   "components": {
@@ -42,11 +42,11 @@
       "solid_count": 1,
       "bbox_mm": [
         14.4827,
-        -123.5294,
-        -0.0874,
-        123.5596,
+        -123.5321,
+        -0.006,
+        123.5521,
         -4.3551,
-        25.7133
+        38.6488
       ]
     },
     "arm_2": {
@@ -55,34 +55,34 @@
       "bbox_mm": [
         14.4827,
         4.3551,
-        -0.0874,
-        123.5596,
-        123.5294,
-        25.7133
+        -0.006,
+        123.5521,
+        123.5321,
+        38.6488
       ]
     },
     "arm_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5446,
-        -123.5294,
-        -0.0874,
+        -123.5393,
+        -123.5264,
+        -0.006,
         -14.4827,
         -4.3551,
-        25.7133
+        38.6488
       ]
     },
     "arm_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -123.5446,
+        -123.5475,
         4.3551,
-        -0.0874,
+        -0.006,
         -14.4827,
-        123.5294,
-        25.7133
+        123.5323,
+        38.6526
       ]
     },
     "prop_1": {
@@ -91,10 +91,10 @@
       "bbox_mm": [
         42.7465,
         -79.7029,
-        8.5848,
+        29.7953,
         106.3692,
         -69.4128,
-        17.4856
+        38.696
       ]
     },
     "prop_2": {
@@ -103,10 +103,10 @@
       "bbox_mm": [
         42.7465,
         69.4128,
-        8.5848,
+        29.7953,
         106.3692,
         79.7029,
-        17.4856
+        38.696
       ]
     },
     "prop_3": {
@@ -115,10 +115,10 @@
       "bbox_mm": [
         -106.3692,
         -79.7029,
-        8.5848,
+        29.7953,
         -42.7465,
         -69.4128,
-        17.4856
+        38.696
       ]
     },
     "prop_4": {
@@ -127,10 +127,10 @@
       "bbox_mm": [
         -106.3692,
         69.4128,
-        8.5848,
+        29.7953,
         -42.7465,
         79.7029,
-        17.4856
+        38.696
       ]
     },
     "screw_1": {
@@ -340,6 +340,55 @@
     "motor_matched": false,
     "thrust_efficiency_bench_tested": false,
     "physical_print_fit_tested": false
+  },
+  "propeller_clearance": {
+    "method": "exact CadQuery solid intersection volumes against each motor, arm root/beam, and guard",
+    "all_four_rotors_checked": true,
+    "collision_checks": [
+      {
+        "propeller": "prop_1",
+        "motor_intersection_volume_mm3": 0.0,
+        "arm_intersection_volume_mm3": 0.0,
+        "guard_intersection_volume_mm3": 0.0,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "motor_clearance_pass": true,
+        "arm_clearance_pass": true,
+        "guard_clearance_pass": true
+      },
+      {
+        "propeller": "prop_2",
+        "motor_intersection_volume_mm3": 0.0,
+        "arm_intersection_volume_mm3": 0.0,
+        "guard_intersection_volume_mm3": 0.0,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "motor_clearance_pass": true,
+        "arm_clearance_pass": true,
+        "guard_clearance_pass": true
+      },
+      {
+        "propeller": "prop_3",
+        "motor_intersection_volume_mm3": 0.0,
+        "arm_intersection_volume_mm3": 0.0,
+        "guard_intersection_volume_mm3": 0.0,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "motor_clearance_pass": true,
+        "arm_clearance_pass": true,
+        "guard_clearance_pass": true
+      },
+      {
+        "propeller": "prop_4",
+        "motor_intersection_volume_mm3": 0.0,
+        "arm_intersection_volume_mm3": 0.0,
+        "guard_intersection_volume_mm3": 0.0,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.104,
+        "motor_clearance_pass": true,
+        "arm_clearance_pass": true,
+        "guard_clearance_pass": true
+      }
+    ],
+    "guard_vertical_offset_mm": 16.711,
+    "shaft_connection_modelled": false,
+    "note": "Zero intersection volume verifies geometric non-overlap only. The motor shaft diameter and prop hub mounting bore are still unspecified and must be matched to the selected motor."
   },
   "arm_geometry": {
     "all_four_arms_checked": true,
