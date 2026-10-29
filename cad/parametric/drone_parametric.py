@@ -694,6 +694,12 @@ def build_modular(p=None):
         beam_clearance = arm(p, x, z, start_r=start_r,
                              y_offset=p["body_shell_thickness"])
         body_part = body_part.cut(beam_clearance)
+    # The tab and its two cross-branches extend inward beyond the arm-beam slot.
+    # Cut their exact mating envelope from the lower shell as well, so the removable
+    # tab seats into a matching pocket instead of intersecting the side wall.
+    # The tab starts above the floor plate, which remains continuous underneath.
+    for x, z in stations_list:
+        body_part = body_part.cut(mounting_tab(p, x, z))
     arm_parts, prop_parts, screw_parts, nut_parts = [], [], [], []
     for arm_index, (x, z) in enumerate(stations_list, 1):
         angle = math.atan2(z, x)
