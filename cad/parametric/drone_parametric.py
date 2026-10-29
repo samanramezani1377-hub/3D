@@ -100,7 +100,7 @@ PARAMS = {
     # Floor-mounted arm attachment: integral tongue + two vertical M3 fasteners per arm.
     # Dimensions below are pre-scale model units; model_scale converts them to final millimetres.
     "joint_clearance": 0.25,
-    "joint_tip_width": 10.0,
+    "joint_tip_width": 16.5,          # keep the tongue full-width at its inner end; no sudden neck-down
     "joint_lead_in_length": 6.0,
     "joint_branch_long_length": 16.0,   # long branch follows the fuselage length axis
     "joint_branch_short_length": 10.0,  # short branch follows the fuselage width axis
@@ -351,11 +351,12 @@ def guard(p, x, z):
 
 # The arm and body socket share this rounded, tapered plan-view profile.
 def radial_joint_profile(length, width, tip_width, lead_length):
-    """Plan-view outline; preserve full width when the root is not tapered."""
+    """Plan-view outline with a square, full-width end and no necked-down tip."""
     if length <= 0 or width <= 0 or tip_width <= 0 or tip_width > width:
         raise ValueError("invalid radial joint profile dimensions")
+    # A removable arm/tongue should not taper to a narrow point at its body-side end.
+    # Keep both side edges parallel and terminate at the full requested width.
     if tip_width >= width - 1e-6:
-        # A full-width root has no taper lead-in; avoid a zero-length edge at the arc tangent.
         return (cq.Workplane("XY")
                 .moveTo(0, -width / 2)
                 .lineTo(length, -width / 2)
@@ -415,7 +416,7 @@ def joint_bolt_points(p, x, z):
 
 
 def _branch_shapes(p, x, z, y_base, height):
-    """Two connected rectangular branches: long along fuselage length, short across its width."""
+    """Forked V-like attachment: long branch follows body length; short branch follows body width."""
     import math
     angle = math.atan2(z, x)
     radius = float(p["joint_bolt_positions"][0][0])
@@ -423,6 +424,9 @@ def _branch_shapes(p, x, z, y_base, height):
     long_len = float(p.get("joint_branch_long_length", 16.0))
     short_len = float(p.get("joint_branch_short_length", 10.0))
     width = float(p.get("joint_branch_width", 7.0))
+    # The two branches start at a common junction and extend in perpendicular body axes.
+    # Keep the longer longitudinal branch and shorter transverse branch distinct, with
+    # the radial tongue joining their inner ends into a compact forked/V-like footprint.
     long_bar = cq.Workplane("XY").box(width, height, long_len).translate(
         (cx, y_base + height / 2.0, cz + math.copysign(long_len / 2.0, z)))
     short_bar = cq.Workplane("XY").box(short_len, height, width).translate(
@@ -688,10 +692,10 @@ def build_modular(p=None):
         body_part = body_part.union(floor_mounting_rail(p, x, z))
     for x, z in stations_list:
         body_part = body_part.cut(arm_entry_slot(p, x, z))
-    # The raised underside rails also cross the arm beam near the socket branches.
-    # Remove only the beam envelope from the rail volume; the cutter starts at the
-    # top of the floor plate, so the closed bottom skin remains intact. This avoids
-    # an actual solid-solid overlap while retaining the rails beneath the mounting tab.
+    # Preserve the full nominal bottom plate thickness. The arm-entry opening and beam
+    # clearance begin at the top face of the plate (Y = body_shell_thickness); neither
+    # cutter may extend below that plane. The separate nut pockets are the only local
+    # underside recesses and remain confined to their fastener locations.
     for x, z in stations_list:
         beam_clearance = arm(p, x, z, start_r=start_r,
                              y_offset=p["body_shell_thickness"])
