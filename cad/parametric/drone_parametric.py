@@ -242,7 +242,16 @@ def faceted_canopy(p, inward=0.0, open_bottom_y=None, roof_drop=0.0):
             else:
                 tri(P[L][i], P[L][j], P[L + 1][j]); tri(P[L][i], P[L + 1][j], P[L + 1][i])
     faces.append(cq.Face.makeFromWires(cq.Wire.makePolygon(P[0] + [P[0][0]], close=False) if False else cq.Wire.makePolygon(P[0], close=True)))
-    faces.append(cq.Face.makeFromWires(cq.Wire.makePolygon(P[-1], close=True)))
+    # The ridge lift makes the top ring non-planar, so cap it with planar triangles
+    # instead of attempting to create one planar face from the whole ring.
+    top_center = cq.Vector(
+        sum(v.x for v in P[-1]) / len(P[-1]),
+        sum(v.y for v in P[-1]) / len(P[-1]),
+        sum(v.z for v in P[-1]) / len(P[-1]),
+    )
+    for i in range(K):
+        j = (i + 1) % K
+        tri(P[-1][i], P[-1][j], top_center)
     shell = cq.Shell.makeShell(faces)
     solid = cq.Solid.makeSolid(shell)
     if solid.Volume() < 0:
