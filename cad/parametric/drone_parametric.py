@@ -102,8 +102,8 @@ PARAMS = {
     "joint_clearance": 0.25,
     "joint_tip_width": 16.5,          # keep the tongue full-width at its inner end; no sudden neck-down
     "joint_lead_in_length": 6.0,
-    "joint_branch_long_length": 16.0,   # long branch follows the fuselage length axis
-    "joint_branch_short_length": 10.0,  # short branch follows the fuselage width axis
+    "joint_branch_long_length": 22.0,   # enlarged longitudinal tick branch
+    "joint_branch_short_length": 14.0,  # enlarged crosswise tick branch
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
     "joint_branch_axis_bias_deg": 20.0,
     "joint_tick_junction_radius": 20.5,
