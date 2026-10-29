@@ -51,7 +51,7 @@ jobs:
           python - <<'PY'
           import json, os
           out = "output/قالب گیری شده/smooth2-parametric"
-          expected = ["drone_parametric.step", "drone_parametric.stl",
+          expected = ["drone_parametric.step", "drone_parametric.stl", "drone_parametric_exploded.stl",
                       "drone_parametric.params.json", "assembly-manifest.json", "validation-report.json"]
           for prefix in ("body_lower", "body_crown", "arm_1", "arm_2", "arm_3", "arm_4",
                          "prop_1", "prop_2", "prop_3", "prop_4",
@@ -95,6 +95,7 @@ jobs:
           files=(
             "drone_parametric.step"
             "drone_parametric.stl"
+            "drone_parametric_exploded.stl"
             "drone_parametric.params.json"
             "assembly-manifest.json"
             "validation-report.json"
@@ -146,6 +147,7 @@ jobs:
             git add -- \
               "$out/drone_parametric.step" \
               "$out/drone_parametric.stl" \
+              "$out/drone_parametric_exploded.stl" \
               "$out/drone_parametric.params.json" \
               "$out/assembly-manifest.json" \
               "$out/validation-report.json" \
