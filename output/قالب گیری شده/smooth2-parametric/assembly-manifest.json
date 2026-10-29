@@ -167,7 +167,7 @@
     }
   ],
   "joint": {
-    "type": "integral arm tongue seated on reinforced inner-floor rails",
+    "type": "full-height arm beam reaches the screw stations; screws pass through the beam and floor into underside nut recesses",
     "fastener": "two vertical M3 screws per arm, passing through the floor into exterior underside nut recesses",
     "fastener_count": 8,
     "fastener_axis_design_coordinates": "Y (vertical); screws installed from the arm-tab side into exterior underside nuts",
@@ -181,7 +181,7 @@
     "side_wall_fasteners": false,
     "floor_plate_cut_through": true,
     "arm_entry_openings": 4,
-    "integral_tab": true,
+    "integral_tab": false,
     "bolt_positions_radial_tangent_model_units": [
       [
         28.5,
@@ -192,10 +192,9 @@
         4.5
       ]
     ],
-    "tab_width_model_units": 16.5,
-    "tab_thickness_model_units": 2.5,
-    "floor_rail_height_model_units": 2.0,
-    "approx_tab_thickness_mm": 3.214,
+    "tab_removed": true,
+    "arm_start_radius_model_units": 20.5,
+    "main_beam_height_mm": 15.426,
     "approx_m3_clearance_hole_diameter_mm": 3.342,
     "hardware_geometry_is_simplified": true,
     "physical_fit_tested": false,

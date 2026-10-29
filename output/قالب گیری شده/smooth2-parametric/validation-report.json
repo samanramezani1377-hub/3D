@@ -9,7 +9,7 @@
     "bbox_mm": [
       247.104248,
       247.058857,
-      39.978888
+      35.052489
     ]
   },
   "components": {
@@ -41,11 +41,11 @@
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        11.1349,
+        11.3621,
         -123.5294,
         -0.0874,
         123.5596,
-        -11.1349,
+        -11.3621,
         25.7133
       ]
     },
@@ -53,8 +53,8 @@
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        11.1349,
-        11.1349,
+        11.3621,
+        11.3621,
         -0.0874,
         123.5596,
         123.5294,
@@ -68,8 +68,8 @@
         -123.5446,
         -123.5294,
         -0.0874,
-        -11.1349,
-        -11.1349,
+        -11.3621,
+        -11.3621,
         25.7133
       ]
     },
@@ -78,9 +78,9 @@
       "solid_count": 1,
       "bbox_mm": [
         -123.5446,
-        11.1349,
+        11.3621,
         -0.0874,
-        -11.1349,
+        -11.3621,
         123.5294,
         25.7133
       ]
@@ -139,10 +139,10 @@
       "bbox_mm": [
         26.6583,
         -38.3331,
-        -5.0138,
+        4.6273,
         32.1876,
         -32.8056,
-        11.3131
+        20.9542
       ]
     },
     "screw_2": {
@@ -151,10 +151,10 @@
       "bbox_mm": [
         29.1808,
         -30.8678,
-        -5.0138,
+        4.6273,
         34.7101,
         -25.3402,
-        11.3131
+        20.9542
       ]
     },
     "screw_3": {
@@ -163,10 +163,10 @@
       "bbox_mm": [
         26.6583,
         32.8056,
-        -5.0138,
+        4.6273,
         32.1876,
         38.3331,
-        11.3131
+        20.9542
       ]
     },
     "screw_4": {
@@ -175,10 +175,10 @@
       "bbox_mm": [
         29.1808,
         25.3402,
-        -5.0138,
+        4.6273,
         34.7101,
         30.8678,
-        11.3131
+        20.9542
       ]
     },
     "screw_5": {
@@ -187,10 +187,10 @@
       "bbox_mm": [
         -32.1876,
         -38.3331,
-        -5.0138,
+        4.6273,
         -26.6583,
         -32.8056,
-        11.3131
+        20.9542
       ]
     },
     "screw_6": {
@@ -199,10 +199,10 @@
       "bbox_mm": [
         -34.7101,
         -30.8678,
-        -5.0138,
+        4.6273,
         -29.1808,
         -25.3402,
-        11.3131
+        20.9542
       ]
     },
     "screw_7": {
@@ -211,10 +211,10 @@
       "bbox_mm": [
         -32.1876,
         32.8056,
-        -5.0138,
+        4.6273,
         -26.6583,
         38.3331,
-        11.3131
+        20.9542
       ]
     },
     "screw_8": {
@@ -223,10 +223,10 @@
       "bbox_mm": [
         -34.7101,
         25.3402,
-        -5.0138,
+        4.6273,
         -29.1808,
         30.8678,
-        11.3131
+        20.9542
       ]
     },
     "nut_1": {
@@ -374,7 +374,7 @@
     "nut_pockets_excluded_from_uniform_thickness_rule": true
   },
   "joint": {
-    "type": "integral arm tongue with long longitudinal and short transverse branches; exterior underside fasteners",
+    "type": "full-height arm beam with direct vertical fastener bores; exterior underside fasteners",
     "model_scale": 1.28548,
     "fastener_count": 8,
     "fasteners_per_arm": 2,
@@ -389,8 +389,9 @@
       ]
     ],
     "bolt_clearance_hole_diameter_mm": 3.342,
-    "tab_thickness_mm": 3.214,
-    "floor_rail_height_mm": 2.571,
+    "thin_tab_removed": true,
+    "arm_start_radius_model_units": 20.5,
+    "main_beam_height_mm": 15.426,
     "nut_trap_depth_mm": 2.571,
     "nut_thickness_mm": 2.442,
     "screws_vertical_and_top_accessible": true,
@@ -412,7 +413,7 @@
     "side_wall_fasteners": false,
     "floor_plate_cut_through": true,
     "hole_centres_aligned_by_shared_coordinates": true,
-    "arm_tab_is_integral": true,
+    "arm_tab_is_integral": false,
     "hardware_geometry_is_simplified": true,
     "physical_fit_tested": false
   },
@@ -423,6 +424,6 @@
     "The workflow checks that exported STEP/STL files exist and are non-empty; STEP round-trip import is not yet checked.",
     "STL watertightness is not reported by this validation step.",
     "Screw and nut solids are simplified envelopes without threads; use real metal M3 hardware.",
-    "The mounting-hole coordinates are shared by the tabs and nut traps, but physical print-fit, screwdriver access in the printed body, and flight-load strength still require testing."
+    "The mounting-hole coordinates align directly with the full-height arm beam and underside nut traps; physical print-fit, screwdriver access in the printed body, and flight-load strength still require testing."
   ]
 }
