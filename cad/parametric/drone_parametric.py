@@ -105,7 +105,8 @@ PARAMS = {
     "joint_branch_long_length": 22.0,   # longitudinal branch length toward the body centre
     "joint_branch_short_length": 14.0,  # transverse branch length at the body entry point
     "joint_branch_width_ratio": 0.60,  # each tick branch is 60% of the main arm width
-    "joint_branch_axis_bias_deg": 65.0, # each branch is 65 degrees from the inward arm axis; included angle = 130 degrees
+    "joint_branch_axis_bias_deg": 65.0, # fixed short-branch direction; preserved while changing the included angle
+    "joint_branch_long_axis_deg": 45.0,  # long branch moves to give a 110-degree included angle
     "joint_tick_junction_radius": 40.5,
     "joint_tab_start_radius": 40.5,
     "joint_tab_end_radius": 43.0,
@@ -432,18 +433,20 @@ def _tick_branch_vectors(p, x, z):
     angle = math.atan2(z, x)
     long_len = float(p.get("joint_branch_long_length", 22.0))
     short_len = float(p.get("joint_branch_short_length", 14.0))
-    half_angle = math.radians(float(p.get("joint_branch_axis_bias_deg", 65.0)))
-    # The main arm points radially outward. Both root legs start at its entry
-    # point and point inward, one to each side of the arm axis; neither follows
-    # the global X/Z axes. Their included angle is 2 * half_angle (130 degrees).
+    # Preserve the short branch's current direction (65 degrees). Rotate
+    # only the long branch to 45 degrees from the inward arm axis, producing
+    # a 110-degree included angle without moving the short branch.
+    short_angle = math.radians(float(p.get("joint_branch_axis_bias_deg", 65.0)))
+    long_angle = math.radians(float(p.get("joint_branch_long_axis_deg", 45.0)))
     inward_x, inward_z = -math.cos(angle), -math.sin(angle)
     side_x, side_z = -inward_z, inward_x
-    c, sn = math.cos(half_angle), math.sin(half_angle)
+    lc, ls = math.cos(long_angle), math.sin(long_angle)
+    sc, ss = math.cos(short_angle), math.sin(short_angle)
     return (
-        (long_len, inward_x * c + side_x * sn,
-         inward_z * c + side_z * sn),
-        (short_len, inward_x * c - side_x * sn,
-         inward_z * c - side_z * sn),
+        (long_len, inward_x * lc + side_x * ls,
+         inward_z * lc + side_z * ls),
+        (short_len, inward_x * sc - side_x * ss,
+         inward_z * sc - side_z * ss),
     )
 
 
