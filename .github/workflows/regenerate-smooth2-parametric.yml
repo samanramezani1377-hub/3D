@@ -89,17 +89,16 @@ jobs:
               raise SystemExit("Geometry report must confirm clearance bores pass through the floor")
           if report_joint.get("nut_seated_inside_floor_recess") is not True:
               raise SystemExit("Geometry report does not confirm nuts are seated inside underside pockets")
-          pocket_depth = report_joint.get("nut_trap_depth_mm", 0)
-          component_reports = report.get("components", {})
-          for i in range(1, 9):
-              nut_name = f"nut_{i}"
-              nut_info = component_reports.get(nut_name, {})
-              nut_bbox = nut_info.get("bbox_mm", [])
-              if len(nut_bbox) != 6 or not nut_info.get("shape_valid") or nut_info.get("solid_count") != 1:
-                  raise SystemExit(f"{nut_name} is missing a valid single-solid bounding box")
-              zmin, zmax = nut_bbox[2], nut_bbox[5]
-              if zmax > 0.05 or zmin >= -0.01 or zmin < -(pocket_depth + 0.05):
-                  raise SystemExit(f"{nut_name} does not fit inside the underside floor pocket: z=[{zmin}, {zmax}], pocket_depth={pocket_depth}")
+          if report_joint.get("nut_recesses_open_on_exterior_underside") is not True:
+              raise SystemExit("Geometry report does not confirm underside-open nut recesses")
+          if report_joint.get("nut_pocket_clearance_per_side_mm", 0) <= 0:
+              raise SystemExit("Geometry report reports no positive nut-pocket side clearance")
+          intersections = report_joint.get("nut_body_intersection_volume_mm3", {})
+          if set(intersections) != {"nut_1", "nut_2", "nut_3", "nut_4", "nut_5", "nut_6", "nut_7", "nut_8"}:
+              raise SystemExit("Geometry report must contain intersection checks for all eight nuts")
+          for nut_name, volume in intersections.items():
+              if not isinstance(volume, (int, float)) or volume > 0.01:
+                  raise SystemExit(f"{nut_name} intersects the remaining body material: {volume} mm^3")
           bbox = report.get("assembly", {}).get("bbox_mm", [])
           if len(bbox) != 3 or not (bbox[2] < bbox[0] * 0.25 and bbox[2] < bbox[1] * 0.25):
               raise SystemExit(f"Expected Z-up footprint with thin vertical extent; got bbox_mm={bbox}")
