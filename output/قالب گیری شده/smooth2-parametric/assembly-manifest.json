@@ -193,7 +193,7 @@
       ]
     ],
     "tab_removed": true,
-    "arm_start_radius_model_units": 20.5,
+    "arm_start_radius_model_units": 30.5,
     "main_beam_height_mm": 15.426,
     "approx_m3_clearance_hole_diameter_mm": 3.342,
     "hardware_geometry_is_simplified": true,
