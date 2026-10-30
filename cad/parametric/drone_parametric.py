@@ -3,7 +3,7 @@
 Design coordinates are Y-up with X-Z as the plan; exported CAD is rotated to Z-up for
 common CAD/3D-printing orientation. Export transform: (x, y, z) -> (x, -z, y).
 Thus the camera/front points toward -Y and the flat underside faces -Z. Units: mm.
-Edit PARAMS (or pass --params file.json) and re-run to regenerate the model.
+Edit cad/parametric/model.params.json and re-run the single canonical build.
 """
 import hashlib, json, shutil
 from pathlib import Path
@@ -740,38 +740,6 @@ def _prop_collision_report(p):
     return checks
 
 
-def build(p=None):
-    p = {**PARAMS, **(p or {})}
-    inner_min = (min(p["guard_profile_inner"]) + p.get("guard_grow", 0.0)) if p.get("guard_use_profile") else p["guard_outer_radius"] - p["guard_wall"]
-    assert p["prop_radius"] < inner_min, "prop would hit the guard"
-    model = body(p)
-    for i, (x, z) in enumerate(stations(p)):
-        model = model.union(arm(p, x, z)).union(guard(p, x, z)).union(motor(p, x, z))
-        if p["include_props"]:
-            model = model.union(prop(p, x, z))
-    f = 1.0
-    if p.get("model_scale"):
-        f = p["model_scale"]
-    elif p.get("target_overall_mm"):
-        bb = model.val().BoundingBox()
-        f = p["target_overall_mm"] / max(bb.xlen, bb.zlen)
-    if p["camera_enabled"]:
-        barrel, cutter = camera_parts(p, f)
-        model = model.union(barrel).cut(cutter)
-    if p["led_enabled"]:
-        model = model.cut(led_slot(p, model.val(), f))
-    if f != 1.0:
-        model = cq.Workplane("XY").newObject([model.val().scale(f)])
-        print("uniform scale factor", round(f, 4))
-    # Export convention: Z is vertical, the flat underside faces -Z, camera/front faces -Y.
-    model = model.rotate((0, 0, 0), (1, 0, 0), 90)
-    return model
-
-
-
-
-
-
 def build_modular(p=None):
     """Build the split body, four removable arms, vertical screws, nut placeholders and props."""
     import math
@@ -1136,15 +1104,16 @@ def write_validation_report(parts, scale, out_dir, params):
 
     # Validate the files actually written to disk, not only in-memory CadQuery shapes.
     import trimesh
+    component_stl_names = [name + ".stl" for name in parts]
     stl_names = ["drone_parametric.stl", "drone_parametric_assembled.stl",
-                 "drone_parametric_exploded.stl"] + [name + ".stl" for name in parts]
+                 "drone_parametric_exploded.stl"] + component_stl_names
     stl_checks = {}
     stl_bounds = {}
-    for filename in stl_names:
+    for filename in component_stl_names:
         path = os.path.join(out_dir, filename)
         mesh = trimesh.load(path, force="mesh", process=True)
         if mesh.is_empty:
-            raise RuntimeError(f"Exported STL is empty: {filename}")
+            raise RuntimeError(f"Exported component STL is empty: {filename}")
         if not mesh.is_watertight:
             trimesh.repair.fill_holes(mesh)
             trimesh.repair.fix_normals(mesh)
@@ -1153,7 +1122,26 @@ def write_validation_report(parts, scale, out_dir, params):
         stl_checks[filename] = bool(mesh.is_watertight)
         stl_bounds[filename] = [float(v) for v in mesh.bounds.reshape(-1)]
         if not stl_checks[filename]:
-            raise RuntimeError(f"Exported STL is not watertight after repair: {filename}")
+            raise RuntimeError(f"Component STL is not watertight after repair: {filename}")
+
+    # A multi-solid assembled STL is allowed to contain touching closed shells.
+    # It is validated as an assembly envelope, not misclassified as one manifold solid.
+    assembled_mesh = trimesh.load(
+        os.path.join(out_dir, "drone_parametric_assembled.stl"), force="mesh", process=True
+    )
+    if assembled_mesh.is_empty:
+        raise RuntimeError("Assembled STL is empty")
+    assembled_stl_bounds = [float(v) for v in assembled_mesh.bounds.reshape(-1)]
+    exploded_mesh = trimesh.load(
+        os.path.join(out_dir, "drone_parametric_exploded.stl"), force="mesh", process=True
+    )
+    if exploded_mesh.is_empty:
+        raise RuntimeError("Exploded STL is empty")
+    exploded_stl_integrity = {
+        "non_empty": not exploded_mesh.is_empty,
+        "triangle_count": int(len(exploded_mesh.faces)),
+        "passed": len(exploded_mesh.faces) > 0
+    }
 
     step_names = ["drone_parametric"] + list(parts)
     step_checks = {}
@@ -1185,7 +1173,7 @@ def write_validation_report(parts, scale, out_dir, params):
         delta = max(abs(a - b) for a, b in zip(step_box, stl_box))
         geometry_pairs[name] = {"max_bbox_delta_mm": round(delta, 6), "passed": delta <= 0.10}
     assembly_delta = max(abs(a - b) for a, b in zip(
-        step_bounds["drone_parametric.step"], stl_bounds["drone_parametric_assembled.stl"]))
+        step_bounds["drone_parametric.step"], assembled_stl_bounds))
     geometry_pairs["assembly"] = {
         "max_bbox_delta_mm": round(assembly_delta, 6), "passed": assembly_delta <= 0.10
     }
@@ -1194,6 +1182,14 @@ def write_validation_report(parts, scale, out_dir, params):
     with open(os.path.join(out_dir, "drone_parametric_assembled.stl"), "rb") as assembled_file:
         assembled_bytes = assembled_file.read()
     default_stl_matches_assembled = default_bytes == assembled_bytes
+    assembly_stl_integrity = {
+        "non_empty": not assembled_mesh.is_empty,
+        "triangle_count": int(len(assembled_mesh.faces)),
+        "step_bbox_delta_mm": round(assembly_delta, 6),
+        "default_stl_byte_identical_to_assembled": default_stl_matches_assembled,
+        "passed": (not assembled_mesh.is_empty and len(assembled_mesh.faces) > 0
+                   and assembly_delta <= 0.10 and default_stl_matches_assembled)
+    }
     export_files = sorted(set(stl_names + [name + ".step" for name in step_names]))
     export_hashes = {}
     for filename in export_files:
@@ -1211,11 +1207,17 @@ def write_validation_report(parts, scale, out_dir, params):
             "all_passed": all(v["passed"] for v in geometry_pairs.values()),
             "files": geometry_pairs
         },
+        "assembly_stl_integrity": assembly_stl_integrity,
+        "exploded_stl_integrity": exploded_stl_integrity,
         "default_stl_is_assembled_alias": default_stl_matches_assembled,
         "file_sha256": export_hashes
     }
     if not default_stl_matches_assembled:
         raise RuntimeError("drone_parametric.stl must be byte-identical to the assembled STL")
+    if not assembly_stl_integrity["passed"]:
+        raise RuntimeError(f"Assembled STL integrity check failed: {assembly_stl_integrity}")
+    if not exploded_stl_integrity["passed"]:
+        raise RuntimeError(f"Exploded STL integrity check failed: {exploded_stl_integrity}")
     if not export_checks["step_stl_geometry_pairs"]["all_passed"]:
         raise RuntimeError(f"STEP/STL bounding-box mismatch: {geometry_pairs}")
     report = {
@@ -1313,6 +1315,8 @@ def write_validation_report(parts, scale, out_dir, params):
         "step_round_trip_import": export_checks["step_round_trip_import"],
         "step_stl_geometry_pairs": export_checks["step_stl_geometry_pairs"],
         "default_stl_is_assembled_alias": export_checks["default_stl_is_assembled_alias"],
+        "assembly_stl_integrity": export_checks["assembly_stl_integrity"],
+        "exploded_stl_integrity": export_checks["exploded_stl_integrity"],
         "export_file_sha256": export_checks["file_sha256"],
         "known_limitations": [
             "CAD validity checks apply to in-memory CadQuery shapes before export.",

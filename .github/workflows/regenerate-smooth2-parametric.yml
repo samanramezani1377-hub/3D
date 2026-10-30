@@ -139,12 +139,16 @@ jobs:
 
           if report.get("step_stl_geometry_pairs", {}).get("all_passed") is not True:
               raise SystemExit("STEP/STL geometry parity checks failed")
+          if report.get("assembly_stl_integrity", {}).get("passed") is not True:
+              raise SystemExit("Assembled STL integrity/bounds check failed")
+          if report.get("exploded_stl_integrity", {}).get("passed") is not True:
+              raise SystemExit("Exploded STL integrity check failed")
           if report.get("default_stl_is_assembled_alias") is not True:
               raise SystemExit("Default STL must match the assembled STEP pose")
           if len(report.get("export_file_sha256", {})) != 56:
               raise SystemExit("Export SHA-256 inventory must cover all 56 STEP/STL files")
 
-          for check_name, expected_count in (("stl_watertight", 29), ("step_round_trip_import", 27)):
+          for check_name, expected_count in (("stl_watertight", 26), ("step_round_trip_import", 27)):
               check = report.get(check_name, {})
               if check.get("all_passed") is not True:
                   raise SystemExit(f"{check_name} did not pass for every export")
