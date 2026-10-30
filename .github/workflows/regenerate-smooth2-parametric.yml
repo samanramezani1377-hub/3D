@@ -213,8 +213,12 @@ jobs:
           built_sha="$(git rev-parse HEAD)"
           git fetch origin kilo
           latest_sha="$(git rev-parse origin/kilo)"
-          if [[ "$latest_sha" != "$built_sha" ]]; then
-            echo "kilo changed during CAD generation; refusing to publish stale artifacts."
+          if ! git diff --quiet "$built_sha" "$latest_sha" -- \
+            "cad/parametric/drone_parametric.py" \
+            "cad/parametric/body_sections.json" \
+            "cad/parametric/model.params.json" \
+            "requirements.txt"; then
+            echo "CAD source or dependency inputs changed during generation; refusing to publish stale artifacts."
             echo "Rerun this workflow against the latest kilo commit."
             exit 1
           fi
