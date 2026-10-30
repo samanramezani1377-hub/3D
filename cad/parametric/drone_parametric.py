@@ -1312,7 +1312,7 @@ def write_validation_report(parts, scale, out_dir, params):
         "report_version": 4,
         "generated_from": "cad/parametric/drone_parametric.py",
         "branch": "kilo",
-        "validation_scope": "Fresh CadQuery solid checks, exported STL watertightness checks, STEP round-trip imports, and workflow output checks; no physical print-fit test"
+        "validation_scope": "Fresh CadQuery solid checks, exported STL watertightness checks, STEP round-trip imports, and workflow output checks; no physical print-fit test",
         "assembly": {
             "shape_valid": bool(compound.isValid()),
             "solid_count": len(compound.Solids()),
