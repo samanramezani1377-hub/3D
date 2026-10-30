@@ -955,11 +955,8 @@ def export_modular(parts, out_dir, params):
     cq.exporters.export(cq.Workplane("XY").newObject([exploded_compound]),
                         os.path.join(out_dir, "drone_parametric_exploded.stl"),
                         tolerance=0.05, angularTolerance=0.1)
-    # Make the conventional/default STL name the exploded layout too, preventing
-    # viewers such as OpenSCAD from opening the assembled compound by accident.
-    cq.exporters.export(cq.Workplane("XY").newObject([exploded_compound]),
-                        os.path.join(out_dir, "drone_parametric.stl"),
-                        tolerance=0.05, angularTolerance=0.1)
+    # Keep the default STL as the assembled alias created above.
+    # Only the explicitly named exploded STL receives presentation translations.
 
     for name, part in parts.items():
         export(part, out_dir, name)
