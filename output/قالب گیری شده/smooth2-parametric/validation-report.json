@@ -1,8 +1,8 @@
 {
-  "report_version": 3,
+  "report_version": 4,
   "generated_from": "cad/parametric/drone_parametric.py",
-  "branch": "demo",
-  "validation_scope": "Fresh CadQuery in-memory geometry checks and workflow output-presence checks; no physical print-fit test",
+  "branch": "kilo",
+  "validation_scope": "Fresh CadQuery solid checks, exported STL watertightness checks, STEP round-trip imports, and workflow output checks; no physical print-fit test",
   "assembly": {
     "shape_valid": true,
     "solid_count": 26,
@@ -464,6 +464,16 @@
         4.5
       ]
     ],
+    "tick_root_geometry": {
+      "long_branch_length_model_units": 22.0,
+      "short_branch_length_model_units": 14.0,
+      "branch_width_ratio": 0.6,
+      "long_branch_axis_deg": 55.0,
+      "short_branch_axis_deg": 55.0,
+      "included_angle_deg": 110.0,
+      "junction_radius_model_units": 36.61,
+      "junction_radius_final_mm": 51.768
+    },
     "bolt_clearance_hole_diameter_mm": 3.342,
     "thin_tab_removed": true,
     "arm_start_radius_model_units": 36.61,
@@ -491,18 +501,216 @@
     },
     "max_nut_body_intersection_volume_mm3": 0.0,
     "side_wall_fasteners": false,
-    "floor_plate_cut_through": true,
+    "floor_bolt_clearance_bores_pass_through": true,
     "hole_centres_aligned_by_shared_coordinates": true,
     "arm_tab_is_integral": false,
     "hardware_geometry_is_simplified": true,
     "physical_fit_tested": false
   },
-  "stl_watertight": "not_checked",
-  "step_round_trip_import": "not_checked",
+  "stl_watertight": {
+    "all_passed": true,
+    "files": {
+      "drone_parametric.stl": true,
+      "drone_parametric_assembled.stl": true,
+      "drone_parametric_exploded.stl": true,
+      "body_lower.stl": true,
+      "body_crown.stl": true,
+      "arm_1.stl": true,
+      "arm_2.stl": true,
+      "arm_3.stl": true,
+      "arm_4.stl": true,
+      "prop_1.stl": true,
+      "prop_2.stl": true,
+      "prop_3.stl": true,
+      "prop_4.stl": true,
+      "screw_1.stl": true,
+      "screw_2.stl": true,
+      "screw_3.stl": true,
+      "screw_4.stl": true,
+      "screw_5.stl": true,
+      "screw_6.stl": true,
+      "screw_7.stl": true,
+      "screw_8.stl": true,
+      "nut_1.stl": true,
+      "nut_2.stl": true,
+      "nut_3.stl": true,
+      "nut_4.stl": true,
+      "nut_5.stl": true,
+      "nut_6.stl": true,
+      "nut_7.stl": true,
+      "nut_8.stl": true
+    }
+  },
+  "step_round_trip_import": {
+    "all_passed": true,
+    "files": {
+      "drone_parametric.step": {
+        "shape_valid": true,
+        "solid_count": 26,
+        "expected_solid_count": 26,
+        "passed": true
+      },
+      "body_lower.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "body_crown.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "arm_1.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "arm_2.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "arm_3.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "arm_4.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "prop_1.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "prop_2.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "prop_3.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "prop_4.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_1.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_2.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_3.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_4.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_5.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_6.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_7.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "screw_8.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_1.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_2.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_3.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_4.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_5.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_6.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_7.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      },
+      "nut_8.step": {
+        "shape_valid": true,
+        "solid_count": 1,
+        "expected_solid_count": 1,
+        "passed": true
+      }
+    }
+  },
   "known_limitations": [
     "CAD validity checks apply to in-memory CadQuery shapes before export.",
-    "The workflow checks that exported STEP/STL files exist and are non-empty; STEP round-trip import is not yet checked.",
-    "STL watertightness is not reported by this validation step.",
+    "STEP round-trip import and STL watertightness are checked for every exported assembly/component file.",
     "Screw and nut solids are simplified envelopes without threads; use real metal M3 hardware.",
     "The mounting-hole coordinates align directly with the full-height arm beam and underside nut traps; physical print-fit, screwdriver access in the printed body, and flight-load strength still require testing."
   ]

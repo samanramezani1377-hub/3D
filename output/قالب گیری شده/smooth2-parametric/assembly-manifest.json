@@ -1,6 +1,6 @@
 {
   "assembly": "drone_parametric.step",
-  "branch_scope": "demo",
+  "branch_scope": "kilo",
   "export_orientation": {
     "vertical_axis": "+Z",
     "camera_front_direction": "-Y",
@@ -13,7 +13,7 @@
       "name": "body_lower",
       "step": "body_lower.step",
       "stl": "body_lower.stl",
-      "role": "lower body shell with reinforced floor rails, side entry openings and hex-nut traps"
+      "role": "lower hull shell with a continuous floor plate, four side-entry openings, and eight underside nut bosses/pockets"
     },
     {
       "name": "body_crown",
@@ -25,25 +25,25 @@
       "name": "arm_1",
       "step": "arm_1.step",
       "stl": "arm_1.stl",
-      "role": "removable arm module with an integral floor-mounting tongue, guard and motor"
+      "role": "removable full-height tick-root arm module with guard and motor"
     },
     {
       "name": "arm_2",
       "step": "arm_2.step",
       "stl": "arm_2.stl",
-      "role": "removable arm module with an integral floor-mounting tongue, guard and motor"
+      "role": "removable full-height tick-root arm module with guard and motor"
     },
     {
       "name": "arm_3",
       "step": "arm_3.step",
       "stl": "arm_3.stl",
-      "role": "removable arm module with an integral floor-mounting tongue, guard and motor"
+      "role": "removable full-height tick-root arm module with guard and motor"
     },
     {
       "name": "arm_4",
       "step": "arm_4.step",
       "stl": "arm_4.stl",
-      "role": "removable arm module with an integral floor-mounting tongue, guard and motor"
+      "role": "removable full-height tick-root arm module with guard and motor"
     },
     {
       "name": "prop_1",
@@ -170,7 +170,7 @@
     "type": "full-height arm beam reaches the screw stations; screws pass through the beam and floor into underside nut recesses",
     "fastener": "two vertical M3 screws per arm, passing through the floor into exterior underside nut recesses",
     "fastener_count": 8,
-    "fastener_axis_design_coordinates": "Y (vertical); screws installed from the arm-tab side into exterior underside nuts",
+    "fastener_axis_design_coordinates": "Y (vertical); screws pass downward through the full-height arm beam and floor into exterior underside nuts",
     "fastener_axis_export_coordinates": "Z (vertical)",
     "nut_retention": "hexagonal pockets open on the exterior underside; nut solids sit inside the pocket depth, with real metal nuts required for assembly",
     "nut_recesses_open_on_exterior_underside": true,
@@ -183,7 +183,7 @@
     "nut_seated_inside_floor_recess": true,
     "nut_pocket_clearance_per_side_mm": 0.193,
     "side_wall_fasteners": false,
-    "floor_plate_cut_through": true,
+    "floor_bolt_clearance_bores_pass_through": true,
     "arm_entry_openings": 4,
     "integral_tab": false,
     "bolt_positions_radial_tangent_model_units": [
@@ -196,6 +196,16 @@
         4.5
       ]
     ],
+    "tick_root_geometry": {
+      "long_branch_length_model_units": 22.0,
+      "short_branch_length_model_units": 14.0,
+      "branch_width_ratio": 0.6,
+      "long_branch_axis_deg": 55.0,
+      "short_branch_axis_deg": 55.0,
+      "included_angle_deg": 110.0,
+      "junction_radius_model_units": 36.61,
+      "junction_radius_final_mm": 51.768
+    },
     "tab_removed": true,
     "arm_start_radius_model_units": 36.61,
     "main_beam_height_mm": 16.968,
