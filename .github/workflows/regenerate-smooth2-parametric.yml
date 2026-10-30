@@ -8,6 +8,8 @@ on:
     paths:
       - "cad/parametric/drone_parametric.py"
       - "cad/parametric/body_sections.json"
+      - "cad/parametric/model.params.json"
+      - "requirements.txt"
       - ".github/workflows/regenerate-smooth2-parametric.yml"
 
 permissions:
@@ -37,7 +39,7 @@ jobs:
       - name: Install CAD dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install cadquery numpy trimesh
+          python -m pip install -r requirements.txt
 
       - name: Generate smooth2 CAD from the single source
         shell: bash
@@ -52,6 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
+          import hashlib
           import json
           from pathlib import Path
 
@@ -83,6 +86,21 @@ jobs:
           manifest = json.loads((out / "assembly-manifest.json").read_text(encoding="utf-8"))
           report = json.loads((out / "validation-report.json").read_text(encoding="utf-8"))
           params = json.loads((out / "drone_parametric.params.json").read_text(encoding="utf-8"))
+          canonical_params = Path("cad/parametric/model.params.json").read_bytes()
+          snapshot_params = (out / "drone_parametric.params.json").read_bytes()
+          config_sha = hashlib.sha256(canonical_params).hexdigest()
+          if canonical_params != snapshot_params:
+              raise SystemExit("Generated parameter snapshot differs from canonical model.params.json")
+          for metadata in (manifest, report):
+              if metadata.get("input_sha256", {}).get("parameters") != config_sha:
+                  raise SystemExit("Generated metadata has a stale parameter fingerprint")
+          for key, path in (("builder", "cad/parametric/drone_parametric.py"),
+                            ("body_sections", "cad/parametric/body_sections.json")):
+              expected_sha = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+              if manifest.get("input_sha256", {}).get(key) != expected_sha:
+                  raise SystemExit(f"Manifest fingerprint mismatch for {path}")
+              if report.get("input_sha256", {}).get(key) != expected_sha:
+                  raise SystemExit(f"Report fingerprint mismatch for {path}")
 
           if manifest.get("branch_scope") != "kilo" or report.get("branch") != "kilo":
               raise SystemExit("Generated metadata must identify the kilo branch")
@@ -118,6 +136,13 @@ jobs:
               for check in collisions
           ):
               raise SystemExit("One or more propeller clearance checks failed")
+
+          if report.get("step_stl_geometry_pairs", {}).get("all_passed") is not True:
+              raise SystemExit("STEP/STL geometry parity checks failed")
+          if report.get("default_stl_is_assembled_alias") is not True:
+              raise SystemExit("Default STL must match the assembled STEP pose")
+          if len(report.get("export_file_sha256", {})) != 56:
+              raise SystemExit("Export SHA-256 inventory must cover all 56 STEP/STL files")
 
           for check_name, expected_count in (("stl_watertight", 29), ("step_round_trip_import", 27)):
               check = report.get(check_name, {})
