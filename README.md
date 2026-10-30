@@ -1,68 +1,81 @@
-# Original quadcopter mesh → CAD
+# Quadcopter CAD — kilo
 
-This repository contains the original quadcopter reference, mesh-derived CAD work, and a measured parametric reconstruction. All active changes must be made on branch `demo`; branch `main` is read-only.
+این شاخه نسخهٔ مستقل و مرتب‌شدهٔ پروژهٔ CAD پهپاد است. تنها مدل فعال این شاخه، بازسازی پارامتریک **smooth2** است؛ مدل‌های آزمایشی، مش‌های میانی، خروجی‌های قدیمی و workflowهای مربوط به مسیرهای کنارگذاشته‌شده از این شاخه حذف شده‌اند.
 
-## Current active working folder — authoritative
+## مرجع واحد پروژه
 
-**The active working folder for the current quadcopter CAD task is:**
+| نقش | مسیر |
+|---|---|
+| سازندهٔ اصلی | `cad/parametric/drone_parametric.py` |
+| دادهٔ مقاطع اندازه‌گیری‌شدهٔ موردنیاز سازنده | `cad/parametric/body_sections.json` |
+| تمام خروجی‌های مدل smooth2 | `output/قالب گیری شده/smooth2-parametric/` |
+| مستندات جزئی مدل و قطعات | `output/قالب گیری شده/smooth2-parametric/README.md` |
+| CI مخصوص این شاخه | `.github/workflows/regenerate-smooth2-parametric.yml` |
 
-`output/قالب گیری شده/smooth2-parametric/`
+**منبع هندسه فقط سازندهٔ Python و فایل مقاطع آن است.** فایل‌های STEP/STL و JSONهای داخل پوشهٔ خروجی، محصول اجرای همین سازنده‌اند و نباید به‌عنوان منبع مستقل هندسه ویرایش شوند.
 
-Use this folder as the source of truth for the current working model and its generated exports. Do not treat the neighboring `output/قالب گیری شده/` exterior-shell candidate or the older `output/قالب گیری شده/smooth 2/` files as the active working target unless the user explicitly changes the decision.
+## اجرای محلی
 
-Current files include:
-- `drone_parametric.step` — existing generated STEP CAD export
-- `drone_parametric.stl` — existing generated STL mesh export
-- `drone_parametric.params.json` — parameter snapshot
-- `validation-report.json` — existing report; do not treat it as validation of any ungenerated future revision
-- `preview_overview.png` — preview image
-- `stage1-measurements.json` — measurement notes
+از ریشهٔ مخزن:
 
-## Python generator
+```bash
+python -m pip install --upgrade pip
+python -m pip install cadquery numpy trimesh
+python cad/parametric/drone_parametric.py
+```
 
-The generator source is tracked separately at:
+اجرای موفق، اسمبلی و قطعات مستقل STEP/STL، snapshot پارامترها، مانیفست و گزارش اعتبارسنجی را در پوشهٔ smooth2 تولید می‌کند. برای پارامترهای جایگزین:
 
-`cad/parametric/drone_parametric.py`
+```bash
+python cad/parametric/drone_parametric.py --params path/to/params.json
+```
 
-It uses measured body sections from `cad/parametric/body_sections.json` and writes generated outputs into `output/قالب گیری شده/smooth2-parametric/`. Keep the source script in its existing location; the output folder above remains the active CAD working folder.
+## مشخصات ثبت‌شدهٔ مدل فعلی
 
-The regeneration workflow is `.github/workflows/regenerate-smooth2-parametric.yml`. Its checks verify that expected files exist and are non-empty, and include metadata/report assertions; these checks do not independently establish STEP round-trip validity or STL watertightness. Keep this limitation visible until stronger validation is implemented.
+این اعداد از پارامترهای سازنده و گزارش خروجی فعلی گرفته شده‌اند؛ پس از هر اجرای موفق CI، گزارش تازه مرجع اعداد نهایی خواهد بود.
 
-## Arm-root / body-entry geometry — required design
+- مقیاس یکنواخت فعلی: `1.414028`
+- ابعاد کلی اسمبلی ثبت‌شده: تقریباً `271.890 × 271.856 × 49.938 mm`
+- اسمبلی شامل ۲۶ جسم مستقل است: پوستهٔ پایینی، تاج، چهار مجموعهٔ بازو/محافظ/موتور، چهار پروانه، هشت پیچ نمایشی و هشت مهرهٔ نمایشی.
+- بازوی اصلی: تقریباً `22.624 × 16.968 mm` در مقطع.
+- شاخه‌های ریشهٔ تیک‌شکل: عرض هر شاخه تقریباً `13.575 mm`، طول‌های محلی ۲۲ و ۱۴ واحد و زاویهٔ داخلی ۱۱۰ درجه.
+- شعاع مرکز ریشهٔ تیک: `36.61` واحد مدل، معادل تقریباً `51.75 mm` پس از مقیاس. این عدد، مقدار واقعی کد فعلی است؛ این شاخه ادعای جابه‌جایی ۵۰ میلی‌متری ریشه را نمی‌کند.
+- ضخامت اسمی کف و پوسته: `2.828 mm` پس از مقیاس؛ هشت سوراخ عبور پیچ و فرورفتگی‌های موضعی مهره از این قاعدهٔ ضخامت یکنواخت مستثنا هستند.
+- قطر اسمی پروانه: `74.802 mm`؛ گام هندسی اسمی `53.086 mm`؛ لقی شعاعی محاسباتی پروانه تا حداقل شعاع داخلی محافظ `4.596 mm`.
 
-The arm root where each arm enters the fuselage must look like a **tick/check mark (✓-like)**, not a symmetric V and not a T.
+برای جزئیات جهت‌گیری، ساختار قطعات، محدودیت‌ها و اتصال‌ها، README داخل پوشهٔ خروجی را ببینید.
 
-- The root has two unequal branches that meet at the arm's inner junction: one long branch and one short branch.
-- The **long branch must run along the aircraft's longitudinal direction**. It points **forward on the rear arms** and **backward on the front arms**.
-- The short branch is the crosswise leg, creating the angled tick/check-mark appearance.
-- **Each of the two tick branches must be 60% of the main arm width** (currently 16 mm arm width → 9.6 mm branch width before model scaling). This narrower branch width is intentional and does not mean the main arm beam itself should neck down.
-- Mirror/rotate the geometry correctly for all four arm positions so the long branch direction follows the front/rear rule, rather than giving all roots the same orientation.
-- Preserve the main arm's width through the body entry; do not neck down the arm at the point where it enters the body.
-- **The arm's width and height must remain constant along its entire length.** Neither dimension may taper, shrink, or be locally reduced at the body-entry/root region or anywhere else along the arm.
-- The tick-shaped root must not create a thinner floor/underside section or otherwise reduce the arm's original cross-section. Keep the full specified arm width and height through the transition into the body.
-- Apply these constant-width and constant-height requirements to all four arms, including their mirrored/rotated roots.
-- **Keep the arm's width and height constant along its full length.** Neither dimension may shrink or taper at the body entry, through the root, or anywhere else along the arm.
-- The tick/check-mark root geometry must not reduce the arm's original cross-section: preserve both the original width and original height where the arm joins the body and throughout the transition.
-- Apply these constant-width and constant-height requirements to all four arms, including their correctly mirrored/rotated roots.
-- The intended mounting remains through the floor with vertical fasteners and underside nut recesses; do not change it to side-wall fastening.
+## خروجی‌های تولیدشده
 
-**Latest requested geometry (source committed; regeneration/validation pending):** the two unequal full-height tick branches remain 22 and 14 model units long, with each branch 60% of the main arm width. Both branch directions rotate together by +10° toward the long-branch side, so their included angle remains 110° (long branch +55° and short branch −55° relative to the inward arm axis). The branch junction and both branch ends move 50 final millimetres inward; the main arm correspondingly extends 50 mm farther toward the fuselage centre. The junction/arm start radius is 1.604 model units after conversion by `model_scale=1.28548`. Bolt-hole, screw, and nut positions are calculated from the updated branch geometry, so they move inward with the branches. The side-wall arm-entry slot remains at its existing wall-crossing location so the arm can still pass through the fuselage wall. The main arm cross-section remains full width and height. The latest source commit is `6e62499a9ff843e31e8bc69314d1826439e8f1f9`; generated CAD exports and validation report must not be treated as current until the triggered workflow finishes.
+سازنده فایل اسمبلی STEP، سه چیدمان STL (نام پیش‌فرض، assembled و exploded)، فایل پارامترها، مانیفست و گزارش اعتبارسنجی را تولید می‌کند. علاوه بر آن، برای هر یک از ۲۶ جزء، فایل STEP و STL مستقل ساخته می‌شود. پیش‌نمایش تصویری و یادداشت اندازه‌گیری مرحلهٔ اولیه در این شاخه نگهداری نمی‌شوند؛ آن‌ها خروجی سازندهٔ اصلی نیستند.
 
-## Current status and known limits
+## اعتبارسنجی و CI
 
-- This is a measured parametric reconstruction using CadQuery, not a feature-exact recovery of the original CAD design.
-- The model includes a simplified two-blade propeller representation and clean primitive arms/motors; these are not exact reconstructions of all original mesh details.
-- The latest recorded assembly report gives a bounding box of approximately 247.08 × 247.03 × 39.98 mm. This is a recorded result, not proof that a future modified revision has been generated or checked.
-- The report records in-memory CadQuery shapes as valid, but lists STL watertightness and STEP round-trip import as `not_checked`.
-- The report records `physical_fit_tested: false`; printed fit, tool access, and flight-load strength remain untested.
-- Screw and nut solids are simplified envelopes without threads; use real metal M3 hardware for a physical build.
-- Do not claim manufacturing readiness unless the current exports have actually passed the relevant geometry and mesh checks.
+Workflow فقط روی شاخهٔ `kilo` اجرا می‌شود؛ با تغییر سازنده یا دادهٔ مقاطع، یا با اجرای دستی. این کارها را انجام می‌دهد:
 
-## Strict project rules
+1. نصب CadQuery، NumPy و Trimesh؛
+2. اجرای سازندهٔ اصلی؛
+3. بررسی وجود و اندازهٔ فایل‌های مورد انتظار؛
+4. بررسی معتبر بودن هندسه و تعداد اجزای مانیفست؛
+5. بررسی watertight بودن تمام STLهای اسمبلی و قطعات؛
+6. واردکردن مجدد تمام STEPها و بررسی اعتبار و تعداد solidها؛
+7. بررسی سازگاری گزارش، پارامترها و مانیفست؛
+8. ثبت خروجی‌های تازه فقط روی شاخهٔ `kilo`.
 
-1. Continue work only on branch `demo`; never change branch `main`.
-2. Use `output/قالب گیری شده/smooth2-parametric/` as the authoritative active working folder for this task.
-3. Preserve existing files and make focused corrections; do not rebuild the model from scratch or replace existing geometry without a clear need.
-4. Keep generated artifacts and reports consistent with the exact source/code revision that produced them.
-5. Validate the current output files, not just old reports or successful file-existence checks.
-6. Describe the tick-root geometry as source-implemented but not validated until the workflow has regenerated and checked the exact new STEP/STL exports.
+خروجی‌های تولیدشده باعث اجرای دوبارهٔ workflow نمی‌شوند؛ بنابراین حلقهٔ بی‌پایان CI ایجاد نمی‌شود. در صورت شکست هر آزمون، job متوقف می‌شود و خروجی ناقص به شاخه commit نمی‌شود.
+
+## محدودیت‌های فنی
+
+- این مدل بازسازی پارامتریک بر اساس اندازه‌گیری‌های smooth2 است، نه بازیابی feature-by-feature فایل CAD اصلی.
+- آزمون‌های هندسی، برخورد و واردسازی مجدد فایل‌ها، جایگزین چاپ آزمایشی، آزمون استحکام، بالانس پروانه یا تست پرواز نیستند.
+- شفت موتور و سوراخ نصب متناسب در توپی پروانه هنوز در CAD تعریف نشده‌اند؛ تطبیق با موتور واقعی لازم است.
+- پیچ و مهره‌ها حجم‌های نمایشی ساده‌شده و بدون رزوه‌اند؛ برای مونتاژ واقعی از سخت‌افزار فلزی M3 استفاده شود.
+- تاج و پوستهٔ پایینی قطعات جدا هستند؛ روش اتصال نهایی آن‌ها عمداً طراحی نشده است.
+- هیچ ادعایی دربارهٔ آماده‌بودن پرواز یا تحمل بار، صرفاً بر اساس موفقیت CI مطرح نمی‌شود.
+
+## محدودهٔ تغییرات
+
+- شاخهٔ کاری این نسخه: `kilo`.
+- شاخهٔ `demo` مبدأ ساخت این شاخه بوده و در این کار تغییر داده نمی‌شود.
+- شاخهٔ `main` کاملاً خارج از محدوده است و نباید تغییر کند.
+- فایل‌های خارج از مدل smooth2 و وابستگی‌های مستقیم سازنده در این شاخه نگهداری نمی‌شوند.

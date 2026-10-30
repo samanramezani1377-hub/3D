@@ -1,1 +1,0 @@
-5a079d82450ed0fe56cdd6bbf8c80fee2b746c414879120109739550915dde41  output/original-quadcopter-mesh-cad/downloaded-cad/quadcopter_tidy_mesh_cad.FCStd

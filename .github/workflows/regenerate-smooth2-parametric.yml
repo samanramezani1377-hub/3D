@@ -1,111 +1,139 @@
-name: Regenerate smooth2 parametric quadcopter
+name: Build and validate smooth2 parametric CAD (kilo)
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - demo
+      - kilo
     paths:
       - "cad/parametric/drone_parametric.py"
+      - "cad/parametric/body_sections.json"
+      - ".github/workflows/regenerate-smooth2-parametric.yml"
 
 permissions:
   contents: write
 
 concurrency:
-  group: regenerate-smooth2-parametric-demo
+  group: smooth2-parametric-kilo
   cancel-in-progress: false
 
 jobs:
   regenerate:
-    if: github.ref == 'refs/heads/demo'
+    if: github.ref == 'refs/heads/kilo'
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
-      - name: Checkout demo branch
+      - name: Checkout kilo
         uses: actions/checkout@v4
         with:
-          ref: demo
+          ref: kilo
           fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: pip
 
-      - name: Install CAD generation dependencies
+      - name: Install CAD dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install cadquery numpy trimesh
 
-      - name: Generate the parametric model
+      - name: Generate smooth2 CAD from the single source
+        shell: bash
         run: |
           set -euo pipefail
           test -s "cad/parametric/drone_parametric.py"
           test -s "cad/parametric/body_sections.json"
           python "cad/parametric/drone_parametric.py"
 
-      - name: Validate generated files
+      - name: Validate the generated package
+        shell: bash
         run: |
           set -euo pipefail
-          out="output/قالب گیری شده/smooth2-parametric"
           python - <<'PY'
-          import json, os
-          out = "output/قالب گیری شده/smooth2-parametric"
-          expected = ["drone_parametric.step", "drone_parametric.stl", "drone_parametric_assembled.stl", "drone_parametric_exploded.stl",
-                      "drone_parametric.params.json", "assembly-manifest.json", "validation-report.json"]
-          for prefix in ("body_lower", "body_crown", "arm_1", "arm_2", "arm_3", "arm_4",
-                         "prop_1", "prop_2", "prop_3", "prop_4",
-                         "screw_1", "screw_2", "screw_3", "screw_4", "screw_5", "screw_6", "screw_7", "screw_8",
-                         "nut_1", "nut_2", "nut_3", "nut_4", "nut_5", "nut_6", "nut_7", "nut_8"):
-              expected.extend([prefix + ".step", prefix + ".stl"])
+          import json
+          from pathlib import Path
+
+          out = Path("output/قالب گیری شده/smooth2-parametric")
+          parts = (
+              ["body_lower", "body_crown"]
+              + [f"arm_{i}" for i in range(1, 5)]
+              + [f"prop_{i}" for i in range(1, 5)]
+              + [f"screw_{i}" for i in range(1, 9)]
+              + [f"nut_{i}" for i in range(1, 9)]
+          )
+          expected = [
+              "drone_parametric.step",
+              "drone_parametric.stl",
+              "drone_parametric_assembled.stl",
+              "drone_parametric_exploded.stl",
+              "drone_parametric.params.json",
+              "assembly-manifest.json",
+              "validation-report.json",
+          ]
+          for part in parts:
+              expected.extend([f"{part}.step", f"{part}.stl"])
+
           for name in expected:
-              path = os.path.join(out, name)
-              if not os.path.isfile(path) or os.path.getsize(path) < 100:
-                  raise SystemExit(f"Missing or unexpectedly small output: {path}")
-              print(f"{name}: {os.path.getsize(path)} bytes")
-          with open(os.path.join(out, "assembly-manifest.json"), encoding="utf-8") as f:
-              manifest = json.load(f)
-          if len(manifest.get("parts", [])) != 26:
-              raise SystemExit("Assembly manifest should list body/crown, four arms, four props, eight screws and eight nuts")
+              path = out / name
+              if not path.is_file() or path.stat().st_size < 100:
+                  raise SystemExit(f"Missing or unexpectedly small generated file: {path}")
+
+          manifest = json.loads((out / "assembly-manifest.json").read_text(encoding="utf-8"))
+          report = json.loads((out / "validation-report.json").read_text(encoding="utf-8"))
+          params = json.loads((out / "drone_parametric.params.json").read_text(encoding="utf-8"))
+
+          if manifest.get("branch_scope") != "kilo" or report.get("branch") != "kilo":
+              raise SystemExit("Generated metadata must identify the kilo branch")
+          if len(manifest.get("parts", [])) != 26 or report.get("assembly", {}).get("solid_count") != 26:
+              raise SystemExit("The current assembly must contain exactly 26 solids/components")
+
           joint = manifest.get("joint", {})
-          if joint.get("fastener_count") != 8 or joint.get("side_wall_fasteners") is not False or joint.get("floor_plate_cut_through") is not True:
-              raise SystemExit("Arm joint metadata must describe eight vertical fasteners through the floor, not side-wall fasteners")
-          if joint.get("nut_recesses_open_on_exterior_underside") is not True or joint.get("nut_seated_inside_floor_recess") is not True:
-              raise SystemExit("Nut geometry metadata must confirm underside-open pockets with nuts seated inside them")
-          if joint.get("nut_pocket_depth_mm", 0) < joint.get("nut_thickness_mm", 999999):
-              raise SystemExit("Nut pocket is shallower than the nut envelope")
-          if joint.get("nut_pocket_clearance_per_side_mm", 0) <= 0:
-              raise SystemExit("Nut pocket has no positive side clearance")
-          names = {p.get("name") for p in manifest.get("parts", [])}
-          if not {"body_lower", "body_crown"}.issubset(names):
-              raise SystemExit("Assembly manifest must contain separate body_lower and body_crown components")
-          orientation = manifest.get("export_orientation", {})
-          if orientation.get("vertical_axis") != "+Z" or orientation.get("camera_front_direction") != "-Y" or orientation.get("flat_underside_direction") != "-Z":
-              raise SystemExit("Export orientation metadata does not match the approved Z-up convention")
-          with open(os.path.join(out, "validation-report.json"), encoding="utf-8") as f:
-              report = json.load(f)
-          report_joint = report.get("joint", {})
-          if report_joint.get("floor_plate_cut_through") is not True:
-              raise SystemExit("Geometry report must confirm clearance bores pass through the floor")
-          if report_joint.get("nut_seated_inside_floor_recess") is not True:
-              raise SystemExit("Geometry report does not confirm nuts are seated inside underside pockets")
-          if report_joint.get("nut_recesses_open_on_exterior_underside") is not True:
-              raise SystemExit("Geometry report does not confirm underside-open nut recesses")
-          if report_joint.get("nut_pocket_clearance_per_side_mm", 0) <= 0:
-              raise SystemExit("Geometry report reports no positive nut-pocket side clearance")
-          intersections = report_joint.get("nut_body_intersection_volume_mm3", {})
-          if set(intersections) != {"nut_1", "nut_2", "nut_3", "nut_4", "nut_5", "nut_6", "nut_7", "nut_8"}:
-              raise SystemExit("Geometry report must contain intersection checks for all eight nuts")
-          for nut_name, volume in intersections.items():
-              if not isinstance(volume, (int, float)) or volume > 0.01:
-                  raise SystemExit(f"{nut_name} intersects the remaining body material: {volume} mm^3")
-          bbox = report.get("assembly", {}).get("bbox_mm", [])
-          if len(bbox) != 3 or not (bbox[2] < bbox[0] * 0.25 and bbox[2] < bbox[1] * 0.25):
-              raise SystemExit(f"Expected Z-up footprint with thin vertical extent; got bbox_mm={bbox}")
-          print(f"Verified Z-up assembly bbox_mm={bbox}")
+          if joint.get("fastener_count") != 8 or joint.get("side_wall_fasteners") is not False:
+              raise SystemExit("Expected eight vertical floor fasteners and no side-wall fasteners")
+          if joint.get("floor_bolt_clearance_bores_pass_through") is not True:
+              raise SystemExit("The floor bolt bores must pass through the floor plate")
+          if joint.get("nut_recesses_open_on_exterior_underside") is not True:
+              raise SystemExit("Underside nut pockets are missing")
+          if joint.get("nut_seated_inside_floor_recess") is not True:
+              raise SystemExit("Nut seating metadata is invalid")
+
+          tick = joint.get("tick_root_geometry", {})
+          if tick.get("included_angle_deg") != 110.0:
+              raise SystemExit(f"Unexpected tick-root included angle: {tick.get('included_angle_deg')}")
+          if abs(tick.get("junction_radius_model_units", -1) - params.get("joint_tick_junction_radius", -2)) > 1e-8:
+              raise SystemExit("Tick-root radius does not match the parameter snapshot")
+
+          floor = report.get("floor_plate", {})
+          if floor.get("sample_points_checked") != 25 or floor.get("sample_points_retaining_nominal_thickness") != 25:
+              raise SystemExit("The 5x5 central floor-thickness sampling did not pass")
+
+          collisions = report.get("propeller_clearance", {}).get("collision_checks", [])
+          if len(collisions) != 4 or any(
+              not all(check.get(key) is True for key in (
+                  "motor_clearance_pass", "arm_clearance_pass",
+                  "guard_clearance_pass", "guard_vertical_coverage_pass"
+              ))
+              for check in collisions
+          ):
+              raise SystemExit("One or more propeller clearance checks failed")
+
+          for check_name, expected_count in (("stl_watertight", 29), ("step_round_trip_import", 27)):
+              check = report.get(check_name, {})
+              if check.get("all_passed") is not True:
+                  raise SystemExit(f"{check_name} did not pass for every export")
+              if len(check.get("files", {})) != expected_count:
+                  raise SystemExit(f"{check_name} does not contain {expected_count} per-file checks")
+
+          print(f"Validated {len(expected)} generated files")
+          print("Assembly bbox (mm):", report["assembly"]["bbox_mm"])
+          print("STL watertight checks:", len(report["stl_watertight"]["files"]))
+          print("STEP round-trip checks:", len(report["step_round_trip_import"]["files"]))
           PY
 
-      - name: Commit exports onto the latest demo branch safely
+      - name: Commit generated exports to kilo only
         shell: bash
         run: |
           set -euo pipefail
@@ -148,74 +176,32 @@ jobs:
             "nut_7.step" "nut_7.stl"
             "nut_8.step" "nut_8.stl"
           )
-          # Preserve the generated artifacts while synchronizing with any newer
-          # commits that arrived on demo during the CAD build.
-          for f in "${files[@]}"; do
-            cp "$out/$f" "$tmpdir/$f"
+
+          for file in "${files[@]}"; do
+            cp "$out/$file" "$tmpdir/$file"
+          done
+
+          built_sha="$(git rev-parse HEAD)"
+          git fetch origin kilo
+          latest_sha="$(git rev-parse origin/kilo)"
+          if [[ "$latest_sha" != "$built_sha" ]]; then
+            echo "kilo changed during CAD generation; refusing to publish stale artifacts."
+            echo "Rerun this workflow against the latest kilo commit."
+            exit 1
+          fi
+
+          git reset --hard origin/kilo
+          for file in "${files[@]}"; do
+            cp "$tmpdir/$file" "$out/$file"
           done
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${out}"
+          if git diff --cached --quiet; then
+            echo "Generated smooth2 outputs already match kilo."
+            exit 0
+          fi
 
-          for attempt in 1 2 3 4 5; do
-            echo "Push attempt $attempt/5: syncing with latest origin/demo"
-            git fetch origin demo
-            git reset --hard origin/demo
-            mkdir -p "$out"
-            for f in "${files[@]}"; do
-              cp "$tmpdir/$f" "$out/$f"
-            done
-
-            git add -- \
-              "$out/drone_parametric.step" \
-              "$out/drone_parametric.stl" \
-              "$out/drone_parametric_assembled.stl" \
-              "$out/drone_parametric_exploded.stl" \
-              "$out/drone_parametric.params.json" \
-              "$out/assembly-manifest.json" \
-              "$out/validation-report.json" \
-              "$out/body_lower.step" "$out/body_lower.stl" \
-              "$out/body_crown.step" "$out/body_crown.stl" \
-              "$out/arm_1.step" "$out/arm_1.stl" \
-              "$out/arm_2.step" "$out/arm_2.stl" \
-              "$out/arm_3.step" "$out/arm_3.stl" \
-              "$out/arm_4.step" "$out/arm_4.stl" \
-              "$out/prop_1.step" "$out/prop_1.stl" \
-              "$out/prop_2.step" "$out/prop_2.stl" \
-              "$out/prop_3.step" "$out/prop_3.stl" \
-              "$out/prop_4.step" "$out/prop_4.stl" \
-              "$out/screw_1.step" "$out/screw_1.stl" \
-              "$out/screw_2.step" "$out/screw_2.stl" \
-              "$out/screw_3.step" "$out/screw_3.stl" \
-              "$out/screw_4.step" "$out/screw_4.stl" \
-              "$out/screw_5.step" "$out/screw_5.stl" \
-              "$out/screw_6.step" "$out/screw_6.stl" \
-              "$out/screw_7.step" "$out/screw_7.stl" \
-              "$out/screw_8.step" "$out/screw_8.stl" \
-              "$out/nut_1.step" "$out/nut_1.stl" \
-              "$out/nut_2.step" "$out/nut_2.stl" \
-              "$out/nut_3.step" "$out/nut_3.stl" \
-              "$out/nut_4.step" "$out/nut_4.stl" \
-              "$out/nut_5.step" "$out/nut_5.stl" \
-              "$out/nut_6.step" "$out/nut_6.stl" \
-              "$out/nut_7.step" "$out/nut_7.stl" \
-              "$out/nut_8.step" "$out/nut_8.stl"
-            # Remove obsolete unsplit body exports; keep only the two current body parts.
-            git rm -f --ignore-unmatch "$out/body.step" "$out/body.stl"
-
-            if git diff --cached --quiet; then
-              echo "Generated CAD exports already match origin/demo; nothing to commit."
-              exit 0
-            fi
-
-            git commit -m "Regenerate smooth2 parametric quadcopter CAD exports"
-            if git push origin HEAD:demo; then
-              echo "CAD exports pushed successfully."
-              exit 0
-            fi
-            echo "Push was rejected (likely a concurrent update); retrying against latest demo."
-            sleep "$attempt"
-          done
-
-          echo "Could not push after 5 attempts; inspect concurrent updates or permissions."
-          exit 1
+          git commit -m "Regenerate and validate smooth2 parametric CAD (kilo)"
+          git push origin HEAD:kilo
