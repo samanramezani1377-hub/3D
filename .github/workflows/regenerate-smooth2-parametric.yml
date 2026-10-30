@@ -1,3 +1,4 @@
+# Re-run CAD generation against the current kilo head after docs-only updates.
 name: Build and validate smooth2 parametric CAD (kilo)
 
 on:
