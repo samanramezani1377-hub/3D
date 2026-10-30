@@ -55,7 +55,7 @@ jobs:
           import json
           from pathlib import Path
 
-          out = Path("output/قالب گیری شده/smooth2-parametric")
+          out = Path("output/smooth2-parametric")
           parts = (
               ["body_lower", "body_crown"]
               + [f"arm_{i}" for i in range(1, 5)]
@@ -136,7 +136,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          out="output/قالب گیری شده/smooth2-parametric"
+          out="output/smooth2-parametric"
           tmpdir="$(mktemp -d)"
           trap 'rm -rf "$tmpdir"' EXIT
 

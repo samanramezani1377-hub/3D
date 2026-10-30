@@ -1459,7 +1459,7 @@ if __name__ == "__main__":
     bb = compound.BoundingBox()
     print("assembly bbox", bb.xlen, bb.ylen, bb.zlen, "valid", compound.isValid(),
           "solids", len(compound.Solids()))
-    out = "output/قالب گیری شده/smooth2-parametric"
+    out = "output/smooth2-parametric"
     if not compound.isValid() or len(compound.Solids()) != len(parts):
         raise RuntimeError("Generated assembly failed validity/solid-count checks")
     export_modular(parts, out)
