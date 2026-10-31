@@ -3,7 +3,7 @@
   "parameter_source": "cad/parametric/model.params.json",
   "parameter_snapshot": "drone_parametric.params.json",
   "input_sha256": {
-    "builder": "4e83c871b93f9e997411cf1c65242565e3ce59c95dc8551128d8a45a3bdb06af",
+    "builder": "f6fca37b07ae289762d5ca141cdbe649db7edaa98e8c9d6f0e22a4bac2c2e719",
     "parameters": "01db4601267d9a8bcf2284a243fbd96b47e874d101ccf47814b0eb57c9683ce7",
     "body_sections": "0ab619d6aca819ae7029b37d5ed1215abd9c503e990bca544f2bc8f5a83e3ad9"
   },
