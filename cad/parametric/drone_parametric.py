@@ -354,14 +354,17 @@ def _tick_branch_vectors(p, x, z):
 
 
 def joint_bolt_points(p, x, z):
-    """Bolt centres at the midpoints of the left and right tick branches."""
+    """Fixed fastener centres in radial/tangential coordinates; independent of branch scaling."""
     import math
     angle = math.atan2(z, x)
-    radius = float(p.get("joint_tick_junction_radius", p["joint_arm_start_radius"]))
-    cx, cz = radius * math.cos(angle), radius * math.sin(angle)
+    radial_x, radial_z = math.cos(angle), math.sin(angle)
+    side_x, side_z = -radial_z, radial_x
+    if x * z < 0:
+        side_x, side_z = -side_x, -side_z
     return [
-        (cx + dx * length / 2.0, cz + dz * length / 2.0)
-        for length, dx, dz in _tick_branch_vectors(p, x, z)
+        (radial * radial_x + tangent * side_x,
+         radial * radial_z + tangent * side_z)
+        for radial, tangent in p["joint_bolt_positions"]
     ]
 
 
