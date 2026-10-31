@@ -1,15 +1,16 @@
-"""Derive the Smooth2 blade stations (r/R, chord, pitch angle) from the BEMT design tool.
+"""Design the Smooth2 propeller for maximum thrust the existing motor can drive.
 
 Run from the repository root:  python cad/parametric/design_prop.py
 
-It reads ``prop_design`` from model.params.json, rewrites ``prop_blade_stations`` as
-rows ``[r/R, chord_local, beta_deg]`` and keeps every other parameter unchanged.  The CAD
-generator then builds exactly those stations; nothing is hard-coded in the generator.
+Inputs live in ``prop_design`` inside model.params.json (mass, thrust-to-weight target, motor
+constants, blade count, chord shape, design lift coefficient, tip clearance).  The script
+grows the propeller radius until the motor reaches its current limit (best thrust), checks the thrust-to-weight target, designs the
+twist of every station with BEMT at the motor's own full-throttle RPM, and writes back:
+blade stations, radius, hub, blade count, guard growth and motor position (so the larger
+rotor still clears the guard and the body).  Everything else in the params file is untouched.
 
-Design rules (all screening-level, not bench-validated):
-  * blade root starts inside the hub and the twist is NOT capped at an arbitrary angle;
-  * every station is pitched so it works at one design lift coefficient at the design RPM;
-  * chord is scaled by ``chord_scale`` from the original planform (diameter unchanged).
+All aerodynamic numbers are screening estimates; the A2212 constants are typical values,
+not measurements of the user's motor.
 """
 import json
 import math
@@ -18,51 +19,124 @@ from pathlib import Path
 import prop_bemt as pb
 
 PARAMS_PATH = Path(__file__).resolve().with_name("model.params.json")
-# Planform kept from the first design (r/R, chord in local model units).
-BASE_PLANFORM = [(0.14, 8.36), (0.23, 9.21), (0.33, 9.43), (0.44, 8.79), (0.56, 7.82),
-                 (0.68, 6.86), (0.80, 6.00), (0.90, 5.14), (0.96, 4.71), (1.00, 4.28)]
+G = 9.80665
 
 
-def _interp(rows, x):
-    if x <= rows[0][0]:
-        return rows[0][1]
-    for (x0, y0), (x1, y1) in zip(rows, rows[1:]):
-        if x <= x1:
-            t = (x - x0) / (x1 - x0)
-            return y0 * (1 - t) + y1 * t
-    return rows[-1][1]
+def planform(x, prop_design, root_x):
+    """Chord / radius at r/R = x: fuller root, peak near 0.3R, linear taper to the tip."""
+    peak = float(prop_design["chord_peak_fraction"])
+    cmax = float(prop_design["max_chord_over_radius"])
+    tip = float(prop_design["tip_chord_ratio"])
+    root = float(prop_design["root_chord_ratio"])
+    if x <= peak:
+        t = root + (1.0 - root) * (x - root_x) / max(peak - root_x, 1e-6)
+    else:
+        t = 1.0 - (1.0 - tip) * (x - peak) / (1.0 - peak)
+    return cmax * t
 
 
-def design(params):
+def build(params, radius_mm):
     dp = params["prop_design"]
     scale = float(params["model_scale"])
-    radius_local = float(params["prop_radius"])
-    radius_m = radius_local * scale / 1000.0
-    hub_frac = float(params["prop_hub_radius"]) / radius_local
-    root_x = round(hub_frac * float(dp["root_start_fraction_of_hub"]), 4)
+    radius_m = radius_mm / 1000.0
+    radius_local = radius_mm / scale
+    hub_local = float(dp["hub_radius_mm"]) / scale
+    root_x = round(hub_local / radius_local * float(dp["root_start_fraction_of_hub"]), 4)
     xs = [root_x] + [float(v) for v in dp["radial_fractions"]]
-    chords = [_interp(BASE_PLANFORM, x) * float(dp["chord_scale"]) for x in xs]
-    stations_m = [(x, c * scale / 1000.0) for x, c in zip(xs, chords)]
+    stations_m = [(x, planform(x, dp, root_x) * radius_m) for x in xs]
     alpha0 = pb.thin_airfoil_alpha0(float(params["prop_airfoil_camber"]),
                                     float(params["prop_airfoil_camber_position"]))
-    betas = pb.design_twist(radius_m, stations_m, float(dp["design_rpm"]),
-                            float(dp["design_cl"]), alpha0, prandtl=False)
-    rows = [[round(x, 4), round(c, 3), round(b, 2)] for x, c, b in zip(xs, chords, betas)]
-    # Effective geometric pitch at 0.75R, final millimetres (documentation value).
-    b75 = _interp([(r[0], r[2]) for r in rows], 0.75)
-    pitch_mm = 2.0 * math.pi * 0.75 * radius_m * 1000.0 * math.tan(math.radians(b75))
-    return rows, pitch_mm
+    blades = int(dp["blade_count"])
+    motor = dict(pb.A2212_ASSUMED, **dp.get("motor", {}))
+    hub_m = hub_local * scale / 1000.0
+    rpm = 0.9 * 60.0 * motor["kv"] * motor["voltage_v"] / 60.0
+    for _ in range(4):
+        betas = pb.design_twist(radius_m, stations_m, rpm, float(dp["design_cl"]), alpha0,
+                                blades=blades, prandtl=False)
+        full = pb.motor_operating_point(radius_m, stations_m, betas, hub_m, blades, alpha0, motor)
+        rpm = full["rpm"]
+    return xs, stations_m, betas, full, (radius_m, hub_m, blades, alpha0, motor)
+
+
+def hover_point(ctx, stations_m, betas, thrust_target):
+    radius_m, hub_m, blades, alpha0, motor = ctx
+    lo, hi = 0.2 * motor["voltage_v"], motor["voltage_v"]
+    for _ in range(30):
+        v = 0.5 * (lo + hi)
+        res = pb.motor_operating_point(radius_m, stations_m, betas, hub_m, blades, alpha0,
+                                       motor, voltage=v, n_int=40)
+        if res["thrust_N"] > thrust_target:
+            hi = v
+        else:
+            lo = v
+    res["equivalent_voltage_v"] = v
+    return res
+
+
+def body_distance(params, x, z):
+    import drone_parametric as d
+    pts = d.canopy_base_points(params)
+    best = 1e9
+    for i, (ax, az) in enumerate(pts):
+        bx, bz = pts[(i + 1) % len(pts)]
+        vx, vz = bx - ax, bz - az
+        t = max(0.0, min(1.0, ((x - ax) * vx + (z - az) * vz) / (vx * vx + vz * vz)))
+        best = min(best, math.hypot(x - ax - t * vx, z - az - t * vz))
+    return best
 
 
 def main():
     params = json.loads(PARAMS_PATH.read_text(encoding="utf-8"))
-    rows, pitch_mm = design(params)
+    dp = params["prop_design"]
+    scale = float(params["model_scale"])
+    weight_per_rotor = float(dp["vehicle_mass_kg"]) * G / 4.0
+    target = float(dp["target_thrust_to_weight"]) * weight_per_rotor
+    # Best thrust: grow the rotor until the assumed motor reaches its current limit (or the
+    # maximum radius), then keep the last radius that stays within the limit.
+    radius_mm = float(dp["min_radius_mm"])
+    best = None
+    while radius_mm <= float(dp["max_radius_mm"]) + 1e-9:
+        result = build(params, radius_mm)
+        if result[3]["current_a"] > float(dp["max_motor_current_a"]) and best is not None:
+            break
+        best = (radius_mm, result)
+        radius_mm += 0.5
+    radius_mm, (xs, st, betas, full, ctx) = best
+    if full["thrust_N"] < target:
+        raise SystemExit("Target thrust cannot be reached within the radius/current limits")
+    radius_local = radius_mm / scale
+    hover = hover_point(ctx, st, betas, weight_per_rotor)
+    # chord in local units: metres -> mm -> / scale
+    rows = [[round(x, 4), round(c * 1000.0 / scale, 3), round(b, 2)]
+            for x, (_, c), b in zip(xs, st, betas)]
+    b75 = None
+    for (x0, _, b0), (x1, _, b1) in zip(rows, rows[1:]):
+        if x0 <= 0.75 <= x1:
+            b75 = b0 + (b1 - b0) * (0.75 - x0) / (x1 - x0)
+    params["prop_radius"] = round(radius_local, 3)
+    params["prop_hub_radius"] = round(float(dp["hub_radius_mm"]) / scale, 3)
+    params["prop_hub_height"] = round(float(dp["hub_height_mm"]) / scale, 3)
+    params["prop_blade_count"] = int(dp["blade_count"])
     params["prop_blade_stations"] = rows
-    params["prop_pitch_mm"] = round(pitch_mm, 3)
+    params["prop_pitch_mm"] = round(2 * math.pi * 0.75 * radius_mm * math.tan(math.radians(b75)), 3)
+    # Guard: inner wall keeps the requested tip clearance; motors move out so the larger guard
+    # keeps the original gap to the body.
+    inner_min = min(params["guard_profile_inner"])
+    params["guard_grow"] = round(radius_local + float(dp["tip_clearance_mm"]) / scale - inner_min, 3)
+    outer_max = max(params["guard_profile_outer"]) + params["guard_grow"]
+    gap = float(dp["guard_to_body_gap_mm"]) / scale
+    m = 40.0
+    while body_distance(params, m, m) < outer_max + gap:
+        m += 0.5
+    params["motor_x"] = params["motor_z"] = m
     PARAMS_PATH.write_text(json.dumps(params, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    for row in rows:
-        print(row)
-    print("pitch@0.75R mm:", round(pitch_mm, 3))
+    print("radius_mm", radius_mm, "diameter_mm", 2 * radius_mm, "blades", dp["blade_count"])
+    print("target thrust N", round(target, 3), "full-throttle", round(full["thrust_N"], 3),
+          "rpm", round(full["rpm"]), "A", round(full["current_a"], 1), "W", round(full["electrical_power_w"], 1))
+    print("hover rpm", round(hover["rpm"]), "A", round(hover["current_a"], 2), "thrust", round(hover["thrust_N"], 3))
+    print("guard_grow", params["guard_grow"], "motor_x/z", m)
+    for r in rows:
+        print(r)
 
 
 if __name__ == "__main__":
