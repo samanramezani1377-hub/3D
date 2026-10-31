@@ -4,8 +4,8 @@
   "branch": "kilo",
   "parameter_source": "cad/parametric/model.params.json",
   "input_sha256": {
-    "builder": "f6fca37b07ae289762d5ca141cdbe649db7edaa98e8c9d6f0e22a4bac2c2e719",
-    "parameters": "01db4601267d9a8bcf2284a243fbd96b47e874d101ccf47814b0eb57c9683ce7",
+    "builder": "adf82d9e17106149fae9289ae0dfb09f42c50878f88d77a8dc6d2ea7661a87ac",
+    "parameters": "a54659ac8769b9caa8b9e478a4bd44305c9257467dda774f96644171ee8c7469",
     "body_sections": "0ab619d6aca819ae7029b37d5ed1215abd9c503e990bca544f2bc8f5a83e3ad9"
   },
   "validation_scope": "Fresh CadQuery solid checks, exported STL watertightness checks, STEP round-trip imports, and workflow output checks; no physical print-fit test",
@@ -95,48 +95,48 @@
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        44.5253,
-        -87.7771,
-        32.4974,
-        119.502,
-        -76.2501,
-        42.5653
+        44.4983,
+        -90.5007,
+        32.8786,
+        119.529,
+        -73.5266,
+        42.5655
       ]
     },
     "prop_2": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        44.5253,
-        76.2501,
-        32.4974,
-        119.502,
-        87.7771,
-        42.5653
+        44.4983,
+        73.5266,
+        32.8786,
+        119.529,
+        90.5007,
+        42.5655
       ]
     },
     "prop_3": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -119.502,
-        -87.7771,
-        32.4974,
-        -44.5253,
-        -76.2501,
-        42.5653
+        -119.529,
+        -90.5007,
+        32.8786,
+        -44.4983,
+        -73.5266,
+        42.5655
       ]
     },
     "prop_4": {
       "shape_valid": true,
       "solid_count": 1,
       "bbox_mm": [
-        -119.502,
-        76.2501,
-        32.4974,
-        -44.5253,
-        87.7771,
-        42.5653
+        -119.529,
+        73.5266,
+        32.8786,
+        -44.4983,
+        90.5007,
+        42.5655
       ]
     },
     "screw_1": {
@@ -333,14 +333,53 @@
     }
   },
   "propeller": {
-    "design": "two-blade cambered NACA 4410 concept with radial chord taper, geometric twist and mild tip sweep",
+    "design": "two-blade cambered NACA 4-digit (4/40/10) concept; BEMT-designed twist holds every station at one design lift coefficient, root starts inside the hub, mild tip sweep, printable minimum thickness and blunt trailing edge",
+    "pitch_law": "designed per station by cad/parametric/design_prop.py (prop_bemt.design_twist); no constant-pitch law and no blanket root cap",
+    "pitch_sign_verified_leading_edge_up": true,
+    "spin_sense_by_prop": {
+      "prop_1": "about +Y (leading edge toward -Z)",
+      "prop_2": "about -Y, mirror-image blade",
+      "prop_3": "about -Y, mirror-image blade",
+      "prop_4": "about +Y (leading edge toward -Z)"
+    },
+    "bemt_screening_estimate": {
+      "model": "annular blade-element/momentum, CL=2*pi*(alpha-alpha0) clipped at +-1.2, CD=0.012+0.01*CL^2, rho=1.225",
+      "validated_against_thrust_stand": false,
+      "zero_lift_angle_deg": -4.154,
+      "points": [
+        {
+          "rpm": 5252,
+          "thrust_N_per_rotor": 0.0575,
+          "shaft_power_W": 0.171,
+          "span_fraction_at_cl_clip": 0.0
+        },
+        {
+          "rpm": 6828,
+          "thrust_N_per_rotor": 0.0971,
+          "shaft_power_W": 0.377,
+          "span_fraction_at_cl_clip": 0.0
+        },
+        {
+          "rpm": 8403,
+          "thrust_N_per_rotor": 0.1471,
+          "shaft_power_W": 0.702,
+          "span_fraction_at_cl_clip": 0.0
+        },
+        {
+          "rpm": 9979,
+          "thrust_N_per_rotor": 0.2074,
+          "shaft_power_W": 1.176,
+          "span_fraction_at_cl_clip": 0.0
+        }
+      ]
+    },
     "blade_count": 2,
     "diameter_mm": 74.802,
-    "nominal_geometric_pitch_mm": 53.086,
-    "nominal_geometric_pitch_in": 2.09,
+    "nominal_geometric_pitch_mm": 39.493,
+    "nominal_geometric_pitch_in": 1.555,
     "airfoil_camber_ratio": 0.04,
     "airfoil_thickness_ratio": 0.1,
-    "radial_stations": 11,
+    "radial_stations": 12,
     "radial_guard_clearance_mm": 4.596,
     "guard_clearance_positive": true,
     "motor_matched": false,
@@ -356,8 +395,8 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.252,
-        "guard_bottom_coverage_margin_mm": 18.392,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.628,
+        "guard_bottom_coverage_margin_mm": 18.768,
         "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
@@ -369,8 +408,8 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.252,
-        "guard_bottom_coverage_margin_mm": 18.392,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.628,
+        "guard_bottom_coverage_margin_mm": 18.768,
         "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
@@ -382,8 +421,8 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.252,
-        "guard_bottom_coverage_margin_mm": 18.392,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.628,
+        "guard_bottom_coverage_margin_mm": 18.768,
         "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
@@ -395,8 +434,8 @@
         "motor_intersection_volume_mm3": 0.0,
         "arm_intersection_volume_mm3": 0.0,
         "guard_intersection_volume_mm3": 0.0,
-        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.252,
-        "guard_bottom_coverage_margin_mm": 18.392,
+        "minimum_prop_to_motor_vertical_bbox_gap_mm": 4.628,
+        "guard_bottom_coverage_margin_mm": 18.768,
         "guard_top_coverage_margin_mm": 1.273,
         "motor_clearance_pass": true,
         "arm_clearance_pass": true,
@@ -739,19 +778,19 @@
         "passed": true
       },
       "prop_1": {
-        "max_bbox_delta_mm": 0.002485,
+        "max_bbox_delta_mm": 0.000447,
         "passed": true
       },
       "prop_2": {
-        "max_bbox_delta_mm": 0.002485,
+        "max_bbox_delta_mm": 0.000447,
         "passed": true
       },
       "prop_3": {
-        "max_bbox_delta_mm": 0.002485,
+        "max_bbox_delta_mm": 0.000447,
         "passed": true
       },
       "prop_4": {
-        "max_bbox_delta_mm": 0.002485,
+        "max_bbox_delta_mm": 0.000447,
         "passed": true
       },
       "screw_1": {
@@ -827,19 +866,19 @@
   "default_stl_is_assembled_alias": true,
   "assembly_stl_integrity": {
     "non_empty": true,
-    "triangle_count": 95514,
+    "triangle_count": 90762,
     "step_bbox_delta_mm": 0.020297,
     "default_stl_byte_identical_to_assembled": true,
     "passed": true
   },
   "exploded_stl_integrity": {
     "non_empty": true,
-    "triangle_count": 96452,
+    "triangle_count": 91700,
     "passed": true
   },
   "export_file_sha256": {
     "arm_1.step": {
-      "sha256": "186361a1868a5632f0a913f211efb9598b2e11e494b8f9b06c8f7fa91e780baf",
+      "sha256": "e7b8d7fa71cdaa6879d5cfd84766cc07911c71491aea1337cffd8b9e2d67a045",
       "size_bytes": 146342
     },
     "arm_1.stl": {
@@ -847,7 +886,7 @@
       "size_bytes": 791484
     },
     "arm_2.step": {
-      "sha256": "00310f20e73b7de569ac1dcc4ce609d921d8ba1dbabe1d884648f5d6fad9d05d",
+      "sha256": "5956802ffa222c93ca2aaa6df52b7a166057859608599cba8dc879a1111797c8",
       "size_bytes": 150178
     },
     "arm_2.stl": {
@@ -855,7 +894,7 @@
       "size_bytes": 791484
     },
     "arm_3.step": {
-      "sha256": "a8ca5fc1ba00f2d32c8ef2e1be13fb1d5bce1788c9f5692efcaaa5d911d6aba4",
+      "sha256": "198328fbf3b74b4b8c2c24049b14289bfab340a153cfded9768659930db85095",
       "size_bytes": 161240
     },
     "arm_3.stl": {
@@ -863,7 +902,7 @@
       "size_bytes": 907184
     },
     "arm_4.step": {
-      "sha256": "b4d45a2a229554aebdbe96cc3da2996b90d05b7f950fc1e621632cf04e284cae",
+      "sha256": "8686e6d018138a0a81258f4bd7419ccafed3dbec0f9292b90032934ec00e5836",
       "size_bytes": 147785
     },
     "arm_4.stl": {
@@ -871,7 +910,7 @@
       "size_bytes": 904084
     },
     "body_crown.step": {
-      "sha256": "0d05be0398bd3b8d55399874f75ed5191443e02dda428a941a887cd556c820a4",
+      "sha256": "38dfd8c01cdee6aca8e872f8bbee865fd300e6e542f49adb44c630350fedc52a",
       "size_bytes": 756055
     },
     "body_crown.stl": {
@@ -879,7 +918,7 @@
       "size_bytes": 22884
     },
     "body_lower.step": {
-      "sha256": "b311a91d3bcc3b760b231f7df1a75b40e66e5398b2f723ccbe522df9ecc90baa",
+      "sha256": "e6632da097e685899ca122d67303298b65625d31573c7ae442c6ad45890cb366",
       "size_bytes": 586746
     },
     "body_lower.stl": {
@@ -887,23 +926,23 @@
       "size_bytes": 498884
     },
     "drone_parametric.step": {
-      "sha256": "7ca372021bbd15b092cb8d2a965e95c34f64d91747fb4090dd603493c8fb3791",
-      "size_bytes": 5980406
+      "sha256": "0d4c850dee12084e451cbc3353b2c05b6dfc3f33a12e637ce782a45b5efe1306",
+      "size_bytes": 6279360
     },
     "drone_parametric.stl": {
-      "sha256": "427cf68309c482c1d288a791e7d7b569180dd61c77e78517e6f340c2ebf3ceb8",
-      "size_bytes": 4775784
+      "sha256": "634c6e1ee316eb78906c202cbeb1d7e1af149ccec6fd9b6e432adbdbd23ed598",
+      "size_bytes": 4538184
     },
     "drone_parametric_assembled.stl": {
-      "sha256": "427cf68309c482c1d288a791e7d7b569180dd61c77e78517e6f340c2ebf3ceb8",
-      "size_bytes": 4775784
+      "sha256": "634c6e1ee316eb78906c202cbeb1d7e1af149ccec6fd9b6e432adbdbd23ed598",
+      "size_bytes": 4538184
     },
     "drone_parametric_exploded.stl": {
-      "sha256": "ec599bc4fdef786c8a4b19fe1c1df3046902e34c844fce89b5e2d218b6612015",
-      "size_bytes": 4822684
+      "sha256": "5ff77bf82f91630f90ea20698ff42e9ab3d6729c1b6c0ac4ec19b5c48aeb355c",
+      "size_bytes": 4585084
     },
     "nut_1.step": {
-      "sha256": "6bd17ee739bc13b6e4c518889f35e0b25cbb1eaca643b1f866694969b093d812",
+      "sha256": "4f857713a80ded04295e61e806476dc2327bc2fe182858adc1151953811b4991",
       "size_bytes": 29142
     },
     "nut_1.stl": {
@@ -911,7 +950,7 @@
       "size_bytes": 26484
     },
     "nut_2.step": {
-      "sha256": "e2ea5b857dbcab8596258ecd03affedf2b9fbcdecb08c7cffad61b5c811040b9",
+      "sha256": "a111cb8cafdc10f22667303bddd666b2033e03017c30babe680007f89811efea",
       "size_bytes": 29089
     },
     "nut_2.stl": {
@@ -919,7 +958,7 @@
       "size_bytes": 26484
     },
     "nut_3.step": {
-      "sha256": "c3bb647e0a2541b7e4a9688d5ce1269bf1eff022f3088d6ee009d865fe606732",
+      "sha256": "b3cf2debb613699e89d2ab4f86ae1e2d9afb5b55d1d9e94c7d1b242f6f566fb7",
       "size_bytes": 29124
     },
     "nut_3.stl": {
@@ -927,7 +966,7 @@
       "size_bytes": 26484
     },
     "nut_4.step": {
-      "sha256": "a262f57a867c66ce787225a6728a87a4ebdfb447904b436460eb37258eea1161",
+      "sha256": "bacf8440fd58195278bed1952a6309b18a14ee04611b0a237b0a20d5e1739b81",
       "size_bytes": 29067
     },
     "nut_4.stl": {
@@ -935,7 +974,7 @@
       "size_bytes": 26484
     },
     "nut_5.step": {
-      "sha256": "a84381dfc2aef79dbcd976a7b983fe4b875be1987a02dd024e5872127b745976",
+      "sha256": "f94d8a7a0bcc4b2b97f51fe8d745d806c65a2d23681c0aad86446dace8c6f69f",
       "size_bytes": 29107
     },
     "nut_5.stl": {
@@ -943,7 +982,7 @@
       "size_bytes": 26484
     },
     "nut_6.step": {
-      "sha256": "0a8b5be558ed838ea95357a450e3f045faec20bb1e352f0cbb7f101db85fc4ed",
+      "sha256": "b63e78f4613d4917226838951c3b0bed87e1acf0d353ab8533726598ede84d10",
       "size_bytes": 29109
     },
     "nut_6.stl": {
@@ -951,7 +990,7 @@
       "size_bytes": 26484
     },
     "nut_7.step": {
-      "sha256": "d8c462d67c960c3c0af37ba21a828a7e8baabdc141d43987a3c5720e8e3d4eb3",
+      "sha256": "3e9e4a0fc91725acecb2aefb8dff169382828dfd53a2414beecfe4e45b0fbb99",
       "size_bytes": 29129
     },
     "nut_7.stl": {
@@ -959,7 +998,7 @@
       "size_bytes": 26484
     },
     "nut_8.step": {
-      "sha256": "5decf62ad0e5cadd84791a6aca511f8c9eb24240cb18a460621e429a3cc00ba1",
+      "sha256": "389393bfc723aaef244dc3246696d6ecbe66e63e1b6be69814111809501b7712",
       "size_bytes": 29089
     },
     "nut_8.stl": {
@@ -967,39 +1006,39 @@
       "size_bytes": 26484
     },
     "prop_1.step": {
-      "sha256": "0bd84556d173e324556617454c1a925e495ff0de301984ce4d9d3462c114ab43",
-      "size_bytes": 823046
+      "sha256": "8bf2f4cae7a6e9d2d9e246fb3fe4de700350ce38734d0d71d23056067b3e0ad8",
+      "size_bytes": 900438
     },
     "prop_1.stl": {
-      "sha256": "ae949127190c72c4bacdd25a078f9e5e5e1264b0cb57a47c824839c69c658b1e",
-      "size_bytes": 302784
+      "sha256": "dafa3b6f46881070435a7dfee4d383bf3f14ac41cc579323c7362a14aca31dcb",
+      "size_bytes": 243784
     },
     "prop_2.step": {
-      "sha256": "a7ee4f76790ce0c2d649c844ef2b58406eadc4ce0250d17ab60487937d484ee1",
-      "size_bytes": 826284
+      "sha256": "d55941ccea71589b0edab1cea3fa6973e2d550b596d0eaa5f7e97a2209aa3ca6",
+      "size_bytes": 903238
     },
     "prop_2.stl": {
-      "sha256": "69d9413c31dd5e9af61c5b93b6908e24368fc4d37fb057cf33cc972ba9f7b427",
-      "size_bytes": 302784
+      "sha256": "d34e09af118746621484009e938da90b82d8f572f79b8558f75c89dc5e20a0cd",
+      "size_bytes": 243784
     },
     "prop_3.step": {
-      "sha256": "5715dc38b172b6a95445db4ec71a40524abeace0f6a0af4575933b24ffb366c4",
-      "size_bytes": 828144
+      "sha256": "454eb02a49ae61746d108298d7a192d89b91b9b4cd17294c147c2844c3a4ac78",
+      "size_bytes": 905124
     },
     "prop_3.stl": {
-      "sha256": "7eb36fd0f7c5c08b413f64c3bd33b3abc6b488fa53d43fae9b707d41b3823d53",
-      "size_bytes": 302784
+      "sha256": "0ac8e6c78346259bcb735450918ddaff82a19621ba002703c081fed41be6b067",
+      "size_bytes": 243784
     },
     "prop_4.step": {
-      "sha256": "ed2d7f84c6c991976a1dfdf1c29200e30a34a4cbc1d7ad667e374c3cbf1fd309",
-      "size_bytes": 825428
+      "sha256": "82590e43d204a7915d2b04dde45a97d3c12a0a3ea964f68407b523f1eec54ea1",
+      "size_bytes": 902244
     },
     "prop_4.stl": {
-      "sha256": "bd1336a96c9e7bbf15f0e1f616d9ee022cf5d485f7f3fd0e2aecc8880e58a6ad",
-      "size_bytes": 302784
+      "sha256": "66ccaa183d7b928ced296e7fa67e02f70a1d38920f7ca17bb7daa3eaa1e00f45",
+      "size_bytes": 243784
     },
     "screw_1.step": {
-      "sha256": "0b3c533091594079fbc494ce37672a4f64a3174c2fef10973a6f0c192979963e",
+      "sha256": "40e511e77ee9608ab40d506c0a4b53a943894f6314c1cb4a590f2b95ff8a3d63",
       "size_bytes": 34089
     },
     "screw_1.stl": {
@@ -1007,7 +1046,7 @@
       "size_bytes": 51484
     },
     "screw_2.step": {
-      "sha256": "6e18e9e2ea5f1f0350fc1025424c69c91156eac722548ae471239a46ff004c85",
+      "sha256": "fb393194ea975c58276ba8dac3b81c7f98822ee01caf5a3ca93ba66bdaa97b98",
       "size_bytes": 33958
     },
     "screw_2.stl": {
@@ -1015,7 +1054,7 @@
       "size_bytes": 51484
     },
     "screw_3.step": {
-      "sha256": "2bbbe12b107c0dcae746e2f956a441ecba14cff18cddda767617c9ce6fc8e915",
+      "sha256": "4d0fbc1afb68e01cf3b06c663effee6688a85c422eb38f4c798470b2273a8136",
       "size_bytes": 34143
     },
     "screw_3.stl": {
@@ -1023,7 +1062,7 @@
       "size_bytes": 51484
     },
     "screw_4.step": {
-      "sha256": "360388ddb4465f8c1938fa879a39fbb6d611ae34a4da03d51e58de5a1bc198bd",
+      "sha256": "e0c6f1e4da60afd24c7f004a451b1adc2946a8bb9bfa106a693a287ab4b82622",
       "size_bytes": 33957
     },
     "screw_4.stl": {
@@ -1031,7 +1070,7 @@
       "size_bytes": 51484
     },
     "screw_5.step": {
-      "sha256": "5f6074d4acc3f70d24eb0dc64de7f53e58ebfc58f6195c5ddb36db0f46290d81",
+      "sha256": "38084a0dc510053ae8a9a8dbb2f32ffba58a4b0e0df463f5cb4b9f506e95c4e9",
       "size_bytes": 34092
     },
     "screw_5.stl": {
@@ -1039,7 +1078,7 @@
       "size_bytes": 51484
     },
     "screw_6.step": {
-      "sha256": "274e7a7c9ef8763ae8a6f775b727c1574bdaac1078d342bf75484d30ea6d6ac6",
+      "sha256": "0c39a3c863b6503a780a97b1bca85b8267846d095d7b89e7b8ed97e45b88fa41",
       "size_bytes": 34018
     },
     "screw_6.stl": {
@@ -1047,7 +1086,7 @@
       "size_bytes": 51484
     },
     "screw_7.step": {
-      "sha256": "1b0e60a48b5a7cb4fdeafecf4cc5e0b3450e918e29318234267c51aaa5564f65",
+      "sha256": "699c272c78e1fce06e5664863af0c9c8c33941b1f6867577b6eb3b6c320bb403",
       "size_bytes": 34044
     },
     "screw_7.stl": {
@@ -1055,7 +1094,7 @@
       "size_bytes": 51484
     },
     "screw_8.step": {
-      "sha256": "0f77aaa52f862789531748f45d081f36364ea82e698d7641a20519de0a241f3c",
+      "sha256": "b01e037bcfb9abf3e5200532167aebf7639c424514282992cafb11dc6c304e61",
       "size_bytes": 34017
     },
     "screw_8.stl": {
