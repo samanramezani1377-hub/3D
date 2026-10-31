@@ -102,56 +102,94 @@
   "prop_y": 25.5,
   "prop_hub_radius": 4,
   "prop_hub_height": 4,
-  "prop_pitch_mm": 53.086,
+  "prop_pitch_mm": 39.493,
   "prop_airfoil_camber": 0.04,
   "prop_airfoil_camber_position": 0.4,
   "prop_airfoil_thickness_ratio": 0.1,
   "prop_airfoil_samples": 24,
   "prop_tip_sweep": 1.2,
+  "prop_min_section_thickness_mm": 0.9,
+  "prop_trailing_edge_thickness_mm": 0.3,
+  "prop_design": {
+    "note": "Screening-level design inputs, not measured motor data. design_rpm is a scenario RPM from the propeller report; run cad/parametric/design_prop.py after editing.",
+    "design_rpm": 8403,
+    "design_cl": 0.8,
+    "chord_scale": 1.35,
+    "root_start_fraction_of_hub": 0.85,
+    "radial_fractions": [
+      0.16,
+      0.22,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      0.96,
+      1.0
+    ]
+  },
   "prop_blade_stations": [
     [
-      0.05,
-      6.96
+      0.1285,
+      11.286,
+      28.86
     ],
     [
-      0.14,
-      8.36
+      0.16,
+      11.541,
+      26.54
     ],
     [
-      0.23,
-      9.21
+      0.22,
+      12.306,
+      23.83
     ],
     [
-      0.33,
-      9.43
+      0.3,
+      12.641,
+      21.16
     ],
     [
-      0.44,
-      8.79
+      0.4,
+      12.181,
+      18.51
     ],
     [
-      0.56,
-      7.82
+      0.5,
+      11.212,
+      16.36
     ],
     [
-      0.68,
-      6.86
+      0.6,
+      10.125,
+      14.62
+    ],
+    [
+      0.7,
+      9.068,
+      13.21
     ],
     [
       0.8,
-      6
+      8.1,
+      12.05
     ],
     [
       0.9,
-      5.14
+      6.939,
+      10.92
     ],
     [
       0.96,
-      4.71
+      6.359,
+      10.35
     ],
     [
-      1,
-      4.28
+      1.0,
+      5.778,
+      9.88
     ]
   ],
   "joint_clearance": 0.227273,
