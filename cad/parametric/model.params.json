@@ -209,7 +209,7 @@
   "joint_floor_pad_height": 2.5,
   "joint_floor_pad_width": 20.625,
   "joint_floor_pad_end_radius": 43.125,
-  "joint_arm_start_radius": 45.7625,
+  "joint_arm_start_radius": 36.61,
   "joint_entry_start_radius": 43.125,
   "joint_entry_end_radius": 62.5,
   "joint_bolt_positions": [
