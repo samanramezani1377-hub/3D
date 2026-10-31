@@ -3,9 +3,9 @@
   "parameter_source": "cad/parametric/model.params.json",
   "parameter_snapshot": "drone_parametric.params.json",
   "input_sha256": {
-    "builder": "df628ab3731edcd0b2f5db138e84cbe81478a62e5f8dd99f6a046d6142e96b05",
+    "builder": "fff0d9002601580e63c3b6fd341fb1ba201b35f8afece3cac16dbba77d920382",
     "parameters": "16826a6d609f7d094b52083d41fd2a09e9a988bb1d829d3ea29eac0e83e75059",
-    "body_sections": "0ab619d6aca819ae7029b37d5ed1215abd9c503e990bca544f2bc8f5a83e3ad9"
+    "body_sections": "d52f0d4767c8165e2651bd3794a91e76969eeda46eb424fd7cb150b476b41550"
   },
   "export_semantics": {
     "drone_parametric.step": "assembled pose; named 26-component STEP assembly",
