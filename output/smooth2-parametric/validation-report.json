@@ -878,7 +878,7 @@
   },
   "export_file_sha256": {
     "arm_1.step": {
-      "sha256": "48e5dc956e1928af794149f66225431840f2df4d9bbdcafdb61de6a162b21fd1",
+      "sha256": "3f6d03cf314b091d955b5e2cf059b2a51ba01ff3b5810ce5073243fed424c86a",
       "size_bytes": 126337
     },
     "arm_1.stl": {
@@ -886,7 +886,7 @@
       "size_bytes": 604684
     },
     "arm_2.step": {
-      "sha256": "bbcbe033287c26b87260893494cf3730decd756a9719f257f700d7ccb9eef70c",
+      "sha256": "79e6a33556ab4ce3bf2c650333478018bccc7fe2b487eaa12b43ca96a8656037",
       "size_bytes": 130252
     },
     "arm_2.stl": {
@@ -894,7 +894,7 @@
       "size_bytes": 599384
     },
     "arm_3.step": {
-      "sha256": "150daca0f94ab31f837360a242bbb8feb7bd443632cb06710c7b4460d8cdb3c4",
+      "sha256": "9ffd7ca02eb19cbf510f169b462dff793efcd7ca424b98de7490d44de25fecd1",
       "size_bytes": 140846
     },
     "arm_3.stl": {
@@ -902,7 +902,7 @@
       "size_bytes": 810984
     },
     "arm_4.step": {
-      "sha256": "658a2cb6807d99ba330b35c654fdcfcddd14c627baf2c979b0c2d8465bf59afa",
+      "sha256": "9b349f30527161e59c8b854eea175352659146508a3be5214cff7a519771160e",
       "size_bytes": 127722
     },
     "arm_4.stl": {
@@ -910,7 +910,7 @@
       "size_bytes": 814684
     },
     "body_crown.step": {
-      "sha256": "99111707c5997ac453f9d66eaae9bd2249581bd59d5ee5ab830aa813dce4ceb8",
+      "sha256": "123e0147b2d97c4a0f0149012196069d37b50f8fac26de6a7811a397d9dad7ec",
       "size_bytes": 657264
     },
     "body_crown.stl": {
@@ -918,7 +918,7 @@
       "size_bytes": 17884
     },
     "body_lower.step": {
-      "sha256": "ef3b886f22d74ddd9178899c5f2dd70665a9564567956bf90a6716f57fd73cf9",
+      "sha256": "2421b472e92f8aa5717583b49b71d85afdd62121fd64491b70c6eefc70545bf4",
       "size_bytes": 553412
     },
     "body_lower.stl": {
@@ -926,7 +926,7 @@
       "size_bytes": 497284
     },
     "drone_parametric.step": {
-      "sha256": "e8b7445fe1480e936c33183acbd25d9abec6f59a76add1f59a6c934efac721e7",
+      "sha256": "b26b33fc4b76a9943feb9d60d783f1a38187c432b8455be5d09e726002abc732",
       "size_bytes": 6033295
     },
     "drone_parametric.stl": {
@@ -942,7 +942,7 @@
       "size_bytes": 4743184
     },
     "nut_1.step": {
-      "sha256": "fb673b474ca314db9ea434b84bf8493a23bdcda655fd978b633a02714419684a",
+      "sha256": "1224adcd7dde1336ae8fc4765995dca3c18586c7f52e335062089a3613b3eeb5",
       "size_bytes": 29136
     },
     "nut_1.stl": {
@@ -950,7 +950,7 @@
       "size_bytes": 26484
     },
     "nut_2.step": {
-      "sha256": "7648b90a8edb8e6330a0c5cf501f765f4b425084f73d79731dc0a536643da711",
+      "sha256": "330d5f0310d3f2fe1547adada23c185b94d2c9d8c5cc07ef5ba4a0f43611e0f9",
       "size_bytes": 29087
     },
     "nut_2.stl": {
@@ -958,7 +958,7 @@
       "size_bytes": 26484
     },
     "nut_3.step": {
-      "sha256": "5b90fc07e87baa5e8cffc740026beafe34b53a07106d3650af385aa402a83d03",
+      "sha256": "73714f097a5bb658a20e0fb7ea7714fcf1e7a19403dac05a85df1d2da63f7ba2",
       "size_bytes": 29104
     },
     "nut_3.stl": {
@@ -966,7 +966,7 @@
       "size_bytes": 26484
     },
     "nut_4.step": {
-      "sha256": "b17b5e3ec91248019eb0100ee73a75e5321d963d03cd505663cdca4dbb87d7f7",
+      "sha256": "36e01f6ead4d2d9c9db3d49b4de90e818323cc87ef0bfe05e88662307c03a38c",
       "size_bytes": 28991
     },
     "nut_4.stl": {
@@ -974,7 +974,7 @@
       "size_bytes": 26484
     },
     "nut_5.step": {
-      "sha256": "9347a56db9a4b2aa541bf46dc22299ad8539a1ac08ffe10c4046a664c45a42d7",
+      "sha256": "f83c4ea609e7ec9ebf1883c48bd7f36b841dbbae90046d20548d6c7bb0667f18",
       "size_bytes": 29092
     },
     "nut_5.stl": {
@@ -982,7 +982,7 @@
       "size_bytes": 26484
     },
     "nut_6.step": {
-      "sha256": "0528e199c597e755f280033aac89970044f0bcdd95908d3cad3cb17cbf410b57",
+      "sha256": "0f161dd3c4c11c25f5107695d96a02af59694337348ed32511d2566dd50e990d",
       "size_bytes": 29115
     },
     "nut_6.stl": {
@@ -990,7 +990,7 @@
       "size_bytes": 26484
     },
     "nut_7.step": {
-      "sha256": "8468c6805a0fedf2626d351e73bab939821b722ca93af90f30e76ac3a471de79",
+      "sha256": "9bec97059fa316935ec0ee32b67c605a056eef60147caaedc10b3af4af3bad7d",
       "size_bytes": 29124
     },
     "nut_7.stl": {
@@ -998,7 +998,7 @@
       "size_bytes": 26484
     },
     "nut_8.step": {
-      "sha256": "89c757ea4cac16bd4a1fa1a9151e2efdaff40aba4d85388b441e4ebea8f1e865",
+      "sha256": "c04c2903b050db9660977f2164a9c8e3d06cc2c3ef78f89b4aae562b423c3a7a",
       "size_bytes": 29115
     },
     "nut_8.stl": {
@@ -1006,7 +1006,7 @@
       "size_bytes": 26484
     },
     "prop_1.step": {
-      "sha256": "0d9ddc1c7ff5a706949e1613db2ddfc1473cedb5d094f353cef53200023d6a1a",
+      "sha256": "bcb8ebcb8bcb29d77e77cf20619c55df7999f24bddc0fe1f3c8ba4036e79aaea",
       "size_bytes": 892884
     },
     "prop_1.stl": {
@@ -1014,7 +1014,7 @@
       "size_bytes": 268984
     },
     "prop_2.step": {
-      "sha256": "a569aa5174bb566a96ed917a17d6c124b6a3de08d6c22435c17857fcf6726e73",
+      "sha256": "9f525aed5636dfdf3afc17c8fee4e29fdd3db04e0799e1eb87798e492d496a2b",
       "size_bytes": 895826
     },
     "prop_2.stl": {
@@ -1022,7 +1022,7 @@
       "size_bytes": 268984
     },
     "prop_3.step": {
-      "sha256": "86d93f34d6dc91dfc1b82b4ad12d9c31882f8c44acb585afd7b91f01454b418a",
+      "sha256": "cd3898fd842efa0a7edfe31dcbf3250683b066aa0d7fe215f1f94011c13329e7",
       "size_bytes": 897426
     },
     "prop_3.stl": {
@@ -1030,7 +1030,7 @@
       "size_bytes": 268984
     },
     "prop_4.step": {
-      "sha256": "3e7059a6946ad0c80d74caf374ad07d486b846f66d1d008debda26efad8b1662",
+      "sha256": "93129f132172972a6a2daf89c0c3d10c4676b58c9b770119e49348c7231a62bb",
       "size_bytes": 894582
     },
     "prop_4.stl": {
@@ -1038,7 +1038,7 @@
       "size_bytes": 268984
     },
     "screw_1.step": {
-      "sha256": "71514eb5e7b886f101811b3c7581c2b27d75930147b6415a4395ff157152855f",
+      "sha256": "16b20eb7690f9e3d8e5a1f6f1a6b961b6d23917ad690163c7415b74598660251",
       "size_bytes": 34157
     },
     "screw_1.stl": {
@@ -1046,7 +1046,7 @@
       "size_bytes": 51484
     },
     "screw_2.step": {
-      "sha256": "44540925f10d34f53b4fb76dc1e78fb0778acf5e68066a0e185b8f96cf07052b",
+      "sha256": "13eef98f0c2de81cd2e6091c60d3b112ec6ffa4f8f413d45ee97179318e58839",
       "size_bytes": 34017
     },
     "screw_2.stl": {
@@ -1054,7 +1054,7 @@
       "size_bytes": 51484
     },
     "screw_3.step": {
-      "sha256": "715afa3df784d9198ae8b01cfe450a85fd0dddba472579287e4eb697aa6d6ee5",
+      "sha256": "e0888186d4a63114f6580423349b16108c98e4dfe4a0fba8b450823ffaa44758",
       "size_bytes": 34073
     },
     "screw_3.stl": {
@@ -1062,7 +1062,7 @@
       "size_bytes": 51484
     },
     "screw_4.step": {
-      "sha256": "87faeab63153d5c2230d61e926cf04157d69a5ac8d0c49f6aebe436423929515",
+      "sha256": "82b8c6db8e12bce48c8b6a2d15894ed12abb12bb50d09bea7e557d8916f8ecf8",
       "size_bytes": 34008
     },
     "screw_4.stl": {
@@ -1070,7 +1070,7 @@
       "size_bytes": 51484
     },
     "screw_5.step": {
-      "sha256": "3d20ce92edcefe20cdd27dad6ee42b2c70aff0377ea7253827dd79d92089d354",
+      "sha256": "6fd8172b0998c4d42c09187d367198e060b393f579396b7255f967de604282e5",
       "size_bytes": 34021
     },
     "screw_5.stl": {
@@ -1078,7 +1078,7 @@
       "size_bytes": 51484
     },
     "screw_6.step": {
-      "sha256": "6b92ba79782469870cbe204083a9f4d4166b229ade2b743ef4bc00918e7231a7",
+      "sha256": "19efa9bcfb9fb356bbf26616d23a9e0280b96a3ccb300826969756ff073b68c2",
       "size_bytes": 34017
     },
     "screw_6.stl": {
@@ -1086,7 +1086,7 @@
       "size_bytes": 51484
     },
     "screw_7.step": {
-      "sha256": "dcb901cefcbbeabadd5d9fe1afd1d2b8e366c77ee6374803218afad7845a0a33",
+      "sha256": "fdfba2985a2d695366a321f3dae47eefa5f66d2630e9cbaa73f80be9f71df4d9",
       "size_bytes": 34017
     },
     "screw_7.stl": {
@@ -1094,7 +1094,7 @@
       "size_bytes": 51484
     },
     "screw_8.step": {
-      "sha256": "71ca049e0fd4028507eac5c945038dae2aad2f064b18672dc3ede982e30c8962",
+      "sha256": "4e4c00aab19b4c0d013217b845d47f856ae70490516408acc454d80a84339778",
       "size_bytes": 34006
     },
     "screw_8.stl": {
