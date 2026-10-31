@@ -26,8 +26,8 @@
   "facet_vertices": 14,
   "facet_inset": 1.125,
   "facet_ridge_lift": 2,
-  "motor_x": 86.5,
-  "motor_z": 86.5,
+  "motor_x": 88.5,
+  "motor_z": 88.5,
   "arm_width": 20,
   "arm_height": 15,
   "motor_radius": 6,
@@ -75,7 +75,7 @@
     35.625
   ],
   "guard_use_profile": true,
-  "guard_grow": 22.472,
+  "guard_grow": 24.24,
   "guard_y_offset": 12.5,
   "led_enabled": true,
   "led_y": 18.125,
@@ -97,12 +97,12 @@
   "camera_cavity_h": 6.6,
   "camera_cavity_d": 7.7,
   "include_props": true,
-  "prop_radius": 54.454,
+  "prop_radius": 56.222,
   "prop_thickness": 1.2,
   "prop_y": 31.875,
   "prop_hub_radius": 7.072,
   "prop_hub_height": 4.95,
-  "prop_pitch_mm": 99.198,
+  "prop_pitch_mm": 98.004,
   "prop_airfoil_camber": 0.04,
   "prop_airfoil_camber_position": 0.4,
   "prop_airfoil_thickness_ratio": 0.1,
@@ -113,19 +113,19 @@
   "prop_design": {
     "note": "Screening-level inputs. Motor constants are typical A2212/13T 1000KV values, not measured; mass is the report's provisional 0.6 kg. Run cad/parametric/design_prop.py after editing.",
     "vehicle_mass_kg": 0.6,
-    "target_thrust_to_weight": 2.0,
+    "target_thrust_to_weight": 2,
     "blade_count": 4,
     "design_cl": 0.85,
-    "min_radius_mm": 40.0,
-    "max_radius_mm": 80.0,
-    "max_motor_current_a": 9.0,
+    "min_radius_mm": 40,
+    "max_radius_mm": 80,
+    "max_motor_current_a": 9,
     "allow_move_motors": true,
-    "max_chord_over_radius": 0.36,
+    "max_chord_over_radius": 0.322,
     "chord_peak_fraction": 0.3,
     "tip_chord_ratio": 0.45,
     "root_chord_ratio": 0.65,
-    "hub_radius_mm": 10.0,
-    "hub_height_mm": 7.0,
+    "hub_radius_mm": 10,
+    "hub_height_mm": 7,
     "root_start_fraction_of_hub": 0.85,
     "radial_fractions": [
       0.2,
@@ -138,12 +138,12 @@
       0.8,
       0.9,
       0.96,
-      1.0
+      1
     ],
     "tip_clearance_mm": 2.5,
     "guard_to_body_gap_mm": 2.5,
     "motor": {
-      "kv": 1000.0,
+      "kv": 1000,
       "resistance_ohm": 0.12,
       "no_load_current_a": 0.5,
       "voltage_v": 11.1
@@ -151,64 +151,64 @@
   },
   "prop_blade_stations": [
     [
-      0.1104,
-      12.742,
-      33.32
+      0.1069,
+      11.767,
+      32.23
     ],
     [
       0.2,
-      15.985,
-      28.56
+      14.822,
+      27.3
     ],
     [
       0.25,
-      17.794,
-      27.21
+      16.463,
+      25.99
     ],
     [
       0.3,
-      19.604,
-      26.25
+      18.104,
+      25.06
     ],
     [
       0.4,
-      18.063,
-      22.53
+      16.681,
+      21.53
     ],
     [
       0.5,
-      16.523,
-      19.85
+      15.259,
+      18.98
     ],
     [
       0.6,
-      14.983,
-      17.75
+      13.836,
+      16.99
     ],
     [
       0.7,
-      13.442,
-      16.03
+      12.414,
+      15.36
     ],
     [
       0.8,
-      11.902,
-      14.55
+      10.991,
+      13.96
     ],
     [
       0.9,
-      10.362,
-      13.24
+      9.569,
+      12.72
     ],
     [
       0.96,
-      9.438,
-      12.52
+      8.716,
+      12.04
     ],
     [
-      1.0,
-      8.822,
-      12.05
+      1,
+      8.147,
+      11.59
     ]
   ],
   "joint_clearance": 0.284091,
