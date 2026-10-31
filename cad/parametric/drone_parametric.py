@@ -627,7 +627,7 @@ def prop_spin(x, z):
 
 
 def prop(p, x, z):
-    """Two-blade low-Re rotor concept: cambered airfoil, radial taper, twist and swept tips.
+    """Four-blade low-Re rotor concept: cambered airfoil, radial taper, twist and swept tips.
 
     This is an aerodynamic-style CAD concept, not a validated thrust/efficiency optimum.
     Motor KV, battery voltage, prop RPM, mass and bench-test data are not present in the repo.
