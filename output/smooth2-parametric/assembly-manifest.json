@@ -4,7 +4,7 @@
   "parameter_snapshot": "drone_parametric.params.json",
   "input_sha256": {
     "builder": "fff0d9002601580e63c3b6fd341fb1ba201b35f8afece3cac16dbba77d920382",
-    "parameters": "ed30d25609f2e6cc81aa35575ce4f1d82f505d88b093152f7cfc7737fbf0bda3",
+    "parameters": "179894ea3ed700a5ba6246c4c95f964830d531a07e0e8bd8173fe3f3da8d7314",
     "body_sections": "11e31f8b2ca19ee1b251d103651d7ad40596e37fbbd99b0415ca240e73e3be56"
   },
   "export_semantics": {
@@ -201,11 +201,11 @@
     "integral_tab": false,
     "bolt_positions_radial_tangent_model_units": [
       [
-        30.300659,
+        40.908653,
         9.010672
       ],
       [
-        32.594965,
+        43.202959,
         -5.734064
       ]
     ],
@@ -216,11 +216,11 @@
       "long_branch_axis_deg": 55,
       "short_branch_axis_deg": 55,
       "included_angle_deg": 110,
-      "junction_radius_model_units": 36.61,
-      "junction_radius_final_mm": 51.768
+      "junction_radius_model_units": 47.217994,
+      "junction_radius_final_mm": 66.768
     },
     "tab_removed": true,
-    "arm_start_radius_model_units": 36.61,
+    "arm_start_radius_model_units": 47.217994,
     "main_beam_height_mm": 21.21,
     "approx_m3_clearance_hole_diameter_mm": 3.342,
     "hardware_geometry_is_simplified": true,

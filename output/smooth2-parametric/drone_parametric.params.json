@@ -200,7 +200,7 @@
   "joint_branch_width_ratio": 0.6,
   "joint_branch_axis_bias_deg": 55,
   "joint_branch_long_axis_deg": 55,
-  "joint_tick_junction_radius": 36.61,
+  "joint_tick_junction_radius": 47.217994,
   "joint_tab_start_radius": 50.625,
   "joint_tab_end_radius": 53.75,
   "joint_tab_width": 20.625,
@@ -209,16 +209,16 @@
   "joint_floor_pad_height": 2.5,
   "joint_floor_pad_width": 20.625,
   "joint_floor_pad_end_radius": 43.125,
-  "joint_arm_start_radius": 36.61,
+  "joint_arm_start_radius": 47.217994,
   "joint_entry_start_radius": 43.125,
   "joint_entry_end_radius": 62.5,
   "joint_bolt_positions": [
     [
-      30.300659,
+      40.908653,
       9.010672
     ],
     [
-      32.594965,
+      43.202959,
       -5.734064
     ]
   ],
