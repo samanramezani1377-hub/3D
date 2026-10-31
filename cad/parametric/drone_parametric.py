@@ -358,7 +358,9 @@ def joint_bolt_points(p, x, z):
     import math
     angle = math.atan2(z, x)
     radial_x, radial_z = math.cos(angle), math.sin(angle)
-    side_x, side_z = -radial_z, radial_x
+    # Match the handedness used by _tick_branch_vectors(): the positive
+    # tangential direction is (radial_z, -radial_x), mirrored by quadrant.
+    side_x, side_z = radial_z, -radial_x
     if x * z < 0:
         side_x, side_z = -side_x, -side_z
     return [
