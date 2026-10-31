@@ -147,3 +147,37 @@ def design_twist(radius, stations, rpm, design_cl, alpha0, blades=2, prandtl=Tru
         beta = math.degrees(phi + alpha)
         out.append(min(beta, max_root_deg) if max_root_deg else beta)
     return out
+
+
+# Typical A2212/13T 1000KV values.  They are NOT measured on the user's motor and the
+# winding resistance in particular varies by manufacturer; the operating-point results
+# are therefore assumption-based screening numbers.
+A2212_ASSUMED = {"kv": 1000.0, "resistance_ohm": 0.12, "no_load_current_a": 0.5,
+                 "voltage_v": 11.1}
+
+
+def motor_operating_point(radius, stations, betas_deg, hub_radius, blades, alpha0,
+                          motor=None, voltage=None, n_int=60):
+    """RPM, current and thrust where the motor's torque balance meets the propeller load.
+
+    Brushless DC model: V = I*R + omega/Kv_rad, torque = (I - I0)/Kt.  ``voltage`` lets the
+    caller evaluate part-throttle (equivalent average voltage).
+    """
+    m = dict(A2212_ASSUMED if motor is None else motor)
+    v = float(m["voltage_v"] if voltage is None else voltage)
+    kt = 60.0 / (2.0 * math.pi * m["kv"])
+    lo, hi = 50.0, 2.0 * math.pi * m["kv"] * v / 60.0 * 1.02
+    res = None
+    for _ in range(40):
+        om = 0.5 * (lo + hi)
+        rpm = om * 60.0 / (2.0 * math.pi)
+        res = analyse(radius, stations, betas_deg, rpm, hub_radius=hub_radius, blades=blades,
+                      alpha0=alpha0, prandtl=True, n_int=n_int)
+        current = res["torque_Nm"] / kt + m["no_load_current_a"]
+        if current * m["resistance_ohm"] + om * kt > v:
+            hi = om
+        else:
+            lo = om
+    res["current_a"] = current
+    res["electrical_power_w"] = current * v
+    return res
