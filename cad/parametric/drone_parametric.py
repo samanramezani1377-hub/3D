@@ -587,10 +587,13 @@ def _prop_airfoil_wire(radius, chord, twist_deg, sweep, p, y_mid):
             )
         y_local = yc * chord + side * yt
         z_local = (u - 0.5) * chord
-        # Twist the section about the radial X axis. Sweep is added in the rotor plane
-        # after twist, so it does not accidentally change the section pitch.
-        y_rot = y_local * cos_t + z_local * sin_t
-        z_rot = -y_local * sin_t + z_local * cos_t + sweep
+        # Twist the section about the radial X axis. The rotor spins about +Y so the
+        # leading edge (u=0, at -Z) leads and the blade must be pitched leading-edge UP
+        # for thrust along +Y (the earlier leading-edge-down sign pushed air upward).
+        # Sweep is added in the rotor plane after twist and points to the trailing side,
+        # so it does not change the section pitch.
+        y_rot = y_local * cos_t - z_local * sin_t
+        z_rot = y_local * sin_t + z_local * cos_t + sweep
         return cq.Vector(float(radius), float(y_mid + y_rot), float(z_rot))
 
     # Traverse upper surface from trailing edge to leading edge, then lower surface
