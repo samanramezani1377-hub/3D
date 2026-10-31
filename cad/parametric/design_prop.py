@@ -6,8 +6,8 @@ Inputs live in ``prop_design`` inside model.params.json (mass, thrust-to-weight 
 constants, blade count, chord shape, design lift coefficient, tip clearance).  The script
 grows the propeller radius until the motor reaches its current limit (best thrust), checks the thrust-to-weight target, designs the
 twist of every station with BEMT at the motor's own full-throttle RPM, and writes back:
-blade stations, radius, hub, blade count, guard growth and motor position (so the larger
-rotor still clears the guard and the body).  Everything else in the params file is untouched.
+blade stations, radius, hub, blade count and guard growth.  Motor positions are kept unless
+``allow_move_motors`` is true; otherwise the rotor is limited by the space left for its guard.  Everything else in the params file is untouched.
 
 All aerodynamic numbers are screening estimates; the A2212 constants are typical values,
 not measurements of the user's motor.
@@ -93,17 +93,32 @@ def main():
     target = float(dp["target_thrust_to_weight"]) * weight_per_rotor
     # Best thrust: grow the rotor until the assumed motor reaches its current limit (or the
     # maximum radius), then keep the last radius that stays within the limit.
-    radius_mm = float(dp["min_radius_mm"])
+    max_radius_mm = float(dp["max_radius_mm"])
+    allow_move = bool(dp.get("allow_move_motors", False))
+    if not allow_move:
+        # Keep the user's motor positions: the rotor may only grow until its guard would touch
+        # the body or the neighbouring guards.
+        gap = float(dp["guard_to_body_gap_mm"]) / scale
+        spread = max(params["guard_profile_outer"]) - min(params["guard_profile_inner"])
+        m_now = float(params["motor_x"])
+        outer_allowed = min(body_distance(params, m_now, m_now) - gap, m_now - gap)
+        space_mm = (outer_allowed - spread - float(dp["tip_clearance_mm"]) / scale) * scale
+        max_radius_mm = min(max_radius_mm, math.floor(space_mm * 2.0) / 2.0)
+        print("space-limited radius mm:", round(space_mm, 2))
+    radius_mm = min(float(dp["min_radius_mm"]), max_radius_mm)
     best = None
-    while radius_mm <= float(dp["max_radius_mm"]) + 1e-9:
+    while radius_mm <= max_radius_mm + 1e-9:
         result = build(params, radius_mm)
         if result[3]["current_a"] > float(dp["max_motor_current_a"]) and best is not None:
             break
         best = (radius_mm, result)
         radius_mm += 0.5
     radius_mm, (xs, st, betas, full, ctx) = best
+    if full["thrust_N"] < weight_per_rotor:
+        raise SystemExit("Even full throttle cannot hover within the radius/current limits")
     if full["thrust_N"] < target:
-        raise SystemExit("Target thrust cannot be reached within the radius/current limits")
+        print("WARNING: thrust-to-weight target not reached; best achievable in the available "
+              "space is TWR %.2f" % (4.0 * full["thrust_N"] / (float(dp["vehicle_mass_kg"]) * G)))
     radius_local = radius_mm / scale
     hover = hover_point(ctx, st, betas, weight_per_rotor)
     # chord in local units: metres -> mm -> / scale
@@ -123,12 +138,14 @@ def main():
     # keeps the original gap to the body.
     inner_min = min(params["guard_profile_inner"])
     params["guard_grow"] = round(radius_local + float(dp["tip_clearance_mm"]) / scale - inner_min, 3)
-    outer_max = max(params["guard_profile_outer"]) + params["guard_grow"]
-    gap = float(dp["guard_to_body_gap_mm"]) / scale
-    m = 40.0
-    while body_distance(params, m, m) < outer_max + gap:
-        m += 0.5
-    params["motor_x"] = params["motor_z"] = m
+    m = float(params["motor_x"])
+    if allow_move:
+        outer_max = max(params["guard_profile_outer"]) + params["guard_grow"]
+        gap = float(dp["guard_to_body_gap_mm"]) / scale
+        m = 40.0
+        while body_distance(params, m, m) < outer_max + gap:
+            m += 0.5
+        params["motor_x"] = params["motor_z"] = m
     PARAMS_PATH.write_text(json.dumps(params, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print("radius_mm", radius_mm, "diameter_mm", 2 * radius_mm, "blades", dp["blade_count"])
     print("target thrust N", round(target, 3), "full-throttle", round(full["thrust_N"], 3),
