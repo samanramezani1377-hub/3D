@@ -606,6 +606,15 @@ def _prop_airfoil_wire(radius, chord, twist_deg, sweep, p, y_mid):
     return wire
 
 
+def prop_spin(x, z):
+    """Spin sense of the rotor at motor position (x, z): +1 = about +Y (leading edge toward -Z).
+
+    Quad-X layout: the two diagonal motors share a direction and the other diagonal
+    spins the opposite way, which needs mirror-image (opposite-handed) blades.
+    """
+    return 1 if x * z > 0 else -1
+
+
 def prop(p, x, z):
     """Two-blade low-Re rotor concept: cambered airfoil, radial taper, twist and swept tips.
 
@@ -657,6 +666,9 @@ def prop(p, x, z):
     rotor = (cq.Workplane("XY").newObject([hub])
              .union(cq.Workplane("XY").newObject([blade]))
              .union(cq.Workplane("XY").newObject([opposite_blade])))
+    if prop_spin(x, z) < 0:
+        # Counter-rotating motors need a mirror-image rotor, not the same blade turned over.
+        rotor = rotor.mirror("XY")
     rotor = rotor.translate((x, 0.0, z))
     if not rotor.val().isValid() or len(rotor.val().Solids()) != 1:
         raise RuntimeError("Propeller blades and hub must form one valid connected solid")
